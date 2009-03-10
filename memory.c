@@ -4,10 +4,10 @@
 #include <time.h>
 #include "util.h"
 
-#if MEMDEBUG_LEVEL == 0
 /**************************************************************************
-  Memory debug level 0
+  No debug
 **************************************************************************/
+#ifdef NDEBUG
 void *impl_xmalloc(size_t size, struct memory_source *src)
 {
 	void *ret = 0;
@@ -49,69 +49,9 @@ char *impl_xstrdup(const char *str, struct memory_source *src)
 	char *ret = impl_xmalloc(len, src);
 	return strcpy(ret, str);
 }
-#elif MEMDEBUG_LEVEL == 1
+#else
 /**************************************************************************
-  Memory debug level 1
-**************************************************************************/
-void *impl_xmalloc(size_t size, struct memory_source *src)
-{
-	void *ret = 0;
-
-	if (src->malloc) {
-		if (src->flags & MEMSRC_RETURN_IMMEDIATELY)
-			return (*src->malloc)(size, src);
-		else
-			ret = (*src->malloc)(size + MEMDEBUG_OVERHEAD, src);
-	}
-	
-	if (!ret)
-		ret = malloc(size + MEMDEBUG_OVERHEAD);
-
-	if (!ret)
-		die("Out of memory, xmalloc(z) failed.");
-
-	*((size_t*)ret) = size;
-	src->allocs++;
-	src->bytes += size;
-
-	ret += sizeof(size_t);
-	return ret;
-}
-
-void *impl_xmallocz(size_t size, struct memory_source *src)
-{
-	void *ret = impl_xmalloc(size, src);
-	memset(ret, 0, size);
-	return ret;
-}
-
-void impl_xfree(void *ptr, struct memory_source *src)
-{
-	if (src->free && (src->flags & MEMSRC_RETURN_IMMEDIATELY)) {
-		(*src->free)(ptr, src);
-		return;
-	}
-
-	size_t *rptr = ptr - sizeof(size_t);
-
-	src->frees++;
-	src->bytes -= *rptr;
-
-	if (src->free)
-		(*src->free)(rptr, src);
-	else
-		free(rptr);
-}
-
-char *impl_xstrdup(const char *str, struct memory_source *src)
-{
-	size_t len = strlen(str);
-	char *ret = impl_xmalloc(len, src);
-	return strcpy(ret, str);
-}
-#elif MEMDEBUG_LEVEL == 2
-/**************************************************************************
-  Memory debug level 2
+  Memory debug
 **************************************************************************/
 void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, unsigned int line)
 {
@@ -257,15 +197,10 @@ static void print_source_stat_ascii(struct memory_source *src)
 
 void xmemstat(struct memory_source **sources, size_t n, bool ascii)
 {
+#ifdef NDEBUG
+	printf("Memory debug is disabled\n");
+#else
 	size_t i;
-
-	if (!MEMDEBUG_LEVEL) {
-		printf("Memory debug report level: disabled\n");
-		return;
-	}
-
-	printf("Memory debug level: %u\n", MEMDEBUG_LEVEL);
-	printf("Memory debug overhead: %u bytes\n", MEMDEBUG_OVERHEAD);
 	
 	for (i = 0; i < n; ++i) {
 		if (i % 2)
@@ -280,4 +215,5 @@ void xmemstat(struct memory_source **sources, size_t n, bool ascii)
 	}
 	printf("\033[0m");
 	fflush(stdout);
+#endif
 }

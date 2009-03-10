@@ -17,18 +17,7 @@ void die(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
   memory utils
 **************************************************************************/
 
-/*
- * Global defined parameters:
- *
- * "MEMDEBUG_LEVEL" - debugging complexity level, possible values are:
- * 	0 - no debugging at all
- * 	1 - size statistics
- * 	2 - size statistics + file:line data (detectable memory leaks)
- *
- * "MEMDEBUG_OVERHEAD" - size of memory allocated for memory manager 
- * debug purposes per memory block (per pointer).
- */
-
+/* Memory source helper macro */
 #define MEMSRC(name, malloc, free, flags) \
 	{name, 0, 0, 0, 0, (malloc), (free), (flags)}
 
@@ -67,22 +56,15 @@ struct memory_source {
 	unsigned int flags;
 };
 
-/* default value */
-#ifndef MEMDEBUG_LEVEL
-	#define MEMDEBUG_LEVEL 2
-#endif
-
 /* overheads */
-#if MEMDEBUG_LEVEL == 0
-	#define MEMDEBUG_OVERHEAD (0)
-#elif MEMDEBUG_LEVEL == 1
-	#define MEMDEBUG_OVERHEAD (sizeof(size_t))
-#elif MEMDEBUG_LEVEL == 2
-	#define MEMDEBUG_OVERHEAD (sizeof(struct memory_stat))
+#ifdef NDEBUG
+ #define MEMDEBUG_OVERHEAD (0)
+#else
+ #define MEMDEBUG_OVERHEAD (sizeof(struct memory_stat))
 #endif
 
 /* functions */
-#if MEMDEBUG_LEVEL == 0 || MEMDEBUG_LEVEL == 1
+#ifdef NDEBUG
 	#define xmalloc(a, s) 	impl_xmalloc((a), (s))
 	#define xmallocz(a, s) 	impl_xmallocz((a), (s))
 	#define xfree(a, s) 	impl_xfree((a), (s))
@@ -92,7 +74,7 @@ struct memory_source {
 	void *impl_xmallocz(size_t size, struct memory_source *src);
 	void impl_xfree(void *ptr, struct memory_source *src);
 	char *impl_xstrdup(const char *str, struct memory_source *src);
-#elif MEMDEBUG_LEVEL == 2
+#else
 	#define xmalloc(a, s) 	impl_xmalloc((a), (s), __FILE__, __LINE__)
 	#define xmallocz(a, s) 	impl_xmallocz((a), (s), __FILE__, __LINE__)
 	#define xfree(a, s) 	impl_xfree((a), (s), __FILE__, __LINE__)
