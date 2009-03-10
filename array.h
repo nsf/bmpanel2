@@ -9,6 +9,22 @@
  * 	type *name; 		- pointer to a memory blob (the array data)
  * 	size_t name_n;		- number of elements in the array
  *	size_t name_alloc;	- capacity of the array
+ *
+ * Main states:
+ *  empty array (no memory) - 
+ *  	name = 0
+ *  	name_n = 0
+ *  	name_alloc = 0
+ *
+ *  allocated - 
+ *  	name = ptr
+ *  	name_n = 0
+ *  	name_alloc = N
+ *
+ *  filled -
+ *  	name = ptr
+ *  	name_n = M
+ *  	name_alloc = N
  */
 
 #define DYN_DATA(array) array
@@ -63,8 +79,9 @@ do {									\
 		if (array##_n) {					\
 			memcpy(newmem, array,				\
 					array##_n * sizeof(array[0]));	\
-			xfree(array, memory_source);			\
 		}							\
+		if (array)						\
+			xfree(array, memory_source);			\
 		array = newmem;						\
 		array##_alloc = newsize;				\
 	}								\
@@ -74,14 +91,17 @@ do {									\
 #define DYN_ARRAY_ENSURE_ADD_CAPACITY(array, add, memory_source)	\
 	DYN_ARRAY_ENSURE_CAPACITY(array, array##_n + add, memory_source)
 
-/* If there is more memory than it is required for elements in the array,
- * shrink it. It is assumed that array contains memory! (array_alloc != 0)
- * Of course if the array has no elements macro frees the memory.
+/* If there is more memory than it is required for elements in the
+ * array, shrink it. Of course if the array has no elements macro
+ * frees the memory.
  */
 #define DYN_ARRAY_SHRINK(array, memory_source)				\
 do {									\
-	if (array##_n == 0) {						\
+	if (!array)							\
+		;							\
+	else if (array##_n == 0) {					\
 		xfree(array, memory_source);				\
+		array = 0;						\
 		array##_alloc = 0;					\
 	} else if (array##_n < array##_alloc) {				\
 		void *newmem = xmalloc(array##_n * sizeof(array[0]),	\
@@ -97,6 +117,7 @@ do {									\
 #define DYN_ARRAY_FREE(array, memory_source)				\
 do {									\
 	xfree(array, memory_source);					\
+	array = 0;							\
 	array##_n = 0;							\
 	array##_alloc = 0;						\
 } while (0)
