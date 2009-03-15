@@ -11,8 +11,8 @@ struct theme_entry {
 	struct theme_entry *children;
 };
 
-struct theme_entry *theme_format_parse(const char *filename);
-struct theme_entry *theme_format_parse_string(const char *str);
+int theme_format_parse(struct theme_entry *tree, const char *filename);
+int theme_format_parse_string(struct theme_entry *tree, const char *str);
 void theme_format_free(struct theme_entry *tree);
 
 extern struct memory_source msrc_theme;
