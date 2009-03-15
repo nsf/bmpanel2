@@ -1,36 +1,34 @@
-----------------------------------------------------
-variable_name value {
-	sub_variable_name sub_value;
-	sub_variable_name2 { x 10; y 10; w 640; h 480; }
-}
-----------------------------------------------------
+example:
 
-escapable symbols: ';' '}'
-like this: \; \}
+--------------------------------------------
+monitor samsung
+    model SyncMaster 931BW
+    color black
+    native_resolution
+        w 1440
+        h 900
+--------------------------------------------
 
-better example:
+or with tabs (actually better way):
 
-----------------------------------------------------
-monitor samsung {
-	model SyncMaster 931BW;
-	color black;
-	native_resolution { w 1440; h 900 }
-	escapable_example 1\;2\;3;
-	escapable_as_string_literal "1;2;3";
-}
-----------------------------------------------------
+--------------------------------------------
+hardware_setup
+	mouse Logitech
+		model MX510
+		interface
+			type USB
+			cable_length 2
+		color blue and black
+		number-of-buttons 8
 
-somewhat equals to XML:
+	keyboard Genuus
+		model K361
+		color white
+		multimedia-buttons
+			web
+			mail
+			browser
+			calculator
 
-----------------------------------------------------
-<monitor value="samsung">
-	<model value="SyncMaster 931BW"/>
-	<color value="black"/>
-	<native_resolution>
-		<w value="1440"/>
-		<h value="900"/>
-	</native_resolution>
-	<escapable_example value="1;2;3"/>
-	<escapable_as_string_literal value="1;2;3"/>
-</monitor>
-----------------------------------------------------
+		number-of-buttons 305
+--------------------------------------------

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "theme-parser.h"
 
 struct memory_source msrc_main = MEMSRC("Main", 0, 0, 0);
 
@@ -8,6 +9,6 @@ struct memory_source *msrc_list[] = {
 
 int main(int argc, char **argv)
 {
-	xmemstat(msrc_list, 1, false);
+	theme_format_parse("test.txt");
 	return 0;
 }
