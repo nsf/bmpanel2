@@ -97,8 +97,8 @@ static int parse_entry(struct theme_entry *te, int indent_level, struct parse_co
 	}
 	const char *end = ctx->cur;
 	size_t nlen = end - start;
-	
-	te->name = xmalloc(nlen, &msrc_theme);
+
+	te->name = xmalloc(nlen+1, &msrc_theme);
 	te->name[nlen] = '\0';
 	strncpy(te->name, start, nlen);
 
@@ -119,7 +119,7 @@ static int parse_entry(struct theme_entry *te, int indent_level, struct parse_co
 			vend = ctx->cur;
 			vlen = vend - vstart;
 
-			te->value = xmalloc(vlen, &msrc_theme);
+			te->value = xmalloc(vlen+1, &msrc_theme);
 			te->value[vlen] = '\0';
 			strncpy(te->value, vstart, vlen);
 	}
