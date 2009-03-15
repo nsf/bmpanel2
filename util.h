@@ -10,8 +10,8 @@
   message utils
 **************************************************************************/
 
-void warning(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
-void die(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
+void xwarning(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
+void xdie(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
 
 /**************************************************************************
   memory utils

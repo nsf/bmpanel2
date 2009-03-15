@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "util.h"
 
-void warning(const char *fmt, ...)
+void xwarning(const char *fmt, ...)
 {
 	va_list args;
 
@@ -13,7 +13,7 @@ void warning(const char *fmt, ...)
 	va_end(args);
 }
 
-void die(const char *fmt, ...)
+void xdie(const char *fmt, ...)
 {
 	va_list args;
 
