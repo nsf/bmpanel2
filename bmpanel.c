@@ -9,7 +9,7 @@ struct memory_source *msrc_list[] = {
 	&msrc_theme
 };
 
-static void print_tree(struct theme_entry *te, int indent)
+static void print_tree(struct theme_format_entry *te, int indent)
 {
 	int i;
 	for (i = 0; i < indent; ++i) 
@@ -22,11 +22,11 @@ static void print_tree(struct theme_entry *te, int indent)
 
 int main(int argc, char **argv)
 {
-	struct theme_data td;
+	struct theme_format_tree tree;
 	int i;
-	theme_format_parse(&td, "test.txt");
-	print_tree(&td.root, 0);
-	theme_data_free(&td);
+	theme_format_load_tree(&tree, "test.txt");
+	print_tree(&tree.root, 0);
+	theme_format_free_tree(&tree);
 	xmemstat(msrc_list, 2, false);
 	return 0;
 }
