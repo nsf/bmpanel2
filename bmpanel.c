@@ -22,10 +22,11 @@ static void print_tree(struct theme_entry *te, int indent)
 
 int main(int argc, char **argv)
 {
-	struct theme_entry te;
-	theme_format_parse(&te, "test.txt");
-	print_tree(&te, 0);
-	theme_format_free(&te);
+	struct theme_data td;
+	int i;
+	theme_format_parse(&td, "test.txt");
+	print_tree(&td.root, 0);
+	theme_data_free(&td);
 	xmemstat(msrc_list, 2, false);
 	return 0;
 }
