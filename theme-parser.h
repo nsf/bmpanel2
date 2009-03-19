@@ -14,19 +14,19 @@ struct theme_format_entry {
 	struct theme_format_entry *children;
 };
 
-/* A theme format tree representation. */
+/* A theme format tree representation. 
+ *
+ * "buf" is a buffer containing modified theme format data (used for in-situ
+ * parsing). Usually it's a pointer to a zero-terminated string which
+ * represents modified contents of a theme config file. Normally not used
+ * directly (private data). 
+ *
+ * "root" is the root of theme format entries tree. Name and value of this root
+ * always point to zero. Only "children_n" and "children" values are
+ * meaningful. 
+ */
 struct theme_format_tree {
-	/* Buffer containing modified theme format data (used for in-situ
-	 * parsing). Usually it's a pointer to a zero-terminated string which
-	 * represents modified contents of a theme config file. Normally not
-	 * used directly (private data). 
-	 */
 	char *buf;
-
-	/* The root of theme format entries tree. Name and value of this root
-	 * always point to zero. Only "children_n" and "children" values are
-	 * meaningful. 
-	 */
 	struct theme_format_entry root;
 };
 
