@@ -40,8 +40,6 @@ struct theme_format_tree {
  * 	Non-zero on error.
  */
 int theme_format_load_tree(struct theme_format_tree *tree, const char *filename);
-
-/* Free all memory used for "tree" structure. */
 void theme_format_free_tree(struct theme_format_tree *tree);
 
 /* Memory source used for working with theme format trees. */

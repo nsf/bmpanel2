@@ -45,25 +45,19 @@ static int count_and_skip_indent(struct parse_context *ctx)
 	return indent;
 }
 
-/* Line classes known to the parser. */
-#define LINE_COMMENT 0
-#define LINE_EMPTY 1
-#define LINE_ENTRY 2
-
 /* Classify the line using its first non-space character. It's intended to do
  * this right after indent skipping. Parser uses this function to know what to
  * do next. If the line is comment or empty, it is being skipped. If the line
  * is entry, it's being parsed as entry. 
  */
-static int classify_line(char first_char)
+static bool line_is_entry(char first_char)
 {
 	switch (first_char) {
 		case '#':
-			return LINE_COMMENT;
 		case '\n':
-			return LINE_EMPTY;
+			return false;
 		default:
-			return LINE_ENTRY;
+			return true;
 	}
 }
 
@@ -106,17 +100,19 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
 	int children_indent = -1;
 	while (*ctx->cur) {
 		int indent = count_and_skip_indent(ctx);
-		if (indent > indent_level && classify_line(*ctx->cur) == LINE_ENTRY) {
-			/* if this is the first child, remember its indent level */
-			if (children_indent == -1)
-				children_indent = indent;
-			/* count all children with that indent level (including
-			   the first one) */
-			if (indent == children_indent)
-				children_count++;
-		} else if (indent <= indent_level && classify_line(*ctx->cur) == LINE_ENTRY)
-			/* we're done, stop counting */
-			break;
+		if (line_is_entry(*ctx->cur)) {
+			if (indent > indent_level) {
+				/* if this is the first child, remember its indent level */
+				if (children_indent == -1)
+					children_indent = indent;
+				/* count all children with that indent level (including
+				   the first one) */
+				if (indent == children_indent)
+					children_count++;
+			} else
+				/* we're done, stop counting */
+				break;
+		}
 		/* skip line */
 		while (*ctx->cur != '\n' && *ctx->cur != '\0')
 			ctx->cur++;
@@ -137,7 +133,7 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
 
 
 /* Parse an entry (name with optional value) and recurse to its children
- * parsing. Function writes parsed info to "te", and it shouldn't point to
+ * parsing. Function writes parsed info to "te", and "te" shouldn't point to
  * zero. Function expects the parse context to be at the first non-indent
  * symbol of the line. And "indent_level" should be the number of indent
  * symbols on that line. This is tricky, but in my opinion it is required for a
@@ -241,7 +237,7 @@ static int parse_format_entry(struct theme_format_entry *te, int indent_level, s
  * So, it's kinda error-proof. Parser will parse eventually any text file.
  *
  * RETURNS
- * 	Zero always (can be safely ignored).
+ * 	A number of child entries were parsed.
  */
 static int parse_children(struct theme_format_entry *te, int indent_level, struct parse_context *ctx)
 {
@@ -261,7 +257,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 	while (*ctx->cur) {
 		/* skip indent */
 		int indent = count_and_skip_indent(ctx);
-		if (indent == children_indent && classify_line(*ctx->cur) == LINE_ENTRY) {
+		if (indent == children_indent && line_is_entry(*ctx->cur)) {
 			/* we're interested in this line (it's a child line) */
 			parse_format_entry(&te->children[children], indent, ctx);
 			/* remember position after line [and its children] */
@@ -289,7 +285,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 	}
 	ctx->cur = pos; /* restore position */
 
-	return 0;
+	return children;
 }
 
 /* Parse theme format tree from a null-terminated string. 
@@ -304,8 +300,7 @@ static int theme_format_parse_string(struct theme_format_entry *tree, char *str)
 	memset(tree, 0, sizeof(struct theme_format_entry));
 	/* trick the parser with -1 and parse zero-indent entries as children
 	   of the root entry */
-	parse_children(tree, -1, &ctx);
-	return 0;
+	return parse_children(tree, -1, &ctx);
 }
 
 int theme_format_load_tree(struct theme_format_tree *tree, const char *filename)
