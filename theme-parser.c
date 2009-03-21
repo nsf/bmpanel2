@@ -339,7 +339,7 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *filename)
 	int children_n = theme_format_parse_string(&tree->root, buf);
 	if (children_n == 0) {
 		xfree(buf, &msrc_theme);
-		return THEME_FORMAT_FILE_EMPTY;
+		return THEME_FORMAT_FILE_IS_EMPTY;
 	}
 
 	/* assign buffer */

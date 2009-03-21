@@ -35,7 +35,7 @@ struct theme_format_tree {
 /* Failed to read file contents properly (fseek/ftell/fread fail) */
 #define THEME_FORMAT_READ_ERROR 2
 /* File was empty, no entries were parsed */
-#define THEME_FORMAT_FILE_EMPTY 3
+#define THEME_FORMAT_FILE_IS_EMPTY 3
 
 /* Load the "tree" from a file with name "filename". The "tree" structure
  * should be empty (all zeroes) or uninitialized (stack garbage). After
