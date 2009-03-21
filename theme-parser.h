@@ -30,14 +30,21 @@ struct theme_format_tree {
 	struct theme_format_entry root;
 };
 
+/* Failed to open file (no rights to read, doesn't exist, etc.) */
+#define THEME_FORMAT_BAD_FILE 1
+/* Failed to read file contents properly (fseek/ftell/fread fail) */
+#define THEME_FORMAT_READ_ERROR 2
+/* File was empty, no entries were parsed */
+#define THEME_FORMAT_FILE_EMPTY 3
+
 /* Load the "tree" from a file with name "filename". The "tree" structure
  * should be empty (all zeroes) or uninitialized (stack garbage). After
  * successful loading "tree" should be released using "theme_format_free_tree"
  * function when the data isn't needed anymore.
  *
  * RETURNS
- * 	0 (zero) - success, also fills "tree" structure with appropriate data.
- * 	Non-zero on error.
+ * 	Zero - success.
+ * 	Non-zero - error (see defines above).
  */
 int theme_format_load_tree(struct theme_format_tree *tree, const char *filename);
 void theme_format_free_tree(struct theme_format_tree *tree);

@@ -131,7 +131,6 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
 	return children_count;
 }
 
-
 /* Parse an entry (name with optional value) and recurse to its children
  * parsing. Function writes parsed info to "te", and "te" shouldn't point to
  * zero. Function expects the parse context to be at the first non-indent
@@ -219,22 +218,23 @@ static int parse_format_entry(struct theme_format_entry *te, int indent_level, s
 	return parse_children(te, indent_level, ctx);
 }
 
-/* Parse children entries of the entry "te" with indent level equals to the
- * "indent_level". Function takes first children (first entry with indent level
- * more than "indent_level") and then thinks of all next entries with the same
- * indent level as other children. Other entries are skipped. Function stops
- * when entry with indent lower or equals to "indent_level" is found.
+/* Parse children entries of the entry "te" which has an indent level equals to
+ * the "indent_level". Function takes first children (first entry with indent
+ * level more than "indent_level") and then thinks of all next entries with the
+ * same indent level as other children. Other entries are skipped. Function
+ * stops when entry with indent lower or equals to "indent_level" is found.
+ * 
+ * Example string and positions (right *after* these symbols):
+ * # - expected begin position
+ * $ - expected end position
  *
- * example:
- *
- * parent value
- *    children1
- *   not_children__skipped
- *    children2
- *     children_of_2
- *    children3
- *
- * So, it's kinda error-proof. Parser will parse eventually any text file.
+ * ----------------------------------------------------
+ *  monitor samsung
+ * #	width 1440
+ * 	height 900
+ * $mouse logitech
+ *  	buttons 8
+ * ----------------------------------------------------
  *
  * RETURNS
  * 	A number of child entries were parsed.
@@ -291,8 +291,8 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 /* Parse theme format tree from a null-terminated string. 
  *
  * RETURNS
- * 	Zero on success.
- * 	Non-zero on error. 
+ * 	Non-zero on success. 
+ * 	Zero on fail.
  */
 static int theme_format_parse_string(struct theme_format_entry *tree, char *str)
 {
@@ -305,17 +305,24 @@ static int theme_format_parse_string(struct theme_format_entry *tree, char *str)
 
 int theme_format_load_tree(struct theme_format_tree *tree, const char *filename)
 {
+	long fsize;
 	size_t size;
 	size_t read;
 	char *buf;
-	FILE *f = fopen(filename, "rb");
-
+	FILE *f;
+	
+	f = fopen(filename, "rb");
 	if (!f)
-		return -1;
+		return THEME_FORMAT_BAD_FILE;
 
-	fseek(f, 0, SEEK_END);
-	size = ftell(f);
-	fseek(f, 0, SEEK_SET);
+	if (fseek(f, 0, SEEK_END) == -1)
+		return THEME_FORMAT_READ_ERROR;
+	fsize = ftell(f);
+	if (fsize == -1)
+		return THEME_FORMAT_READ_ERROR;
+	size = (size_t)fsize;
+	if (fseek(f, 0, SEEK_SET) == -1)
+		return THEME_FORMAT_READ_ERROR;
 
 	/* read file contents to buffer */
 	buf = xmalloc(size+1, &msrc_theme);
@@ -323,17 +330,21 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *filename)
 	read = fread(buf, 1, size, f);
 	if (read != size) {
 		xfree(buf, &msrc_theme);
-		return -1;
+		return THEME_FORMAT_READ_ERROR;
 	}
 
 	fclose(f);
 
 	/* use string parsing function to actually parse */
-	int ret = theme_format_parse_string(&tree->root, buf);
+	int children_n = theme_format_parse_string(&tree->root, buf);
+	if (children_n == 0) {
+		xfree(buf, &msrc_theme);
+		return THEME_FORMAT_FILE_EMPTY;
+	}
 
 	/* assign buffer */
 	tree->buf = buf;
-	return ret;
+	return 0;
 }
 
 /* Free theme format tree */

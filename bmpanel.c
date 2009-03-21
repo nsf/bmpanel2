@@ -23,10 +23,15 @@ static void print_tree(struct theme_format_entry *te, int indent)
 int main(int argc, char **argv)
 {
 	struct theme_format_tree tree;
-	int i;
-	theme_format_load_tree(&tree, "test.txt");
+	int errno;
+	
+	errno = theme_format_load_tree(&tree, "test.txt");
+	if (errno)
+		xdie("theme format load tree error: %d", errno);
+
 	print_tree(&tree.root, 0);
 	theme_format_free_tree(&tree);
+
 	xmemstat(msrc_list, 2, false);
 	return 0;
 }
