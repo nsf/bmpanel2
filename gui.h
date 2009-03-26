@@ -3,6 +3,7 @@
 
 #include <cairo.h>
 #include "util.h"
+#include "xutil.h"
 #include "theme-parser.h"
 
 /**************************************************************************
@@ -55,21 +56,27 @@ struct panel_theme {
 	int position;
 	cairo_surface_t *background;
 	cairo_surface_t *separator;
+	int height;
 };
 
 #define PANEL_MAX_WIDGETS 20
 
 struct panel {
+	Window win;
+
 	size_t widgets_n;
 	struct widget *widgets[PANEL_MAX_WIDGETS];
 
-	struct panel_theme *theme;
+	struct panel_theme theme;
+	struct x_connection conn;
 };
 
 int panel_theme_load(struct panel_theme *theme, struct theme_format_tree *tree);
 void panel_theme_free(struct panel_theme *theme);
 
-int panel_create(struct panel *panel, struct panel_theme *theme);
+int panel_create(struct panel *panel, struct theme_format_tree *tree);
 void panel_destroy(struct panel *panel);
+
+extern struct memory_source msrc_panel;
 
 #endif /* BMPANEL2_GUI_H */

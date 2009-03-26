@@ -129,3 +129,8 @@ int x_connect(struct x_connection *c, const char *display)
 
 	return 0;
 }
+
+void x_disconnect(struct x_connection *c)
+{
+	XCloseDisplay(c->dpy);
+}

@@ -3,6 +3,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
+#include <X11/Xutil.h>
 #include "util.h"
 
 enum {
@@ -59,6 +60,7 @@ struct x_connection {
 };
 
 int x_connect(struct x_connection *c, const char *display);
+void x_disconnect(struct x_connection *c);
 
 int x_get_prop_int(struct x_connection *c, Window win, Atom at);
 Window x_get_prop_window(struct x_connection *c, Window win, Atom at);
