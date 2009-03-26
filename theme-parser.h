@@ -16,6 +16,8 @@ struct theme_format_entry {
 
 /* A theme format tree representation. 
  *
+ * "dir" is a directory of a theme file.
+ *
  * "buf" is a buffer containing modified theme format data (used for in-situ
  * parsing). Usually it's a pointer to a zero-terminated string which
  * represents modified contents of a theme config file. Normally not used
@@ -26,6 +28,7 @@ struct theme_format_entry {
  * meaningful. 
  */
 struct theme_format_tree {
+	char *dir;
 	char *buf;
 	struct theme_format_entry root;
 };
@@ -37,7 +40,7 @@ struct theme_format_tree {
 /* File was empty, no entries were parsed */
 #define THEME_FORMAT_FILE_IS_EMPTY 3
 
-/* Load the "tree" from a file with name "filename". The "tree" structure
+/* Load the "tree" from a file located at "path"/theme. The "tree" structure
  * should be empty (all zeroes) or uninitialized (stack garbage). After
  * successful loading "tree" should be released using "theme_format_free_tree"
  * function when the data isn't needed anymore.
@@ -46,8 +49,21 @@ struct theme_format_tree {
  * 	Zero - success.
  * 	Non-zero - error (see defines above).
  */
-int theme_format_load_tree(struct theme_format_tree *tree, const char *filename);
+int theme_format_load_tree(struct theme_format_tree *tree, const char *path);
 void theme_format_free_tree(struct theme_format_tree *tree);
+
+/* Find child entry of entry "e" with name "name".
+ *
+ * RETURNS
+ * 	Zero - not found, or entry has no "value".
+ * 	Non-zero - the "value" of the entry.
+ */
+struct theme_format_entry *theme_format_find_entry(struct theme_format_entry *e, 
+		const char *name);
+
+/* Same as above, but returns "value" or 0 if not found or no value. */
+const char *theme_format_find_entry_value(struct theme_format_entry *e, 
+		const char *name);
 
 /* Memory source used for working with theme format trees. */
 extern struct memory_source msrc_theme;

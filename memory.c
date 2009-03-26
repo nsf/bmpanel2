@@ -46,7 +46,7 @@ void impl_xfree(void *ptr, struct memory_source *src)
 char *impl_xstrdup(const char *str, struct memory_source *src)
 {
 	size_t len = strlen(str);
-	char *ret = impl_xmalloc(len, src);
+	char *ret = impl_xmalloc(len+1, src);
 	return strcpy(ret, str);
 }
 #else
@@ -126,7 +126,7 @@ void impl_xfree(void *ptr, struct memory_source *src, const char *file, unsigned
 char *impl_xstrdup(const char *str, struct memory_source *src, const char *file, unsigned int line)
 {
 	size_t len = strlen(str);
-	char *ret = impl_xmalloc(len, src, file, line);
+	char *ret = impl_xmalloc(len+1, src, file, line);
 	return strcpy(ret, str);
 }
 #endif

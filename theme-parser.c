@@ -303,15 +303,19 @@ static int theme_format_parse_string(struct theme_format_entry *tree, char *str)
 	return parse_children(tree, -1, &ctx);
 }
 
-int theme_format_load_tree(struct theme_format_tree *tree, const char *filename)
+int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
 {
 	long fsize;
 	size_t size;
 	size_t read;
 	char *buf;
 	FILE *f;
-	
-	f = fopen(filename, "rb");
+	char *theme_file;
+
+	theme_file = xmalloc(strlen(path) + 7, &msrc_theme);
+	sprintf(theme_file, "%s/theme", path);
+	f = fopen(theme_file, "rb");
+	xfree(theme_file, &msrc_theme);
 	if (!f)
 		return THEME_FORMAT_BAD_FILE;
 
@@ -342,8 +346,9 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *filename)
 		return THEME_FORMAT_FILE_IS_EMPTY;
 	}
 
-	/* assign buffer */
+	/* assign buffer and dir */
 	tree->buf = buf;
+	tree->dir = xstrdup(path, &msrc_theme);
 	return 0;
 }
 
@@ -361,5 +366,23 @@ void theme_format_free_tree(struct theme_format_tree *tree)
 {
 	theme_format_free_entry(&tree->root);
 	xfree(tree->buf, &msrc_theme);
+	xfree(tree->dir, &msrc_theme);
 }
 
+struct theme_format_entry *theme_format_find_entry(struct theme_format_entry *e, 
+		const char *name)
+{
+	int i;
+	for (i = 0; i < e->children_n; ++i) {
+		if (strcmp(e->children[i].name, name) == 0)
+			return &e->children[i];
+	}
+	return 0;
+}
+
+const char *theme_format_find_entry_value(struct theme_format_entry *e, 
+		const char *name)
+{
+	struct theme_format_entry *ee = theme_format_find_entry(e, name);
+	return (ee) ? ee->value : 0;
+}
