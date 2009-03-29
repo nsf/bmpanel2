@@ -240,11 +240,17 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
 	char *buf;
 	FILE *f;
 	char *theme_file;
+	size_t theme_file_strlen = strlen(path) + 7;
 
-	theme_file = xmalloc(strlen(path) + 7);
+	if (theme_file_strlen > MAX_ALLOCA)
+		theme_file = xmalloc(theme_file_strlen);
+	else
+		theme_file = alloca(theme_file_strlen);
 	sprintf(theme_file, "%s/theme", path);
 	f = fopen(theme_file, "rb");
-	xfree(theme_file);
+	if (theme_file_strlen > MAX_ALLOCA)
+		xfree(theme_file);
+
 	if (!f)
 		return xerror("Failed to open theme file in dir: %s", path);
 

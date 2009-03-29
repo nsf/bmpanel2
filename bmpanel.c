@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 	panel_destroy(&p);
 	theme_format_free_tree(&tree);
 
+	clean_image_cache();
 	xmemstat(0, 0, false);
 	return EXIT_SUCCESS;
 }

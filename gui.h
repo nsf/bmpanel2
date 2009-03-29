@@ -16,17 +16,32 @@ struct image {
 	int ref_count;
 };
 
-#define IMAGE_INC(image_ptr) ((image_ptr)->ref_count++)
-#define IMAGE_DEC(image_ptr) 			\
-do {						\
-	(image_ptr)->ref_count--;		\
-	if ((image_ptr)->ref_count == 0)	\
-		free_image(image_ptr);		\
-} while (0)					
-
 struct image *get_image(const char *path);
 void free_image(struct image *img); /* don't use directly, use IMAGE_DEC */
 void clean_image_cache();
+
+struct image_part {
+	struct image *img;
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
+int parse_image_part(struct image_part *imgp, struct theme_format_entry *e,
+		struct theme_format_tree *tree);
+
+static inline void acquire_image(struct image *image_ptr)
+{
+	image_ptr->ref_count++;
+}
+
+static inline void release_image(struct image *image_ptr)
+{
+	image_ptr->ref_count--;
+	if (image_ptr->ref_count == 0)
+		free_image(image_ptr);
+}
 
 /**************************************************************************
   Drag'n'drop
@@ -90,8 +105,8 @@ void register_clock();
 
 struct panel_theme {
 	int position;
-	cairo_surface_t *background;
-	cairo_surface_t *separator;
+	struct image_part background;
+	struct image_part separator;
 	int height;
 };
 

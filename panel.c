@@ -16,23 +16,6 @@ static int parse_position(const char *pos)
 	return PANEL_POSITION_TOP;
 }
 
-static int load_cairo_surface(cairo_surface_t **out, 
-		const char *dir, const char *name)
-{
-	char *file;
-	file = xmalloc(strlen(dir) + 1 + strlen(name) + 1);
-	sprintf(file, "%s/%s", dir, name);
-
-	*out = cairo_image_surface_create_from_png(file);
-	xfree(file);
-	if (cairo_surface_status(*out) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(*out);
-		*out = 0;
-		return xerror("Failed to load cairo surface from png: %s/%s", dir, name);
-	}
-	return 0;
-}
-
 static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree *tree)
 {
 	memset(theme, 0, sizeof(struct panel_theme));
@@ -41,40 +24,36 @@ static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree 
 		return xerror("Failed to find 'panel' section in theme format file");
 
 	const char *v;
+	struct theme_format_entry *ee;
 
 	theme->position = PANEL_POSITION_TOP; /* default */
 	v = theme_format_find_entry_value(e, "position");
 	if (v)
 		theme->position = parse_position(v);
 	
-	theme->separator = 0; /* default */
-	v = theme_format_find_entry_value(e, "separator");
-	if (v) 
-		/* ignore error */
-		load_cairo_surface(&theme->separator, tree->dir, v);
+	theme->separator.img = 0; /* default */
+	ee = theme_format_find_entry(e, "separator");
+	if (ee) 
+		parse_image_part(&theme->separator, ee, tree);
 
 	/* background is necessary */
-	v = theme_format_find_entry_value(e, "background");
-	if (!v || load_cairo_surface(&theme->background, tree->dir, v) != 0) {
-		if (theme->separator) 
-			cairo_surface_destroy(theme->separator);
+	ee = theme_format_find_entry(e, "background");
+	if (!ee || parse_image_part(&theme->background, ee, tree) != 0) {
+		if (theme->separator.img)
+			release_image(theme->separator.img);
 		return xerror("Missing 'background' image in panel section");
 	}
 
-	theme->height = cairo_image_surface_get_height(theme->background);
+	theme->height = cairo_image_surface_get_height(theme->background.img->surface);
 
 	return 0;
 }
 
 static void free_panel_theme(struct panel_theme *theme)
 {
-	cairo_surface_destroy(theme->background);
-	theme->background = 0;
-	
-	if (theme->separator) {
-		cairo_surface_destroy(theme->separator);
-		theme->separator = 0;
-	}
+	release_image(theme->background.img);
+	if (theme->separator.img)
+		release_image(theme->separator.img);
 }
 
 /**************************************************************************

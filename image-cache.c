@@ -36,7 +36,7 @@ static void try_add_image_to_cache(struct image *img)
 	if (images_cache_n == IMAGES_CACHE_SIZE)
 		return;
 
-	IMAGE_INC(img);
+	acquire_image(img);
 	images_cache[images_cache_n++] = img;	
 }
 
@@ -66,7 +66,7 @@ void clean_image_cache()
 	size_t i = 0;
 	while (i < images_cache_n) {
 		if (images_cache[i]->ref_count == 1) {
-			IMAGE_DEC(images_cache[i]);
+			release_image(images_cache[i]);
 			images_cache[i] = images_cache[images_cache_n-1];
 			images_cache_n--;
 			continue;
