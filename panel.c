@@ -2,13 +2,6 @@
 #include <stdio.h>
 #include "gui.h"
 
-struct memory_source msrc_panel = MEMSRC(
-	"Panel", 
-	MEMSRC_DEFAULT_MALLOC, 
-	MEMSRC_DEFAULT_FREE, 
-	MEMSRC_NO_FLAGS
-);
-
 /**************************************************************************
   Panel theme
 **************************************************************************/
@@ -19,32 +12,33 @@ static int parse_position(const char *pos)
 		return PANEL_POSITION_TOP;
 	else if (strcmp("bottom", pos) == 0)
 		return PANEL_POSITION_BOTTOM;
+	xwarning("Unknown position type: %s, back to default 'top'", pos);
 	return PANEL_POSITION_TOP;
 }
 
-static bool load_cairo_surface(cairo_surface_t **out, 
+static int load_cairo_surface(cairo_surface_t **out, 
 		const char *dir, const char *name)
 {
 	char *file;
-	file = xmalloc(strlen(dir) + 1 + strlen(name) + 1, &msrc_panel);
+	file = xmalloc(strlen(dir) + 1 + strlen(name) + 1);
 	sprintf(file, "%s/%s", dir, name);
 
 	*out = cairo_image_surface_create_from_png(file);
-	xfree(file, &msrc_panel);
+	xfree(file);
 	if (cairo_surface_status(*out) != CAIRO_STATUS_SUCCESS) {
 		cairo_surface_destroy(*out);
 		*out = 0;
-		return false;
+		return xerror("Failed to load cairo surface from png: %s/%s", dir, name);
 	}
-	return true;
+	return 0;
 }
 
-int panel_theme_load(struct panel_theme *theme, struct theme_format_tree *tree)
+static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree *tree)
 {
 	memset(theme, 0, sizeof(struct panel_theme));
 	struct theme_format_entry *e = theme_format_find_entry(&tree->root, "panel");
 	if (!e)
-		return 1;
+		return xerror("Failed to find 'panel' section in theme format file");
 
 	const char *v;
 
@@ -61,20 +55,22 @@ int panel_theme_load(struct panel_theme *theme, struct theme_format_tree *tree)
 
 	/* background is necessary */
 	v = theme_format_find_entry_value(e, "background");
-	if (!v || !load_cairo_surface(&theme->background, tree->dir, v))
-		return 1;
+	if (!v || load_cairo_surface(&theme->background, tree->dir, v) != 0) {
+		if (theme->separator) 
+			cairo_surface_destroy(theme->separator);
+		return xerror("Missing 'background' image in panel section");
+	}
 
 	theme->height = cairo_image_surface_get_height(theme->background);
 
 	return 0;
 }
 
-void panel_theme_free(struct panel_theme *theme)
+static void free_panel_theme(struct panel_theme *theme)
 {
-	if (theme->background) {
-		cairo_surface_destroy(theme->background);
-		theme->background = 0;
-	}
+	cairo_surface_destroy(theme->background);
+	theme->background = 0;
+	
 	if (theme->separator) {
 		cairo_surface_destroy(theme->separator);
 		theme->separator = 0;
@@ -107,32 +103,25 @@ static void get_position_and_strut(const struct x_connection *c,
 	*ox = x; *oy = y; *oh = h; *ow = w;
 }
 
-int panel_create(struct panel *panel, struct theme_format_tree *tree)
+static Window create_window(struct x_connection *c, struct panel_theme *t)
 {
-	if (x_connect(&panel->conn, 0))
-		return 1;
-
-	if (panel_theme_load(&panel->theme, tree)) {
-		x_disconnect(&panel->conn);
-		return 1;
-	}
-
-	struct x_connection *c = &panel->conn;
-	struct panel_theme *t = &panel->theme;
-
 	int x,y,w,h;
 	long strut[4];
+	long tmp;
+	Window win;
 	XSetWindowAttributes attrs;
 	attrs.background_pixel = 0xFF0000;
 
 	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
-	panel->win = XCreateWindow(c->dpy, c->root, x, y, w, h, 0, 
+	win = XCreateWindow(c->dpy, c->root, x, y, w, h, 0, 
 			c->default_depth, InputOutput, 
 			c->default_visual, CWBackPixel, &attrs);
+	if (win == None)
+		return None;
 
 	/* NETWM struts */
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_STRUT], 
-			XA_CARDINAL, 32, PropModeReplace, (unsigned char*)strut, 4);
+	XChangeProperty(c->dpy, win, c->atoms[XATOM_NET_WM_STRUT], XA_CARDINAL, 32, 
+			PropModeReplace, (unsigned char*)strut, 4);
 
 	static const struct {
 		int s, e;
@@ -145,18 +134,18 @@ int panel_create(struct panel *panel, struct theme_format_tree *tree)
 
 	strutp[where[t->position].s] = x;
 	strutp[where[t->position].e] = x+w;
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
+	XChangeProperty(c->dpy, win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
 			XA_CARDINAL, 32, PropModeReplace, (unsigned char*)strutp, 12);
 
 	/* desktops */
-	long tmp = -1;
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
-			XA_CARDINAL, 32, PropModeReplace, (unsigned char*)&tmp, 1);
+	tmp = -1;
+	XChangeProperty(c->dpy, win, c->atoms[XATOM_NET_WM_DESKTOP], XA_CARDINAL, 
+			32, PropModeReplace, (unsigned char*)&tmp, 1);
 
 	/* window type */
 	tmp = c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK];
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
-			XA_ATOM, 32, PropModeReplace, (unsigned char*)&tmp, 1);
+	XChangeProperty(c->dpy, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], XA_ATOM, 
+			32, PropModeReplace, (unsigned char*)&tmp, 1);
 
 	/* place window on it's position */
 	XSizeHints size_hints;
@@ -169,7 +158,7 @@ int panel_create(struct panel *panel, struct theme_format_tree *tree)
 	size_hints.flags = PPosition | PMaxSize | PMinSize;
 	size_hints.min_width = size_hints.max_width = w;
 	size_hints.min_height = size_hints.max_height = h;
-	XSetWMNormalHints(c->dpy, panel->win, &size_hints);
+	XSetWMNormalHints(c->dpy, win, &size_hints);
 
 	/* motif hints */
 	#define MWM_HINTS_DECORATIONS (1L << 1)
@@ -180,7 +169,7 @@ int panel_create(struct panel *panel, struct theme_format_tree *tree)
 		int32_t input_mode;
 		uint32_t status;
 	} mwm = {MWM_HINTS_DECORATIONS,0,0,0,0};
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_MOTIF_WM_HINTS], 
+	XChangeProperty(c->dpy, win, c->atoms[XATOM_MOTIF_WM_HINTS], 
 			c->atoms[XATOM_MOTIF_WM_HINTS], 32, PropModeReplace, 
 			(unsigned char*)&mwm, sizeof(struct mwmhints) / 4);
 	#undef MWM_HINTS_DECORATIONS
@@ -190,18 +179,89 @@ int panel_create(struct panel *panel, struct theme_format_tree *tree)
 	if ((ch = XAllocClassHint())) {
 		ch->res_name = "panel";
 		ch->res_class = "bmpanel";
-		XSetClassHint(c->dpy, panel->win, ch);
+		XSetClassHint(c->dpy, win, ch);
 		XFree(ch);
 	}
 
+	return win;
+}
+
+static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tree)
+{
+	size_t i;
+	for (i = 0; i < tree->root.children_n; ++i) {
+		struct theme_format_entry *e = &tree->root.children[i];
+		struct widget_interface *we = lookup_widget_interface(e->name);
+		if (we) {
+			if (panel->widgets_n == PANEL_MAX_WIDGETS)
+				return xerror("error: Widgets limit reached");
+			struct widget *w = (*we->create_widget)(e, tree);
+			if (w) 
+				panel->widgets[panel->widgets_n++] = w;
+			else
+				xwarning("Failed to create widget: %s", e->name);
+		}
+	}
+	return 0;
+}
+
+int panel_create(struct panel *panel, struct theme_format_tree *tree)
+{
+	memset(panel, 0, sizeof(struct panel));
+
+	/* connect to X server */
+	if (x_connect(&panel->connection, 0)) {
+		xwarning("Failed to connect to X server");
+		goto panel_create_error_x;
+	}
+
+	/* parse panel theme */
+	if (load_panel_theme(&panel->theme, tree)) {
+		xwarning("Failed to load theme format file");
+		goto panel_create_error_theme;
+	}
+
+	struct x_connection *c = &panel->connection;
+	struct panel_theme *t = &panel->theme;
+
+	/* create window */
+	panel->win = create_window(c, t);
+	if (panel->win == None) {
+		xwarning("Can't create panel window");
+		goto panel_create_error_win;
+	}
+
+	/* parse panel widgets */
+	if (parse_panel_widgets(panel, tree)) {
+		xwarning("Failed to load one of panel's widgets");
+		goto panel_create_error_widgets;
+	}
+
+	/* all ok, map window */
 	XMapWindow(c->dpy, panel->win);
 	XSync(c->dpy, 0);
 
 	return 0;
+
+panel_create_error_widgets:
+	XDestroyWindow(c->dpy, panel->win);
+panel_create_error_win:
+	free_panel_theme(&panel->theme);
+panel_create_error_theme:
+	x_disconnect(&panel->connection);
+panel_create_error_x:
+	return -1;
 }
 
 void panel_destroy(struct panel *panel)
 {
-	panel_theme_free(&panel->theme);
-	x_disconnect(&panel->conn);
+	size_t i;
+	for (i = 0; i < panel->widgets_n; ++i) {
+		struct widget *w = panel->widgets[i];
+		(*w->interface->destroy_widget)(w);
+	}
+
+	XDestroyWindow(panel->connection.dpy, panel->win);
+	free_panel_theme(&panel->theme);
+	x_disconnect(&panel->connection);
 }

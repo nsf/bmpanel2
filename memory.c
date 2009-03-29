@@ -4,6 +4,13 @@
 #include <time.h>
 #include "util.h"
 
+struct memory_source msrc_default = MEMSRC(
+	"Default", 
+	MEMSRC_DEFAULT_MALLOC, 
+	MEMSRC_DEFAULT_FREE, 
+	MEMSRC_NO_FLAGS
+);
+
 /**************************************************************************
   No debug
 **************************************************************************/
@@ -201,6 +208,12 @@ void xmemstat(struct memory_source **sources, size_t n, bool ascii)
 	printf("Memory debug is disabled\n");
 #else
 	size_t i;
+
+	printf("\033[32m");
+	if (ascii) 
+		print_source_stat_ascii(&msrc_default);
+	else
+		print_source_stat(&msrc_default);
 	
 	for (i = 0; i < n; ++i) {
 		if (i % 2)

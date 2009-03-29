@@ -2,13 +2,6 @@
 #include <string.h>
 #include "theme-parser.h"
 
-struct memory_source msrc_theme = MEMSRC(
-	"Theme format", 
-	MEMSRC_DEFAULT_MALLOC, 
-	MEMSRC_DEFAULT_FREE, 
-	MEMSRC_NO_FLAGS
-);
-
 /* Tiny structure used for tracking current parsing position and probably other
  * parser related data (if any, currently none). 
  */
@@ -21,16 +14,6 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 
 /* Count indent symbols (tabs and spaces) and advance parsing context to the
  * first non-indent symbol. 
- *
- * Example string and positions (right *after* these symbols):
- * # - expected begin position
- * $ - expected end position
- *
- * ----------------------------------------------------
- *  monitor samsung
- * #	$width 1440
- * 	height 900
- * ----------------------------------------------------
  *
  * RETURNS
  * 	A number of indent symbols (aka indent level).
@@ -66,29 +49,11 @@ static bool line_is_entry(char first_char)
  * a variable at the address 'chld_indent' if it is not zero. This function
  * doesn't advance parse context position.
  *
- * Example string and positions (right *after* these symbols):
- * # - expected begin position
- * $ - expected end position
- *
- * ----------------------------------------------------
- *  monitor samsung
- * #$	width 1440
- *    bad_param skipped
- *         bad_param2 skipped
- * 	height 900
- *  mouse logitech
- *  	buttons 8
- * ----------------------------------------------------
- * 
- * (when #$ are next to each other, it means function doesn't advance parse
- * context)
- *
- * In this example function will return 2 and will write 1 to the
- * "chld_indent". As you can see it thinks of the child indent level as an
- * indent level of the first child. Also function skips all bad-formed children
- * (their indent level differs from an indent level of the first child). And of
- * course function stops counting when there is an entry with indent level
- * lower or equals to that the parent has.
+ * It thinks of the child indent level as an indent level of the first child.
+ * Also function skips all bad-formed children (their indent level differs from
+ * an indent level of the first child). And of course function stops counting
+ * when there is an entry with indent level lower or equals to that the parent
+ * has.
  *
  * RETURNS
  * 	A number of children.
@@ -139,35 +104,11 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
  * nice recursion here. Also it is worth to notice that function modifies
  * buffer, because of in-situ parsing.
  * 
- * Example string and positions (right *after* these symbols):
- * # - expected begin position
- * $ - expected end position
- *
- * ----------------------------------------------------
- *  monitor samsung
- * 	#width 1440
- * $	height 900
- *  mouse logitech
- *  	buttons 8
- * ----------------------------------------------------
- * 
- * or another example with children:
- * 
- * ----------------------------------------------------
- *  monitor samsung
- *  	#parameters
- *  		width 1440
- *  		height 900
- * $mouse logitech
- *  	buttons 8
- * ----------------------------------------------------
- *
- * Yes, this function ends after its children, because of recursion. But before
- * calling "parse_children" it ends right after the line it was called on (like
- * in the first example). 
+ * This function ends after its children, because of recursion. But before
+ * calling "parse_children" it ends right after the line it was called on. 
  *
  * RETURNS
- * 	Zero, always (can be safely ignored).
+ * 	See "parse_children"...
  */
 static int parse_format_entry(struct theme_format_entry *te, int indent_level, struct parse_context *ctx)
 {
@@ -224,18 +165,6 @@ static int parse_format_entry(struct theme_format_entry *te, int indent_level, s
  * same indent level as other children. Other entries are skipped. Function
  * stops when entry with indent lower or equals to "indent_level" is found.
  * 
- * Example string and positions (right *after* these symbols):
- * # - expected begin position
- * $ - expected end position
- *
- * ----------------------------------------------------
- *  monitor samsung
- * #	width 1440
- * 	height 900
- * $mouse logitech
- *  	buttons 8
- * ----------------------------------------------------
- *
  * RETURNS
  * 	A number of child entries were parsed.
  */
@@ -250,7 +179,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 		return 0;
 
 	/* allocate space for child entries */
-	te->children = xmallocz(sizeof(struct theme_format_entry) * te->children_n, &msrc_theme);
+	te->children = xmallocz(sizeof(struct theme_format_entry) * te->children_n);
 
 	/* ok, this is the *main* parse loop actually, since parser starts from
 	   virtual root's children. */
@@ -312,29 +241,29 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
 	FILE *f;
 	char *theme_file;
 
-	theme_file = xmalloc(strlen(path) + 7, &msrc_theme);
+	theme_file = xmalloc(strlen(path) + 7);
 	sprintf(theme_file, "%s/theme", path);
 	f = fopen(theme_file, "rb");
-	xfree(theme_file, &msrc_theme);
+	xfree(theme_file);
 	if (!f)
-		return THEME_FORMAT_BAD_FILE;
+		return xerror("Failed to open theme file in dir: %s", path);
 
 	if (fseek(f, 0, SEEK_END) == -1)
-		return THEME_FORMAT_READ_ERROR;
+		return xerror("Theme file fseek failed");
 	fsize = ftell(f);
 	if (fsize == -1)
-		return THEME_FORMAT_READ_ERROR;
+		return xerror("Theme file ftell failed");
 	size = (size_t)fsize;
 	if (fseek(f, 0, SEEK_SET) == -1)
-		return THEME_FORMAT_READ_ERROR;
+		return xerror("Theme file fseek failed");
 
 	/* read file contents to buffer */
-	buf = xmalloc(size+1, &msrc_theme);
+	buf = xmalloc(size+1);
 	buf[size] = '\0';
 	read = fread(buf, 1, size, f);
 	if (read != size) {
-		xfree(buf, &msrc_theme);
-		return THEME_FORMAT_READ_ERROR;
+		xfree(buf);
+		return xerror("Read error in theme file in dir: %s", path);
 	}
 
 	fclose(f);
@@ -342,13 +271,13 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
 	/* use string parsing function to actually parse */
 	int children_n = theme_format_parse_string(&tree->root, buf);
 	if (children_n == 0) {
-		xfree(buf, &msrc_theme);
-		return THEME_FORMAT_FILE_IS_EMPTY;
+		xfree(buf);
+		return xerror("Theme format file is empty in dir: %s", path);
 	}
 
 	/* assign buffer and dir */
 	tree->buf = buf;
-	tree->dir = xstrdup(path, &msrc_theme);
+	tree->dir = xstrdup(path);
 	return 0;
 }
 
@@ -359,14 +288,14 @@ void theme_format_free_entry(struct theme_format_entry *e)
 	for (i = 0; i < e->children_n; i++)
 		theme_format_free_entry(&e->children[i]);
 	if (e->children)
-		xfree(e->children, &msrc_theme);
+		xfree(e->children);
 }
 
 void theme_format_free_tree(struct theme_format_tree *tree)
 {
 	theme_format_free_entry(&tree->root);
-	xfree(tree->buf, &msrc_theme);
-	xfree(tree->dir, &msrc_theme);
+	xfree(tree->buf);
+	xfree(tree->dir);
 }
 
 struct theme_format_entry *theme_format_find_entry(struct theme_format_entry *e, 

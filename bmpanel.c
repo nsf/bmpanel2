@@ -4,17 +4,14 @@
 #include "gui.h"
 #include "theme-parser.h"
 
-struct memory_source msrc_main = MEMSRC("Main", 0, 0, 0);
-
-struct memory_source *msrc_list[] = {
-	&msrc_main,
-	&msrc_theme,
-	&msrc_panel
-};
+void print_image(struct image *img) 
+{
+	printf("image: %s (refs: %d, ptr: %p)\n", img->filename, img->ref_count,
+			img->surface);
+}
 
 int main(int argc, char **argv)
 {
-	struct x_connection *xc;
 	struct theme_format_tree tree;
 	struct panel p;
 
@@ -28,13 +25,9 @@ int main(int argc, char **argv)
 
 	sleep(3);
 
-	xc = &p.conn;
-	printf("%d %d %d %d\n", xc->workarea_x, xc->workarea_y, 
-			xc->workarea_width, xc->workarea_height);
-
 	panel_destroy(&p);
 	theme_format_free_tree(&tree);
 
-	xmemstat(msrc_list, 3, false);
-	return 0;
+	xmemstat(0, 0, false);
+	return EXIT_SUCCESS;
 }
