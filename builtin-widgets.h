@@ -6,12 +6,13 @@
 struct taskbar_task {
 	const char *name;
 	cairo_surface_t *icon;
+	Window win;
 };
 
 struct taskbar_button_theme {
-	cairo_surface_t *left;
-	cairo_surface_t *center;
-	cairo_surface_t *right;
+	struct image_part left;
+	struct image_part center;
+	struct image_part right;
 };
 
 struct taskbar_theme {

@@ -1,7 +1,7 @@
 #ifndef BMPANEL2_GUI_H 
 #define BMPANEL2_GUI_H
 
-#include <cairo.h>
+#include <cairo-xlib.h>
 #include "util.h"
 #include "xutil.h"
 #include "theme-parser.h"
@@ -27,9 +27,6 @@ struct image_part {
 	int width;
 	int height;
 };
-
-int parse_image_part(struct image_part *imgp, struct theme_format_entry *e,
-		struct theme_format_tree *tree);
 
 static inline void acquire_image(struct image *image_ptr)
 {
@@ -68,6 +65,7 @@ struct drag_info {
 #define WIDGET_SIZE_FILL 2
 
 struct widget;
+struct panel;
 
 struct widget_interface {
 	const char *theme_name;
@@ -76,6 +74,7 @@ struct widget_interface {
 	struct widget *(*create_widget)(struct theme_format_entry *e, 
 			struct theme_format_tree *tree);
 	void (*destroy_widget)(struct widget *w);
+	void (*draw)(struct widget *w, struct panel *p);
 };
 
 struct widget {
@@ -107,19 +106,25 @@ struct panel_theme {
 	int position;
 	struct image_part background;
 	struct image_part separator;
-	int height;
 };
 
 #define PANEL_MAX_WIDGETS 20
 
 struct panel {
 	Window win;
+	Pixmap bg;
 
 	size_t widgets_n;
 	struct widget *widgets[PANEL_MAX_WIDGETS];
 
 	struct panel_theme theme;
 	struct x_connection connection;
+	cairo_t *cr;
+
+	int x;
+	int y;
+	int width;
+	int height;
 };
 
 int panel_create(struct panel *panel, struct theme_format_tree *tree);

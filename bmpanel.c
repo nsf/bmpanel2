@@ -10,6 +10,17 @@ void print_image(struct image *img)
 			img->surface);
 }
 
+void print_widgets(struct panel *p)
+{
+	size_t i;
+	for (i = 0; i < p->widgets_n; ++i) {
+		struct widget *w = p->widgets[i];
+		printf("widget: %s (%d) [%d %d %d %d]\n", w->interface->theme_name, 
+				w->interface->size_type, w->x, w->y, w->width,
+				w->height);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	struct theme_format_tree tree;
@@ -20,8 +31,13 @@ int main(int argc, char **argv)
 
 	printf("theme from dir: '%s' loaded\n", tree.dir);
 
+	register_taskbar();
+
 	if (0 != panel_create(&p, &tree))
 		xdie("Failed to create panel");
+
+	printf("panel created: %d %d %d %d\n", p.x, p.y, p.width, p.height);
+	print_widgets(&p);
 
 	sleep(3);
 

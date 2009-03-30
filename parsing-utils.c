@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <alloca.h>
-#include "gui.h"
+#include "parsing-utils.h"
 
 int parse_image_part(struct image_part *imgp, struct theme_format_entry *e,
 		struct theme_format_tree *tree)
@@ -49,6 +49,27 @@ int parse_image_part(struct image_part *imgp, struct theme_format_entry *e,
 		if (v)
 			sscanf(v, "%d", &imgp->height);
 	}
+
+	return 0;
+}
+
+int parse_taskbar_button_theme(struct taskbar_button_theme *tbt,
+		struct theme_format_entry *e, struct theme_format_tree *tree)
+{
+	struct theme_format_entry *ee = theme_format_find_entry(e, "center");
+	if (!ee)
+		return xerror("Can't find 'center' image of taskbar button theme");
+
+	if (parse_image_part(&tbt->center, ee, tree))
+		return xerror("Can't parse 'center' image of taskbar button theme");
+
+	ee = theme_format_find_entry(e, "left");
+	if (ee)
+		parse_image_part(&tbt->left, ee, tree);
+
+	ee = theme_format_find_entry(e, "right");
+	if (ee)
+		parse_image_part(&tbt->right, ee, tree);
 
 	return 0;
 }
