@@ -14,5 +14,7 @@ void pattern_image(cairo_surface_t *src, cairo_t *dest,
 void draw_text(cairo_t *cr, PangoLayout *dest, PangoFontDescription *font, 
 		const char *text, unsigned char *color, int x, int y, 
 		int w, int h, int align);
+void text_extents(PangoLayout *layout, PangoFontDescription *font,
+		const char *text, int *w, int *h);
 
 #endif /* BMPANEL2_DRAWING_UTILS_H */

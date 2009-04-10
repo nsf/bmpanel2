@@ -2,6 +2,7 @@
 #define BMPANEL2_BUILTIN_WIDGETS_H
 
 #include "gui.h"
+#include "parsing-utils.h"
 
 /**************************************************************************
   Taskbar
@@ -11,23 +12,33 @@ struct taskbar_task {
 	const char *name;
 	cairo_surface_t *icon;
 	Window win;
-};
-
-struct taskbar_button_theme {
-	cairo_surface_t *left;
-	cairo_surface_t *center;
-	cairo_surface_t *right;
+	int desktop;
 };
 
 struct taskbar_theme {
-	struct taskbar_button_theme idle;
-	struct taskbar_button_theme pressed;
+	struct triple_image idle;
+	struct triple_image pressed;
 };
 
 struct taskbar_widget {
 	struct taskbar_theme theme;
 	size_t tasks_n;
 	struct taskbar_task *tasks;
+	int pressed;
+};
+
+/**************************************************************************
+  Clock
+**************************************************************************/
+
+struct clock_theme {
+	struct triple_image background;
+	PangoFontDescription *font;
+	unsigned char font_color[3];
+};
+
+struct clock_widget {
+	struct clock_theme theme;
 };
 
 #endif /* BMPANEL2_BUILTIN_WIDGETS_H */

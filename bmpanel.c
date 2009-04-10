@@ -27,27 +27,11 @@ int main(int argc, char **argv)
 	printf("theme from dir: '%s' loaded\n", tree.dir);
 	
 	register_taskbar();
+	register_clock();
 
 	if (0 != create_panel(&p, &tree))
 		xdie("Failed to create panel");
 
-	printf("panel created: %d %d %d %d\n", p.x, p.y, p.width, p.height);
-	print_widgets(&p);
-
-	cairo_save(p.cr);
-	cairo_identity_matrix(p.cr);
-	
-	PangoFontDescription *fontd = pango_font_description_from_string("Verdana 8");
-	unsigned char white[] = {255, 255, 255};
-	unsigned char black[] = {0, 0, 0};
-	draw_text(p.cr, p.layout, fontd, "This is a test", white, 0, 1, 100, p.height,
-			TEXT_ALIGN_CENTER);
-	
-	pango_font_description_free(fontd);
-	cairo_restore(p.cr);
-	
-	expose_panel(&p, 0, 0, p.width, p.height);
-	
 	panel_main_loop(&p);
 
 	destroy_panel(&p);

@@ -55,3 +55,31 @@ cairo_surface_t *parse_image_part_named(const char *name, struct theme_format_en
 	return parse_image_part(ee, tree);
 }
 
+int parse_triple_image(struct triple_image *tbt,
+		const char *name, struct theme_format_entry *e, 
+		struct theme_format_tree *tree)
+{
+	struct theme_format_entry *ee = find_theme_format_entry(e, name);
+	if (!ee)
+		return -1;
+
+	tbt->center = parse_image_part_named("center", ee, tree);
+	if (!tbt->center)
+		return xerror("Can't parse 'center' image of taskbar button theme");
+
+	tbt->left = parse_image_part_named("left", ee, tree);
+	tbt->right = parse_image_part_named("right", ee, tree);
+
+	return 0;
+}
+
+void free_triple_image(struct triple_image *tbt)
+{
+	cairo_surface_destroy(tbt->center);
+	if (tbt->left) 
+		cairo_surface_destroy(tbt->left);
+	if (tbt->right) 
+		cairo_surface_destroy(tbt->right);
+}
+
+

@@ -59,6 +59,7 @@ struct widget_interface {
 
 struct widget {
 	struct widget_interface *interface;
+	struct panel *panel;
 
 	/* rectangle for event dispatching */
 	int x;
@@ -66,8 +67,9 @@ struct widget {
 	int width;
 	int height;
 
-	struct panel *panel;
-	void *private;
+	int needs_expose;
+
+	void *private; /* private part */
 };
 
 int register_widget_interface(struct widget_interface *wc);
@@ -116,6 +118,5 @@ struct panel {
 int create_panel(struct panel *panel, struct theme_format_tree *tree);
 void destroy_panel(struct panel *panel);
 void panel_main_loop(struct panel *panel);
-void expose_panel(struct panel *panel, int x, int y, int w, int h);
 
 #endif /* BMPANEL2_GUI_H */

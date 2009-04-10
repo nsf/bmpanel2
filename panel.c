@@ -188,8 +188,11 @@ static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tr
 				return xerror("error: Widgets limit reached");
 			
 			struct widget *w = &panel->widgets[panel->widgets_n];
+
 			w->interface = we;
 			w->panel = panel;
+			w->needs_expose = 1; /* initial drawing */
+
 			if ((*we->create_widget_private)(w, e, tree) == 0)
 				panel->widgets_n++;
 			else
@@ -269,9 +272,38 @@ static int create_drawing_context(struct panel *panel)
 		return xerror("Failed to create cairo drawing context");
 	}
 
+	/* XXX */
 	pattern_image(panel->theme.background, panel->cr, 0, 0, panel->width);
 
 	return 0;
+}
+
+static void expose_panel(struct panel *panel)
+{
+	Display *dpy = panel->connection.dpy;
+	GC dgc = panel->connection.default_gc;
+
+	size_t i;
+	for (i = 0; i < panel->widgets_n; ++i) {
+		struct widget *w = &panel->widgets[i];
+		if (w->needs_expose) {
+			/* TODO: bg draw */
+			(*w->interface->draw)(w);
+			XCopyArea(dpy, panel->bg, panel->win, dgc, w->x, w->y, 
+					w->width, w->height, w->x, w->y);
+			w->needs_expose = 0;
+		}
+	}
+	XSync(dpy, 0);
+}
+
+static void expose_whole_panel(struct panel *panel)
+{
+	Display *dpy = panel->connection.dpy;
+	GC dgc = panel->connection.default_gc;
+	XCopyArea(dpy, panel->bg, panel->win, dgc, 0, 0, 
+			panel->width, panel->height, 0, 0);
+	XSync(dpy, 0);
 }
 
 int create_panel(struct panel *panel, struct theme_format_tree *tree)
@@ -280,6 +312,7 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 	memset(panel, 0, sizeof(struct panel));
 
 	/* connect to X server */
+	/* TODO: error handlers */
 	if (x_connect(&panel->connection, 0)) {
 		xwarning("Failed to connect to X server");
 		goto create_panel_error_x;
@@ -300,6 +333,14 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 		goto create_panel_error_win;
 	}
 
+	if (create_drawing_context(panel)) {
+		xwarning("Failed to create drawing context");
+		goto create_panel_error_drawing_context;
+	}
+
+	/* doesn't fail? */
+	panel->layout = pango_cairo_create_layout(panel->cr);
+	
 	/* parse panel widgets */
 	if (parse_panel_widgets(panel, tree)) {
 		xwarning("Failed to load one of panel's widgets");
@@ -311,34 +352,22 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 		goto create_panel_error_widget_sizes;
 	}
 
-	if (create_drawing_context(panel)) {
-		xwarning("Failed to create drawing context");
-		goto create_panel_error_drawing_context;
-	}
-
-	for (i = 0; i < panel->widgets_n; ++i) {
-		struct widget *w = &panel->widgets[i];
-		(*w->interface->draw)(w);
-	}
-
-	/* doesn't fail? */
-	panel->layout = pango_cairo_create_layout(panel->cr);
-
 	/* all ok, map window */
 	XMapWindow(c->dpy, panel->win);
 	XSync(c->dpy, 0);
-
-	expose_panel(panel, 0, 0, panel->width, panel->height);
+	expose_panel(panel);
 
 	return 0;
 
-create_panel_error_drawing_context:
 create_panel_error_widget_sizes:
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
 		(*w->interface->destroy_widget_private)(w);
 	}
 create_panel_error_widgets:
+	g_object_unref(panel->layout);
+	cairo_destroy(panel->cr);
+create_panel_error_drawing_context:
 	XDestroyWindow(c->dpy, panel->win);
 	XFreePixmap(c->dpy, panel->bg);
 create_panel_error_win:
@@ -375,6 +404,15 @@ int point_in_rect(int px, int py, int x, int y, int w, int h)
 
 gboolean panel_second_timeout(gpointer data)
 {
+	struct panel *p = data;
+	size_t i;
+	struct widget *w;
+	for (i = 0; i < p->widgets_n; ++i) {
+		w = &p->widgets[i];
+		if (w->interface->clock_tick)
+			(*w->interface->clock_tick)(w);
+	}
+	expose_panel(p);
 }
 
 static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
@@ -389,9 +427,15 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 		XNextEvent(dpy, &e);
 
 		switch (e.type) {
-		case Expose:
-			expose_panel(p, 0, 0, p->width, p->height);
+		
+		case NoExpose:
+			/* skip? */
 			break;
+
+		case Expose:
+			expose_whole_panel(p);
+			break;
+		
 		case ButtonRelease:
 		case ButtonPress:
 			for (i = 0; i < p->widgets_n; ++i) {
@@ -404,6 +448,7 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 				}
 			}
 			break;
+		
 		case PropertyNotify:
 			for (i = 0; i < p->widgets_n; ++i) {
 				w = &p->widgets[i];
@@ -411,11 +456,13 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 					(*w->interface->prop_change)(w, &e.xproperty);
 			}
 			break;
+		
 		default:
 			xwarning("Unknown XEvent (type: %d)", e.type);
 			break;
 		}
 	}
+	expose_panel(p);
 	return 1;
 }
 
@@ -432,10 +479,3 @@ void panel_main_loop(struct panel *panel)
 	g_main_destroy(panel->loop);
 }
 
-void expose_panel(struct panel *panel, int x, int y, int w, int h)
-{
-	Display *dpy = panel->connection.dpy;
-	GC dgc = panel->connection.default_gc;
-	XCopyArea(dpy, panel->bg, panel->win, dgc, x, y, w, h, x, y);
-	XSync(dpy, 0);
-}
