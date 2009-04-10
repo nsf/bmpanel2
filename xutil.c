@@ -114,8 +114,11 @@ int x_connect(struct x_connection *c, const char *display)
 	c->default_visual 	= DefaultVisual(c->dpy, c->screen);
 	c->default_colormap 	= DefaultColormap(c->dpy, c->screen);
 	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
+	c->default_gc		= DefaultGC(c->dpy, c->screen);
 	c->root 		= RootWindow(c->dpy, c->screen);
 	c->root_pixmap 		= x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
+
+	XSelectInput(c->dpy, c->root, PropertyChangeMask);
 
 	/* get workarea */
 	long *workarea = get_prop_data(c->dpy, c->root, c->atoms[XATOM_NET_WORKAREA], XA_CARDINAL, 0);

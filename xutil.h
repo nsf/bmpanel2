@@ -52,6 +52,7 @@ struct x_connection {
 	Visual *default_visual;
 	Colormap default_colormap;
 	int default_depth;
+	GC default_gc;
 
 	Window root;
 	Pixmap root_pixmap;

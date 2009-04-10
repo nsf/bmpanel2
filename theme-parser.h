@@ -35,15 +35,15 @@ struct theme_format_tree {
 
 /* Load the "tree" from a file located at "path"/theme. The "tree" structure
  * should be empty (all zeroes) or uninitialized (stack garbage). After
- * successful loading "tree" should be released using "theme_format_free_tree"
+ * successful loading "tree" should be released using "free_theme_format_tree"
  * function when the data isn't needed anymore.
  *
  * RETURNS
  * 	true - success.
  * 	false - error (logged to stderr).
  */
-int theme_format_load_tree(struct theme_format_tree *tree, const char *path);
-void theme_format_free_tree(struct theme_format_tree *tree);
+int load_theme_format_tree(struct theme_format_tree *tree, const char *path);
+void free_theme_format_tree(struct theme_format_tree *tree);
 
 /* Find child entry of entry "e" with name "name".
  *
@@ -51,11 +51,11 @@ void theme_format_free_tree(struct theme_format_tree *tree);
  * 	Zero - not found.
  * 	Non-zero - The pointer to the entry.
  */
-struct theme_format_entry *theme_format_find_entry(struct theme_format_entry *e, 
+struct theme_format_entry *find_theme_format_entry(struct theme_format_entry *e, 
 		const char *name);
 
 /* Same as above, but returns "value" or 0 if not found or no value. */
-const char *theme_format_find_entry_value(struct theme_format_entry *e, 
+const char *find_theme_format_entry_value(struct theme_format_entry *e, 
 		const char *name);
 
 #endif /* BMPANEL2_THEME_PARSER_H */

@@ -223,7 +223,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
  * 	Non-zero on success. 
  * 	Zero on fail.
  */
-static int theme_format_parse_string(struct theme_format_entry *tree, char *str)
+static int parse_theme_format_string(struct theme_format_entry *tree, char *str)
 {
 	struct parse_context ctx = {str};
 	memset(tree, 0, sizeof(struct theme_format_entry));
@@ -232,7 +232,7 @@ static int theme_format_parse_string(struct theme_format_entry *tree, char *str)
 	return parse_children(tree, -1, &ctx);
 }
 
-int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
+int load_theme_format_tree(struct theme_format_tree *tree, const char *path)
 {
 	long fsize;
 	size_t size;
@@ -275,7 +275,7 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
 	fclose(f);
 
 	/* use string parsing function to actually parse */
-	int children_n = theme_format_parse_string(&tree->root, buf);
+	int children_n = parse_theme_format_string(&tree->root, buf);
 	if (children_n == 0) {
 		xfree(buf);
 		return xerror("Theme format file is empty in dir: %s", path);
@@ -287,24 +287,24 @@ int theme_format_load_tree(struct theme_format_tree *tree, const char *path)
 	return 0;
 }
 
-/* Free theme format tree */
-void theme_format_free_entry(struct theme_format_entry *e)
+static void free_theme_format_entry(struct theme_format_entry *e)
 {
 	size_t i;
 	for (i = 0; i < e->children_n; i++)
-		theme_format_free_entry(&e->children[i]);
+		free_theme_format_entry(&e->children[i]);
 	if (e->children)
 		xfree(e->children);
 }
 
-void theme_format_free_tree(struct theme_format_tree *tree)
+/* Free theme format tree */
+void free_theme_format_tree(struct theme_format_tree *tree)
 {
-	theme_format_free_entry(&tree->root);
+	free_theme_format_entry(&tree->root);
 	xfree(tree->buf);
 	xfree(tree->dir);
 }
 
-struct theme_format_entry *theme_format_find_entry(struct theme_format_entry *e, 
+struct theme_format_entry *find_theme_format_entry(struct theme_format_entry *e, 
 		const char *name)
 {
 	int i;
@@ -315,9 +315,9 @@ struct theme_format_entry *theme_format_find_entry(struct theme_format_entry *e,
 	return 0;
 }
 
-const char *theme_format_find_entry_value(struct theme_format_entry *e, 
+const char *find_theme_format_entry_value(struct theme_format_entry *e, 
 		const char *name)
 {
-	struct theme_format_entry *ee = theme_format_find_entry(e, name);
+	struct theme_format_entry *ee = find_theme_format_entry(e, name);
 	return (ee) ? ee->value : 0;
 }

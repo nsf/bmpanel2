@@ -3,6 +3,10 @@
 
 #include "gui.h"
 
+/**************************************************************************
+  Taskbar
+**************************************************************************/
+
 struct taskbar_task {
 	const char *name;
 	cairo_surface_t *icon;
@@ -10,9 +14,9 @@ struct taskbar_task {
 };
 
 struct taskbar_button_theme {
-	struct image_part left;
-	struct image_part center;
-	struct image_part right;
+	cairo_surface_t *left;
+	cairo_surface_t *center;
+	cairo_surface_t *right;
 };
 
 struct taskbar_theme {
@@ -21,12 +25,9 @@ struct taskbar_theme {
 };
 
 struct taskbar_widget {
-	struct widget widget;
-
+	struct taskbar_theme theme;
 	size_t tasks_n;
 	struct taskbar_task *tasks;
-
-	struct taskbar_theme theme;
 };
 
 #endif /* BMPANEL2_BUILTIN_WIDGETS_H */

@@ -20,7 +20,7 @@ static int parse_position(const char *pos)
 static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree *tree)
 {
 	memset(theme, 0, sizeof(struct panel_theme));
-	struct theme_format_entry *e = theme_format_find_entry(&tree->root, "panel");
+	struct theme_format_entry *e = find_theme_format_entry(&tree->root, "panel");
 	if (!e)
 		return xerror("Failed to find 'panel' section in theme format file");
 
@@ -28,31 +28,24 @@ static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree 
 	struct theme_format_entry *ee;
 
 	theme->position = PANEL_POSITION_TOP; /* default */
-	v = theme_format_find_entry_value(e, "position");
+	v = find_theme_format_entry_value(e, "position");
 	if (v)
 		theme->position = parse_position(v);
 	
-	theme->separator.img = 0; /* default */
-	ee = theme_format_find_entry(e, "separator");
-	if (ee) 
-		parse_image_part(&theme->separator, ee, tree);
-
-	/* background is necessary */
-	ee = theme_format_find_entry(e, "background");
-	if (!ee || parse_image_part(&theme->background, ee, tree) != 0) {
-		if (theme->separator.img)
-			release_image(theme->separator.img);
+	theme->background = parse_image_part_named("background", e, tree);
+	if (!theme->background)
 		return xerror("Missing 'background' image in panel section");
-	}
+
+	theme->separator = parse_image_part_named("separator", e, tree);
 
 	return 0;
 }
 
 static void free_panel_theme(struct panel_theme *theme)
 {
-	release_image(theme->background.img);
-	if (theme->separator.img)
-		release_image(theme->separator.img);
+	cairo_surface_destroy(theme->background);
+	if (theme->separator)
+		cairo_surface_destroy(theme->separator);
 }
 
 /**************************************************************************
@@ -66,7 +59,7 @@ static void get_position_and_strut(const struct x_connection *c,
 	int x,y,w,h;
 	x = c->workarea_x;
 	y = c->workarea_y;
-	h = cairo_image_surface_get_height(t->background.img->surface);
+	h = cairo_image_surface_get_height(t->background);
 	w = c->workarea_width;
 
 	strut[0] = strut[1] = strut[3] = 0;
@@ -98,7 +91,7 @@ static int create_window(struct panel *panel)
 	if (panel->bg == None)
 		return xerror("Failed to create background pixmap");
 	
-	attrs.background_pixmap = panel->bg;
+	attrs.background_pixmap = None;
 
 	panel->win = XCreateWindow(c->dpy, c->root, x, y, w, h, 0, 
 			c->default_depth, InputOutput, 
@@ -107,6 +100,10 @@ static int create_window(struct panel *panel)
 		XFreePixmap(c->dpy, panel->bg);
 		return xerror("Failed to create window");
 	}
+
+	XSelectInput(c->dpy, panel->win, 
+			ButtonPressMask | ButtonReleaseMask | ExposureMask | 
+			StructureNotifyMask);
 
 	panel->x = x;
 	panel->y = y;
@@ -189,9 +186,12 @@ static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tr
 		if (we) {
 			if (panel->widgets_n == PANEL_MAX_WIDGETS)
 				return xerror("error: Widgets limit reached");
-			struct widget *w = (*we->create_widget)(e, tree);
-			if (w) 
-				panel->widgets[panel->widgets_n++] = w;
+			
+			struct widget *w = &panel->widgets[panel->widgets_n];
+			w->interface = we;
+			w->panel = panel;
+			if ((*we->create_widget_private)(w, e, tree) == 0)
+				panel->widgets_n++;
 			else
 				xwarning("Failed to create widget: %s", e->name);
 		}
@@ -210,14 +210,14 @@ static int calculate_widget_sizes(struct panel *panel)
 	size_t i;
 
 	for (i = 0; i < panel->widgets_n; ++i) {
-		if (panel->widgets[i]->interface->size_type == WIDGET_SIZE_CONSTANT) {
+		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_CONSTANT) {
 			num_constant++;
-			total_constants_width += panel->widgets[i]->width;
+			total_constants_width += panel->widgets[i].width;
 		} else
 			num_fill++;
 
-		panel->widgets[i]->y = 0;
-		panel->widgets[i]->height = panel->height;
+		panel->widgets[i].y = 0;
+		panel->widgets[i].height = panel->height;
 	}
 
 	if (num_fill != 1)
@@ -227,23 +227,23 @@ static int calculate_widget_sizes(struct panel *panel)
 		return xerror("Too many widgets here, try to remove one or more");
 
 	for (i = 0; i < panel->widgets_n; ++i) {
-		if (panel->widgets[i]->interface->size_type == WIDGET_SIZE_FILL)
+		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_FILL)
 			break;
 
-		panel->widgets[i]->x = x;
-		x += panel->widgets[i]->width;
+		panel->widgets[i].x = x;
+		x += panel->widgets[i].width;
 	}
 
 	for (i = panel->widgets_n - 1; i >= 0; --i) {
-		if (panel->widgets[i]->interface->size_type == WIDGET_SIZE_FILL)
+		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_FILL)
 			break;
 
-		x2 -= panel->widgets[i]->width;
-		panel->widgets[i]->x = x2;
+		x2 -= panel->widgets[i].width;
+		panel->widgets[i].x = x2;
 	}
 
-	panel->widgets[i]->x = x;
-	panel->widgets[i]->width = x2 - x;
+	panel->widgets[i].x = x;
+	panel->widgets[i].width = x2 - x;
 
 	return 0;
 }
@@ -269,15 +269,12 @@ static int create_drawing_context(struct panel *panel)
 		return xerror("Failed to create cairo drawing context");
 	}
 
-	/*
-	cairo_set_source_rgb(panel->cr, 1, 0, 0);
-	cairo_paint(panel->cr);
-	*/
+	pattern_image(panel->theme.background, panel->cr, 0, 0, panel->width);
 
 	return 0;
 }
 
-int panel_create(struct panel *panel, struct theme_format_tree *tree)
+int create_panel(struct panel *panel, struct theme_format_tree *tree)
 {
 	size_t i;
 	memset(panel, 0, sizeof(struct panel));
@@ -285,13 +282,13 @@ int panel_create(struct panel *panel, struct theme_format_tree *tree)
 	/* connect to X server */
 	if (x_connect(&panel->connection, 0)) {
 		xwarning("Failed to connect to X server");
-		goto panel_create_error_x;
+		goto create_panel_error_x;
 	}
 
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree)) {
 		xwarning("Failed to load theme format file");
-		goto panel_create_error_theme;
+		goto create_panel_error_theme;
 	}
 
 	struct x_connection *c = &panel->connection;
@@ -300,64 +297,145 @@ int panel_create(struct panel *panel, struct theme_format_tree *tree)
 	/* create window */
 	if (create_window(panel)) {
 		xwarning("Can't create panel window");
-		goto panel_create_error_win;
+		goto create_panel_error_win;
 	}
 
 	/* parse panel widgets */
 	if (parse_panel_widgets(panel, tree)) {
 		xwarning("Failed to load one of panel's widgets");
-		goto panel_create_error_widgets;
+		goto create_panel_error_widgets;
 	}
 
 	if (calculate_widget_sizes(panel)) {
 		xwarning("Failed to calculate widgets sizes");
-		goto panel_create_error_widget_sizes;
+		goto create_panel_error_widget_sizes;
 	}
 
 	if (create_drawing_context(panel)) {
 		xwarning("Failed to create drawing context");
-		goto panel_create_error_drawing_context;
+		goto create_panel_error_drawing_context;
 	}
 
 	for (i = 0; i < panel->widgets_n; ++i) {
-		struct widget *w = panel->widgets[i];
-		(*w->interface->draw)(w, panel);
+		struct widget *w = &panel->widgets[i];
+		(*w->interface->draw)(w);
 	}
+
+	/* doesn't fail? */
+	panel->layout = pango_cairo_create_layout(panel->cr);
 
 	/* all ok, map window */
 	XMapWindow(c->dpy, panel->win);
 	XSync(c->dpy, 0);
 
+	expose_panel(panel, 0, 0, panel->width, panel->height);
+
 	return 0;
 
-panel_create_error_drawing_context:
-panel_create_error_widget_sizes:
+create_panel_error_drawing_context:
+create_panel_error_widget_sizes:
 	for (i = 0; i < panel->widgets_n; ++i) {
-		struct widget *w = panel->widgets[i];
-		(*w->interface->destroy_widget)(w);
+		struct widget *w = &panel->widgets[i];
+		(*w->interface->destroy_widget_private)(w);
 	}
-panel_create_error_widgets:
+create_panel_error_widgets:
 	XDestroyWindow(c->dpy, panel->win);
 	XFreePixmap(c->dpy, panel->bg);
-panel_create_error_win:
+create_panel_error_win:
 	free_panel_theme(&panel->theme);
-panel_create_error_theme:
+create_panel_error_theme:
 	x_disconnect(&panel->connection);
-panel_create_error_x:
+create_panel_error_x:
 	return -1;
 }
 
-void panel_destroy(struct panel *panel)
+void destroy_panel(struct panel *panel)
 {
 	size_t i;
 	for (i = 0; i < panel->widgets_n; ++i) {
-		struct widget *w = panel->widgets[i];
-		(*w->interface->destroy_widget)(w);
+		struct widget *w = &panel->widgets[i];
+		(*w->interface->destroy_widget_private)(w);
 	}
 
+	g_object_unref(panel->layout);
 	cairo_destroy(panel->cr);
 	XDestroyWindow(panel->connection.dpy, panel->win);
 	XFreePixmap(panel->connection.dpy, panel->bg);
 	free_panel_theme(&panel->theme);
 	x_disconnect(&panel->connection);
+}
+
+int point_in_rect(int px, int py, int x, int y, int w, int h)
+{
+	return (px > x &&
+		px < x + w &&
+		py > y &&
+		py < y + h);
+}
+
+gboolean panel_second_timeout(gpointer data)
+{
+}
+
+static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
+{
+	struct panel *p = data;
+	Display *dpy = p->connection.dpy;
+	size_t i;
+	struct widget *w;
+
+	while (XPending(dpy)) {
+		XEvent e;
+		XNextEvent(dpy, &e);
+
+		switch (e.type) {
+		case Expose:
+			expose_panel(p, 0, 0, p->width, p->height);
+			break;
+		case ButtonRelease:
+		case ButtonPress:
+			for (i = 0; i < p->widgets_n; ++i) {
+				w = &p->widgets[i];
+				if (w->interface->button_click &&
+				    point_in_rect(e.xbutton.x, e.xbutton.y,
+						w->x, w->y, w->width, w->height))
+				{
+					(*w->interface->button_click)(w, &e.xbutton);
+				}
+			}
+			break;
+		case PropertyNotify:
+			for (i = 0; i < p->widgets_n; ++i) {
+				w = &p->widgets[i];
+				if (w->interface->prop_change)
+					(*w->interface->prop_change)(w, &e.xproperty);
+			}
+			break;
+		default:
+			xwarning("Unknown XEvent (type: %d)", e.type);
+			break;
+		}
+	}
+	return 1;
+}
+
+void panel_main_loop(struct panel *panel)
+{
+	int fd = ConnectionNumber(panel->connection.dpy);
+	panel->loop = g_main_loop_new(0, 0);
+	
+	GIOChannel *x = g_io_channel_unix_new(fd);
+	g_io_add_watch(x, G_IO_IN | G_IO_HUP, panel_x_in, panel);
+	g_timeout_add(1000, panel_second_timeout, panel);
+
+	g_main_loop_run(panel->loop);
+	g_main_destroy(panel->loop);
+}
+
+void expose_panel(struct panel *panel, int x, int y, int w, int h)
+{
+	Display *dpy = panel->connection.dpy;
+	GC dgc = panel->connection.default_gc;
+	XCopyArea(dpy, panel->bg, panel->win, dgc, x, y, w, h, x, y);
+	XSync(dpy, 0);
 }

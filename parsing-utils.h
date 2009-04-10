@@ -1,13 +1,12 @@
 #ifndef BMPANEL2_PARSING_UTILS_H 
 #define BMPANEL2_PARSING_UTILS_H
 
+#include "theme-parser.h"
 #include "gui.h"
-#include "builtin-widgets.h"
 
-int parse_image_part(struct image_part *imgp, struct theme_format_entry *e,
+cairo_surface_t *parse_image_part(struct theme_format_entry *e,
 		struct theme_format_tree *tree);
-
-int parse_taskbar_button_theme(struct taskbar_button_theme *tbt,
-		struct theme_format_entry *e, struct theme_format_tree *tree);
+cairo_surface_t *parse_image_part_named(const char *name, struct theme_format_entry *e,
+		struct theme_format_tree *tree);
 
 #endif /* BMPANEL2_PARSING_UTILS_H */
