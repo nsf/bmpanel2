@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "gui.h"
-#include "parsing-utils.h"
+#include "widget-utils.h"
 
 /**************************************************************************
   Panel theme

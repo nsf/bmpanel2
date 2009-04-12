@@ -1,4 +1,3 @@
-#include "drawing-utils.h"
 #include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct theme_format_entry *e, 

@@ -3,7 +3,6 @@
 #include "xutil.h"
 #include "gui.h"
 #include "theme-parser.h"
-#include "drawing-utils.h"
 
 void print_widgets(struct panel *p)
 {

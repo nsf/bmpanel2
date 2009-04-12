@@ -2,7 +2,7 @@
 #define BMPANEL2_BUILTIN_WIDGETS_H
 
 #include "gui.h"
-#include "parsing-utils.h"
+#include "widget-utils.h"
 
 /**************************************************************************
   Taskbar
@@ -33,8 +33,7 @@ struct taskbar_widget {
 
 struct clock_theme {
 	struct triple_image background;
-	PangoFontDescription *font;
-	unsigned char font_color[3];
+	struct font_info font;
 };
 
 struct clock_widget {

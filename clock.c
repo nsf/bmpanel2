@@ -1,6 +1,5 @@
 #include <time.h>
 #include <string.h>
-#include "drawing-utils.h"
 #include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct theme_format_entry *e, 
@@ -35,10 +34,10 @@ static int parse_clock_theme(struct clock_theme *ct,
 	if (parse_triple_image(&ct->background, "background", e, tree))
 		return xerror("Can't parse 'background' clock triple");
 
-	ct->font = pango_font_description_from_string("DejaVuSans 14");
-	ct->font_color[0] = 255;
-	ct->font_color[1] = 255;
-	ct->font_color[2] = 255;
+	if (parse_font_info(&ct->font, "font", e, tree)) {
+		free_triple_image(&ct->background);
+		return xerror("Can't parse 'font' clock entry");
+	}
 
 	return 0;
 }
@@ -46,7 +45,7 @@ static int parse_clock_theme(struct clock_theme *ct,
 static void free_clock_theme(struct clock_theme *ct)
 {
 	free_triple_image(&ct->background);
-	pango_font_description_free(ct->font);
+	free_font_info(&ct->font);
 }
 
 /**************************************************************************
@@ -65,7 +64,7 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 	/* get widget width */
 	int text_width;
 	int pics_width;
-	text_extents(w->panel->layout, cw->theme.font, "00:00:00", &text_width, 0);
+	text_extents(w->panel->layout, cw->theme.font.pfd, "00:00:00", &text_width, 0);
 	pics_width = cairo_image_surface_get_width(cw->theme.background.left) +
 		cairo_image_surface_get_width(cw->theme.background.right);
 	w->width = text_width + pics_width;
@@ -105,8 +104,8 @@ static void draw(struct widget *w)
 	current_time = time(0);
 	strftime(buftime, sizeof(buftime), "%H:%M:%S", localtime(&current_time));
 
-	draw_text(cr, w->panel->layout, cw->theme.font, buftime, 
-			cw->theme.font_color, x, w->y, 
+	draw_text(cr, w->panel->layout, cw->theme.font.pfd, buftime, 
+			cw->theme.font.color, x, w->y, 
 			centerw, w->height, TEXT_ALIGN_CENTER);
 }
 
