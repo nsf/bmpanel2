@@ -55,6 +55,29 @@ struct widget_interface {
 	void (*button_click)(struct widget *w, XButtonEvent *e);
 	void (*clock_tick)(struct widget *w); /* every second */
 	void (*prop_change)(struct widget *w, XPropertyEvent *e);
+	void (*mouse_enter)(struct widget *w);
+	void (*mouse_leave)(struct widget *w);
+	void (*mouse_motion)(struct widget *w, XMotionEvent *e);
+	/* When D'n'D starts, it contains following valid variables:
+	 * "taken_on" - widget on which drag was started, this widget recieves
+	 *              "dnd_start" message.
+	 * "taken_x" 
+	 * "taken_y" - where drag was started, coordinates of the mouse
+	 *             press event.
+	 */
+	void (*dnd_start)(struct drag_info *di);
+
+	/* D'n'D drag message is sent to the "taken_on" widget and in addition
+	 * to valid "dnd_start" variables contains valid "cur_x" and "cur_y".
+	 * This is the position of mouse cursor while it is moving with button
+	 * pressed.
+	 */
+	void (*dnd_drag)(struct drag_info *di);
+
+	/* This message is sent to a "dropped_on" widget first. And if it
+	 * returns error (!= 0), then it is send to the "taken_on" widget. 
+	 */
+	int (*dnd_drop)(struct drag_info *di);
 };
 
 struct widget {
@@ -96,27 +119,49 @@ struct panel_theme {
 #define PANEL_MAX_WIDGETS 20
 
 struct panel {
+	/* X stuff */
 	Window win;
 	Pixmap bg;
 
+	/* widgets */
 	size_t widgets_n;
 	struct widget widgets[PANEL_MAX_WIDGETS];
 
+	/* "big" things */
 	struct panel_theme theme;
 	struct x_connection connection;
 	cairo_t *cr;
 	PangoLayout *layout;
-
 	GMainLoop *loop;
 
+	/* panel dimensions */
 	int x;
 	int y;
 	int width;
 	int height;
+
+	/* expose flag */
+	int needs_expose;
+
+	/* event dispatching state */
+	struct widget *under_mouse;
+	struct drag_info dnd;
+
+	struct widget *last_click_widget;
+	int last_click_x;
+	int last_click_y;
 };
 
 int create_panel(struct panel *panel, struct theme_format_tree *tree);
 void destroy_panel(struct panel *panel);
 void panel_main_loop(struct panel *panel);
+
+void recalculate_widgets_sizes(struct panel *panel);
+
+/* event dispatchers */
+void disp_button_press_release(struct panel *p, XButtonEvent *e);
+void disp_motion_notify(struct panel *p, XMotionEvent *e);
+void disp_property_notify(struct panel *p, XPropertyEvent *e);
+void disp_enter_leave_notify(struct panel *p, XCrossingEvent *e);
 
 #endif /* BMPANEL2_GUI_H */

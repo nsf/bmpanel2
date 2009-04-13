@@ -15,9 +15,14 @@ struct taskbar_task {
 	int desktop;
 };
 
+struct taskbar_state {
+	struct triple_image background;
+	struct text_info font;
+};
+
 struct taskbar_theme {
-	struct triple_image idle;
-	struct triple_image pressed;
+	struct taskbar_state idle;
+	struct taskbar_state pressed;
 };
 
 struct taskbar_widget {
@@ -33,7 +38,10 @@ struct taskbar_widget {
 
 struct clock_theme {
 	struct triple_image background;
-	struct font_info font;
+	struct text_info font;
+	int text_spacing;
+	int spacing;
+	char *time_format;
 };
 
 struct clock_widget {

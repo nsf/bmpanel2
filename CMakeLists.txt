@@ -23,6 +23,7 @@ SET(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-interface.c
 	${CMAKE_CURRENT_SOURCE_DIR}/image-cache.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-utils.c
+	${CMAKE_CURRENT_SOURCE_DIR}/event-dispatchers.c
 )
 
 FIND_PACKAGE(X11 REQUIRED)

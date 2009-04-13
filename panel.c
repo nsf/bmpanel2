@@ -102,8 +102,9 @@ static int create_window(struct panel *panel)
 	}
 
 	XSelectInput(c->dpy, panel->win, 
-			ButtonPressMask | ButtonReleaseMask | ExposureMask | 
-			StructureNotifyMask);
+			ExposureMask | StructureNotifyMask |
+			ButtonPressMask | ButtonReleaseMask | 
+			PointerMotionMask | EnterWindowMask | LeaveWindowMask);
 
 	panel->x = x;
 	panel->y = y;
@@ -191,7 +192,7 @@ static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tr
 
 			w->interface = we;
 			w->panel = panel;
-			w->needs_expose = 1; /* initial drawing */
+			w->needs_expose = 0;
 
 			if ((*we->create_widget_private)(w, e, tree) == 0)
 				panel->widgets_n++;
@@ -202,7 +203,7 @@ static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tr
 	return 0;
 }
 
-static int calculate_widget_sizes(struct panel *panel)
+static int calculate_widgets_sizes(struct panel *panel)
 {
 	const int min_fill_size = 200;
 	int num_constant = 0;
@@ -210,12 +211,19 @@ static int calculate_widget_sizes(struct panel *panel)
 	int total_constants_width = 0;
 	int x = 0;
 	int x2 = panel->width;
+	int separators = 0;
+	int separator_width = 0;
+	if (panel->theme.separator)
+		separator_width = cairo_image_surface_get_width(panel->theme.separator);
+	int total_separators_width = 0;
 	size_t i;
 
 	for (i = 0; i < panel->widgets_n; ++i) {
 		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_CONSTANT) {
 			num_constant++;
 			total_constants_width += panel->widgets[i].width;
+			if (panel->widgets[i].width)
+				separators++;
 		} else
 			num_fill++;
 
@@ -223,11 +231,16 @@ static int calculate_widget_sizes(struct panel *panel)
 		panel->widgets[i].height = panel->height;
 	}
 
+	total_separators_width = separators * separator_width;
+
 	if (num_fill != 1)
 		return xerror("There always should be one widget with SIZE_FILL");
 
-	if (total_constants_width > panel->width - min_fill_size)
+	if (total_constants_width + total_separators_width > 
+			panel->width - min_fill_size)
+	{
 		return xerror("Too many widgets here, try to remove one or more");
+	}
 
 	for (i = 0; i < panel->widgets_n; ++i) {
 		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_FILL)
@@ -235,6 +248,8 @@ static int calculate_widget_sizes(struct panel *panel)
 
 		panel->widgets[i].x = x;
 		x += panel->widgets[i].width;
+		if (panel->widgets[i].width)
+			x += separator_width;
 	}
 
 	for (i = panel->widgets_n - 1; i >= 0; --i) {
@@ -243,12 +258,23 @@ static int calculate_widget_sizes(struct panel *panel)
 
 		x2 -= panel->widgets[i].width;
 		panel->widgets[i].x = x2;
+		if (panel->widgets[i].width)
+			x2 -= separator_width;
 	}
 
 	panel->widgets[i].x = x;
 	panel->widgets[i].width = x2 - x;
 
+	/* request redraw */
+	panel->needs_expose = 1;
+
 	return 0;
+}
+
+void recalculate_widgets_sizes(struct panel *p)
+{
+	if (calculate_widgets_sizes(p) != 0)
+		xwarning("That's really bad, it should't happen");
 }
 
 static int create_drawing_context(struct panel *panel)
@@ -272,10 +298,43 @@ static int create_drawing_context(struct panel *panel)
 		return xerror("Failed to create cairo drawing context");
 	}
 
-	/* XXX */
-	pattern_image(panel->theme.background, panel->cr, 0, 0, panel->width);
-
 	return 0;
+}
+
+static void expose_whole_panel(struct panel *panel)
+{
+	Display *dpy = panel->connection.dpy;
+	GC dgc = panel->connection.default_gc;
+	int sepw = 0;
+	if (panel->theme.separator)
+		sepw += cairo_image_surface_get_width(panel->theme.separator);
+
+	size_t i;
+	for (i = 0; i < panel->widgets_n; ++i) {
+		struct widget *wi = &panel->widgets[i];
+		int x = wi->x;
+		int w = wi->width;
+		if (!w) /* skip empty */
+			continue;
+
+		/* background */
+		pattern_image(panel->theme.background, panel->cr, x, 0, w);
+		/* widget contents */
+		(*wi->interface->draw)(wi);
+		/* separator */
+		x += w;
+		if (panel->theme.separator && panel->widgets_n - 1 != i)
+			blit_image(panel->theme.separator, panel->cr, x, 0);
+
+		/* widget was drawn, clear "needs_expose" flag */
+		wi->needs_expose = 0;
+
+	}
+
+	XCopyArea(dpy, panel->bg, panel->win, dgc, 0, 0, 
+			panel->width, panel->height, 0, 0);
+	XSync(dpy, 0);
+	panel->needs_expose = 0;
 }
 
 static void expose_panel(struct panel *panel)
@@ -283,26 +342,23 @@ static void expose_panel(struct panel *panel)
 	Display *dpy = panel->connection.dpy;
 	GC dgc = panel->connection.default_gc;
 
+	if (panel->needs_expose) {
+		expose_whole_panel(panel);
+		return;
+	}
+
 	size_t i;
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
 		if (w->needs_expose) {
-			/* TODO: bg draw */
+			pattern_image(panel->theme.background, panel->cr, 
+					w->x, 0, w->width);
 			(*w->interface->draw)(w);
 			XCopyArea(dpy, panel->bg, panel->win, dgc, w->x, w->y, 
 					w->width, w->height, w->x, w->y);
 			w->needs_expose = 0;
 		}
 	}
-	XSync(dpy, 0);
-}
-
-static void expose_whole_panel(struct panel *panel)
-{
-	Display *dpy = panel->connection.dpy;
-	GC dgc = panel->connection.default_gc;
-	XCopyArea(dpy, panel->bg, panel->win, dgc, 0, 0, 
-			panel->width, panel->height, 0, 0);
 	XSync(dpy, 0);
 }
 
@@ -347,9 +403,9 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 		goto create_panel_error_widgets;
 	}
 
-	if (calculate_widget_sizes(panel)) {
+	if (calculate_widgets_sizes(panel)) {
 		xwarning("Failed to calculate widgets sizes");
-		goto create_panel_error_widget_sizes;
+		goto create_panel_error_widgets_sizes;
 	}
 
 	/* all ok, map window */
@@ -359,7 +415,7 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 
 	return 0;
 
-create_panel_error_widget_sizes:
+create_panel_error_widgets_sizes:
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
 		(*w->interface->destroy_widget_private)(w);
@@ -394,7 +450,7 @@ void destroy_panel(struct panel *panel)
 	x_disconnect(&panel->connection);
 }
 
-int point_in_rect(int px, int py, int x, int y, int w, int h)
+static int point_in_rect(int px, int py, int x, int y, int w, int h)
 {
 	return (px > x &&
 		px < x + w &&
@@ -402,7 +458,7 @@ int point_in_rect(int px, int py, int x, int y, int w, int h)
 		py < y + h);
 }
 
-gboolean panel_second_timeout(gpointer data)
+static gboolean panel_second_timeout(gpointer data)
 {
 	struct panel *p = data;
 	size_t i;
@@ -433,28 +489,25 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 			break;
 
 		case Expose:
-			expose_whole_panel(p);
+			p->needs_expose = 1;
 			break;
 		
 		case ButtonRelease:
 		case ButtonPress:
-			for (i = 0; i < p->widgets_n; ++i) {
-				w = &p->widgets[i];
-				if (w->interface->button_click &&
-				    point_in_rect(e.xbutton.x, e.xbutton.y,
-						w->x, w->y, w->width, w->height))
-				{
-					(*w->interface->button_click)(w, &e.xbutton);
-				}
-			}
+			disp_button_press_release(p, &e.xbutton);
+			break;
+
+		case MotionNotify:
+			disp_motion_notify(p, &e.xmotion);
+			break;
+
+		case EnterNotify:
+		case LeaveNotify:
+			disp_enter_leave_notify(p, &e.xcrossing);
 			break;
 		
 		case PropertyNotify:
-			for (i = 0; i < p->widgets_n; ++i) {
-				w = &p->widgets[i];
-				if (w->interface->prop_change)
-					(*w->interface->prop_change)(w, &e.xproperty);
-			}
+			disp_property_notify(p, &e.xproperty);
 			break;
 		
 		default:
