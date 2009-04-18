@@ -1,4 +1,3 @@
-#include <string.h>
 #include <stdio.h>
 #include <alloca.h>
 #include "widget-utils.h"
@@ -251,4 +250,182 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
 		*w = r.width;
 	if (h)
 		*h = r.height;
+}
+
+/**************************************************************************
+  X imaging utils
+**************************************************************************/
+
+static cairo_user_data_key_t surface_data_key;
+
+static void free_custom_surface_data(void *ptr)
+{
+	xfree(ptr);
+}
+
+static cairo_surface_t *get_icon_from_netwm(long *data)
+{
+	cairo_surface_t *ret = 0;
+	uint32_t *array = 0; 
+	uint32_t w,h,size,i;
+	long *locdata = data;
+
+	w = *locdata++;
+	h = *locdata++;
+	size = w * h;
+
+	/* convert netwm icon format to cairo data */
+	array = xmalloc(sizeof(uint32_t) * size);
+	for (i = 0; i < size; ++i) {
+		unsigned char *a, *d;
+		a = (char*)&array[i];
+		d = (char*)&locdata[i];
+		a[0] = d[0];
+		a[1] = d[1];
+		a[2] = d[2];
+		a[3] = d[3];
+		/* premultiply alpha */
+		a[0] *= (float)d[3] / 255.0f;
+		a[1] *= (float)d[3] / 255.0f;
+		a[2] *= (float)d[3] / 255.0f;
+	}
+
+	/* TODO: I'm pretending here, that stride is w*4, but it should
+	 * be tested/verified 
+	 */
+	ret = cairo_image_surface_create_for_data((unsigned char*)array, 
+			CAIRO_FORMAT_ARGB32, w, h, w*4);		
+	if (cairo_surface_status(ret) != CAIRO_STATUS_SUCCESS)
+		goto get_icon_from_netwm_error;
+	else {
+		cairo_status_t st;
+		st = cairo_surface_set_user_data(ret, &surface_data_key, 
+				array, free_custom_surface_data);
+		if (st != CAIRO_STATUS_SUCCESS)
+			goto get_icon_from_netwm_error;
+	}
+
+	return ret;
+
+get_icon_from_netwm_error:
+	cairo_surface_destroy(ret);
+	xfree(array);
+	return 0;
+}
+
+static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c, 
+		Pixmap icon, Pixmap icon_mask)
+{
+	Window root_ret;
+	int x = 0, y = 0;
+	unsigned int w = 0, h = 0, d = 0, bw = 0;
+	cairo_surface_t *ret = 0;
+	cairo_surface_t *sicon, *smask;
+	
+	XGetGeometry(c->dpy, icon, &root_ret, 
+			&x, &y, &w, &h, &bw, &d);
+
+	sicon = cairo_xlib_surface_create(c->dpy, icon, 
+			c->default_visual, w, h);
+	if (cairo_surface_status(sicon) != CAIRO_STATUS_SUCCESS)
+		goto get_icon_from_pixmap_error_sicon;
+
+	smask = cairo_xlib_surface_create_for_bitmap(c->dpy, icon_mask,
+			DefaultScreenOfDisplay(c->dpy), w, h);
+	if (cairo_surface_status(smask) != CAIRO_STATUS_SUCCESS)
+		goto get_icon_from_pixmap_error_smask;
+
+	ret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+	if (cairo_surface_status(ret) != CAIRO_STATUS_SUCCESS)
+		goto get_icon_from_pixmap_error_ret;
+
+	cairo_t *cr = cairo_create(ret);
+	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+		goto get_icon_from_pixmap_error_cr;
+
+	/* fill with transparent (alpha == 0) */
+	cairo_set_source_rgba(cr, 0, 0, 0, 0);
+	cairo_paint(cr);
+
+	/* draw icon with mask */
+	cairo_set_source_surface(cr, sicon, 0, 0);
+	cairo_mask_surface(cr, smask, 0, 0);
+
+	/* clean up */
+	cairo_destroy(cr);
+	cairo_surface_destroy(sicon);
+	cairo_surface_destroy(smask);
+
+	return ret;
+
+get_icon_from_pixmap_error_cr:
+	cairo_surface_destroy(ret);
+get_icon_from_pixmap_error_ret:
+	cairo_surface_destroy(smask);
+get_icon_from_pixmap_error_smask:
+	cairo_surface_destroy(sicon);
+get_icon_from_pixmap_error_sicon:
+	return 0;
+}
+
+cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
+		cairo_surface_t *default_icon)
+{
+	cairo_surface_t *ret = 0;
+	
+	int num = 0;
+	long *data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_ICON],
+			XA_CARDINAL, &num);
+
+	/* TODO: look for best sized icon? */
+	if (data) {
+		ret = get_icon_from_netwm(data);
+		XFree(data);
+	}
+
+	if (!ret) {
+	        XWMHints *hints = XGetWMHints(c->dpy, win);
+		if (hints) {
+			if (hints->flags & IconPixmapHint) {
+				ret = get_icon_from_pixmap(c, hints->icon_pixmap,
+						hints->icon_mask);
+			}
+	        	XFree(hints);
+		}
+	}
+
+	if (!ret) {
+		cairo_surface_reference(default_icon);
+		return default_icon;
+	}
+
+	double w = cairo_image_surface_get_width(default_icon);
+	double h = cairo_image_surface_get_height(default_icon);
+
+	double ow = cairo_image_surface_get_width(ret);
+	double oh = cairo_image_surface_get_height(ret);
+
+	cairo_surface_t *sizedret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+			w, h);
+	if (cairo_surface_status(sizedret) != CAIRO_STATUS_SUCCESS)
+		goto get_window_icon_error_sizedret;
+
+	cairo_t *cr = cairo_create(sizedret);
+	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+		goto get_window_icon_error_cr;
+
+	cairo_scale(cr, w / ow, h / oh);
+	cairo_set_source_surface(cr, ret, 0, 0);
+	cairo_paint(cr);
+
+	cairo_destroy(cr);
+	cairo_surface_destroy(ret);
+
+	return sizedret;
+
+get_window_icon_error_cr:
+	cairo_surface_destroy(sizedret);
+get_window_icon_error_sizedret:
+	cairo_surface_destroy(ret);
+	return 0;
 }

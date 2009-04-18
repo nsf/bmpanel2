@@ -1,4 +1,3 @@
-#include <string.h>
 #include <stdio.h>
 #include "gui.h"
 #include "widget-utils.h"
@@ -19,7 +18,7 @@ static int parse_position(const char *pos)
 
 static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree *tree)
 {
-	memset(theme, 0, sizeof(struct panel_theme));
+	CLEAR_STRUCT(theme);
 	struct theme_format_entry *e = find_theme_format_entry(&tree->root, "panel");
 	if (!e)
 		return xerror("Failed to find 'panel' section in theme format file");
@@ -365,7 +364,7 @@ static void expose_panel(struct panel *panel)
 int create_panel(struct panel *panel, struct theme_format_tree *tree)
 {
 	size_t i;
-	memset(panel, 0, sizeof(struct panel));
+	CLEAR_STRUCT(panel);
 
 	/* connect to X server */
 	/* TODO: error handlers */

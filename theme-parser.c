@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include "theme-parser.h"
 
 /* Tiny structure used for tracking current parsing position and probably other
@@ -226,7 +225,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 static int parse_theme_format_string(struct theme_format_entry *tree, char *str)
 {
 	struct parse_context ctx = {str};
-	memset(tree, 0, sizeof(struct theme_format_entry));
+	CLEAR_STRUCT(tree);
 	/* trick the parser with -1 and parse zero-indent entries as children
 	   of the root entry */
 	return parse_children(tree, -1, &ctx);

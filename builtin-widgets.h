@@ -3,16 +3,19 @@
 
 #include "gui.h"
 #include "widget-utils.h"
+#include "array.h"
 
 /**************************************************************************
   Taskbar
 **************************************************************************/
 
 struct taskbar_task {
-	const char *name;
+	char *name;
 	cairo_surface_t *icon;
 	Window win;
 	int desktop;
+	int iconified;
+	int focused;
 };
 
 struct taskbar_state {
@@ -23,13 +26,14 @@ struct taskbar_state {
 struct taskbar_theme {
 	struct taskbar_state idle;
 	struct taskbar_state pressed;
+	cairo_surface_t *default_icon;
 };
 
 struct taskbar_widget {
 	struct taskbar_theme theme;
-	size_t tasks_n;
-	struct taskbar_task *tasks;
-	int pressed;
+	DECLARE_ARRAY(struct taskbar_task, tasks);
+	Window focused;
+	int desktop;
 };
 
 /**************************************************************************

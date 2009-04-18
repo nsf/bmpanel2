@@ -1,4 +1,3 @@
-#include <string.h>
 #include "xutil.h"
 
 static char *atom_names[] = {
@@ -31,7 +30,7 @@ static char *atom_names[] = {
 	"_XROOTPMAP_ID"
 };
 
-static void *get_prop_data(Display *dpy, Window win, Atom prop, Atom type, int *items)
+void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, Atom type, int *items)
 {
 	Atom type_ret;
 	int format_ret;
@@ -41,7 +40,7 @@ static void *get_prop_data(Display *dpy, Window win, Atom prop, Atom type, int *
 
 	prop_data = 0;
 
-	XGetWindowProperty(dpy, win, prop, 0, 0x7fffffff, False,
+	XGetWindowProperty(c->dpy, win, prop, 0, 0x7fffffff, False,
 			type, &type_ret, &format_ret, &items_ret,
 			&after_ret, &prop_data);
 	if (items)
@@ -55,7 +54,7 @@ int x_get_prop_int(struct x_connection *c, Window win, Atom at)
 	int num = 0;
 	long *data;
 
-	data = get_prop_data(c->dpy, win, at, XA_CARDINAL, 0);
+	data = x_get_prop_data(c, win, at, XA_CARDINAL, 0);
 	if (data) {
 		num = *data;
 		XFree(data);
@@ -68,7 +67,7 @@ Window x_get_prop_window(struct x_connection *c, Window win, Atom at)
 	Window num = 0;
 	Window *data;
 
-	data = get_prop_data(c->dpy, win, at, XA_WINDOW, 0);
+	data = x_get_prop_data(c, win, at, XA_WINDOW, 0);
 	if (data) {
 		num = *data;
 		XFree(data);
@@ -81,7 +80,7 @@ Pixmap x_get_prop_pixmap(struct x_connection *c, Window win, Atom at)
 	Pixmap num = 0;
 	Pixmap *data;
 
-	data = get_prop_data(c->dpy, win, at, XA_PIXMAP, 0);
+	data = x_get_prop_data(c, win, at, XA_PIXMAP, 0);
 	if (data) {
 		num = *data;
 		XFree(data);
@@ -96,7 +95,7 @@ int x_get_window_desktop(struct x_connection *c, Window win)
 
 int x_connect(struct x_connection *c, const char *display)
 {
-	memset(c, 0, sizeof(struct x_connection));
+	CLEAR_STRUCT(c);
 	c->dpy = XOpenDisplay(display);
 	if (!c->dpy)
 		return 1;
@@ -121,7 +120,7 @@ int x_connect(struct x_connection *c, const char *display)
 	XSelectInput(c->dpy, c->root, PropertyChangeMask);
 
 	/* get workarea */
-	long *workarea = get_prop_data(c->dpy, c->root, c->atoms[XATOM_NET_WORKAREA], XA_CARDINAL, 0);
+	long *workarea = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_WORKAREA], XA_CARDINAL, 0);
 	if (workarea) {
 		c->workarea_x = workarea[0];
 		c->workarea_y = workarea[1];
@@ -136,4 +135,97 @@ int x_connect(struct x_connection *c, const char *display)
 void x_disconnect(struct x_connection *c)
 {
 	XCloseDisplay(c->dpy);
+}
+
+int x_is_window_hidden(struct x_connection *c, Window win)
+{
+	Atom *data;
+	int ret = 0;
+	int num;
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
+			XA_ATOM, &num);
+	if (data) {
+		if (*data == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK] ||
+		    *data == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP]) 
+		{
+			XFree(data);
+			return 1;
+		}
+		XFree(data);
+	}
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
+	if (!data)
+		return 0;
+
+	while (num) {
+		num--;
+		if (data[num] == c->atoms[XATOM_NET_WM_STATE_SKIP_TASKBAR])
+			ret = 1;
+	}
+	XFree(data);
+
+	return ret;
+}
+
+int x_is_window_iconified(struct x_connection *c, Window win)
+{
+	long *data;
+	int ret = 0;
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE], 
+	     		c->atoms[XATOM_WM_STATE], 0);
+	if (data) {
+		if (data[0] == IconicState) {
+			ret = 1;
+		}
+		XFree(data);
+	}
+
+	int num;
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
+	if (data) {
+		while (num) {
+			num--;
+			if (data[num] == c->atoms[XATOM_NET_WM_STATE_HIDDEN])
+				ret = 1;
+		}
+		XFree(data);
+	}
+
+	return ret;
+}
+
+char *x_alloc_window_name(struct x_connection *c, Window win)
+{
+	char *ret, *name = 0;
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME], 
+			c->atoms[XATOM_UTF8_STRING], 0);
+	if (name) 
+		goto name_here;
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_ICON_NAME], 
+			c->atoms[XATOM_UTF8_STRING], 0);
+	if (name) 
+		goto name_here;
+	name = x_get_prop_data(c, win, XA_WM_ICON_NAME, XA_STRING, 0);
+	if (name) 
+		goto name_here;
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_NAME], 
+			c->atoms[XATOM_UTF8_STRING], 0);
+	if (name) 
+		goto name_here;
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_NAME],
+			c->atoms[XATOM_UTF8_STRING], 0);
+	if (name) 
+		goto name_here;
+	name = x_get_prop_data(c, win, XA_WM_NAME, XA_STRING, 0);
+	if (name) 
+		goto name_here;
+
+	return xstrdup("<unknown>");
+name_here:
+	ret = xstrdup(name);
+	XFree(name);
+	return ret;
 }

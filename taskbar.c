@@ -11,7 +11,7 @@ static void mouse_leave(struct widget *w);
 
 static void dnd_start(struct drag_info *di);
 static void dnd_drag(struct drag_info *di);
-static int dnd_drop(struct drag_info *di);
+static void dnd_drop(struct drag_info *di);
 
 static struct widget_interface taskbar_interface = {
 	"taskbar",
@@ -83,8 +83,16 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 		goto parse_taskbar_button_theme_error_pressed;
 	}
 
+	tt->default_icon = parse_image_part_named("default_icon", e, tree);
+	if (!tt->default_icon) {
+		xwarning("Can't parse 'default_icon' taskbar image");
+		goto parse_taskbar_theme_error_default_icon;
+	}
+
 	return 0;
 
+parse_taskbar_theme_error_default_icon:
+	free_taskbar_state(&tt->pressed);
 parse_taskbar_button_theme_error_pressed:
 	free_taskbar_state(&tt->idle);
 parse_taskbar_button_theme_error_idle:
@@ -95,6 +103,115 @@ static void free_taskbar_theme(struct taskbar_theme *tt)
 {
 	free_taskbar_state(&tt->idle);
 	free_taskbar_state(&tt->pressed);
+	cairo_surface_destroy(tt->default_icon);
+}
+
+/**************************************************************************
+  Taskbar task management
+**************************************************************************/
+
+static int find_task_by_window(struct taskbar_widget *tw, Window win)
+{
+	size_t i;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		if (tw->tasks[i].win == win)
+			return (int)i;
+	}
+	return -1;
+}
+
+static int find_last_task_by_desktop(struct taskbar_widget *tw, int desktop)
+{
+	int t = -1;
+	size_t i;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		if (tw->tasks[i].desktop == desktop)
+			t = (int)i;
+	}
+	return t;
+}
+
+static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window win)
+{
+	struct taskbar_task t;
+
+	if (x_is_window_hidden(c, win))
+		return;
+
+	t.win = win;
+	t.name = x_alloc_window_name(c, win); 
+	t.icon = get_window_icon(c, win, tw->theme.default_icon);
+	t.desktop = x_get_window_desktop(c, win);
+	t.iconified = x_is_window_iconified(c, win); 
+	t.focused = (tw->focused == win);
+
+	int i = find_last_task_by_desktop(tw, t.desktop);
+	if (i == -1)
+		ARRAY_APPEND(tw->tasks, t);
+	else
+		ARRAY_INSERT_AFTER(tw->tasks, i, t);
+}
+
+static void remove_task(struct taskbar_widget *tw, Window win)
+{
+	int i = find_task_by_window(tw, win);
+	if (i == -1)
+		xwarning("taskbar: Trying to delete non-existent window");
+	else {
+		xfree(tw->tasks[i].name);
+		cairo_surface_destroy(tw->tasks[i].icon);
+		ARRAY_REMOVE(tw->tasks, i);
+	}
+}
+
+static void remove_task_i(struct taskbar_widget *tw, size_t i)
+{
+	xfree(tw->tasks[i].name);
+	cairo_surface_destroy(tw->tasks[i].icon);
+	ARRAY_REMOVE(tw->tasks, i);
+}
+
+static void free_tasks(struct taskbar_widget *tw)
+{
+	size_t i;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		xfree(tw->tasks[i].name);
+		cairo_surface_destroy(tw->tasks[i].icon);
+	}
+	FREE_ARRAY(tw->tasks);
+}
+
+static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
+{
+	Window *wins;
+	int num;
+	
+	tw->focused = x_get_prop_window(c, c->root, 
+			c->atoms[XATOM_NET_ACTIVE_WINDOW]);
+
+	wins = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_CLIENT_LIST], 
+			XA_WINDOW, &num);
+
+	size_t i, j;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		struct taskbar_task *t = &tw->tasks[i];
+		int delete = 0;
+		for (j = 0; j < num; ++j) {
+			if (wins[j] == t->win) {
+				delete = 1;
+				break;
+			}
+		}
+		if (delete)
+			remove_task_i(tw, i--);
+	}
+
+	for (i = 0; i < num; ++i) {
+		if (find_task_by_window(tw, wins[i]) == -1)
+			add_task(tw, c, wins[i]);
+	}
+	
+	XFree(wins);
 }
 
 /**************************************************************************
@@ -105,13 +222,16 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 		struct theme_format_tree *tree)
 {
 	struct taskbar_widget *tw = xmallocz(sizeof(struct taskbar_widget));
-	tw->pressed = 0;
 	if (parse_taskbar_theme(&tw->theme, e, tree)) {
 		xfree(tw);
 		return -1;
 	}
-	
+
+	INIT_ARRAY(tw->tasks, 50);
 	w->private = tw;
+
+	struct x_connection *c = &w->panel->connection;
+	update_tasks(tw, c);
 
 	return 0;
 }
@@ -120,6 +240,7 @@ static void destroy_widget_private(struct widget *w)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	free_taskbar_theme(&tw->theme);
+	free_tasks(tw);
 	xfree(tw);
 }
 
@@ -136,8 +257,7 @@ static void draw(struct widget *w)
 	blit_image(tw->theme.idle.background.right, cr, x, w->y);
 	x += cairo_image_surface_get_width(tw->theme.idle.background.right);
 
-	struct triple_image *tbt = (tw->pressed) ? &tw->theme.pressed.background :
-						&tw->theme.idle.background;
+	struct triple_image *tbt = &tw->theme.pressed.background;
 	blit_image(tbt->left, cr, x, w->y);
 	x += cairo_image_surface_get_width(tbt->left);
 	pattern_image(tbt->center, cr, x, w->y, 100);
@@ -147,12 +267,6 @@ static void draw(struct widget *w)
 
 static void button_click(struct widget *w, XButtonEvent *e)
 {
-	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-	if (e->type == ButtonPress)
-		tw->pressed = 1;
-	else
-		tw->pressed = 0;
-	w->needs_expose = 1;
 }
 
 static void mouse_enter(struct widget *w)
@@ -175,7 +289,7 @@ static void dnd_drag(struct drag_info *di)
 	printf("taskbar: dnd drag: %d %d\n", di->cur_x, di->cur_y);
 }
 
-static int dnd_drop(struct drag_info *di)
+static void dnd_drop(struct drag_info *di)
 {
 	if (!di->dropped_on)
 		printf("taskbar: dnd drop (dropped to nowhere)\n");
@@ -183,5 +297,4 @@ static int dnd_drop(struct drag_info *di)
 		printf("taskbar: dnd drop (%s: %d %d)\n", 
 			di->dropped_on->interface->theme_name, 
 			di->dropped_x, di->dropped_y);
-	return 0;
 }

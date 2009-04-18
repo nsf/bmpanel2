@@ -1,4 +1,3 @@
-#include <string.h>
 #include "gui.h"
 
 static int point_in_rect(int px, int py, int x, int y, int w, int h)
@@ -35,20 +34,18 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 					p->dnd.dropped_on = w;
 					p->dnd.dropped_x = e->x;
 					p->dnd.dropped_y = e->y;
-					if (w->interface->dnd_drop) {
-						drag_status = (*w->interface->
-								dnd_drop)(&p->dnd);
-					}					
+					if (w->interface->dnd_drop)
+						(*w->interface->dnd_drop)(&p->dnd);		
 				}
 			}
 		}
 	}
 	if (e->type == ButtonRelease && p->dnd.taken_on) {
 		struct widget *w = p->dnd.taken_on;
-		if (w->interface->dnd_drop && drag_status != 0)
+		if (w->interface->dnd_drop && p->dnd.taken_on != p->dnd.dropped_on)
 			(*w->interface->dnd_drop)(&p->dnd);
 
-		memset(&p->dnd, 0, sizeof(struct drag_info));
+		CLEAR_STRUCT(&p->dnd);
 	}
 }
 

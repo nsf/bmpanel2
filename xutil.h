@@ -63,9 +63,19 @@ struct x_connection {
 int x_connect(struct x_connection *c, const char *display);
 void x_disconnect(struct x_connection *c);
 
+/* allocated by Xlib, should be released with XFree */
+void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 
+		Atom type, int *items);
+
 int x_get_prop_int(struct x_connection *c, Window win, Atom at);
 Window x_get_prop_window(struct x_connection *c, Window win, Atom at);
 Pixmap x_get_prop_pixmap(struct x_connection *c, Window win, Atom at);
 int x_get_window_desktop(struct x_connection *c, Window win);
+
+int x_is_window_hidden(struct x_connection *c, Window win);
+int x_is_window_iconified(struct x_connection *c, Window win);
+
+/* allocated by xstrdup, should be released with xfree */
+char *x_alloc_window_name(struct x_connection *c, Window win);
 
 #endif /* BMPANEL2_XUTIL_H */

@@ -74,10 +74,10 @@ struct widget_interface {
 	 */
 	void (*dnd_drag)(struct drag_info *di);
 
-	/* This message is sent to a "dropped_on" widget first. And if it
-	 * returns error (!= 0), then it is send to the "taken_on" widget. 
+	/* This message is sent to a "dropped_on" widget first, and then to a
+	 * "taken_on" widget.
 	 */
-	int (*dnd_drop)(struct drag_info *di);
+	void (*dnd_drop)(struct drag_info *di);
 };
 
 struct widget {

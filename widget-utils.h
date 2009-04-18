@@ -59,4 +59,11 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 void text_extents(PangoLayout *layout, PangoFontDescription *font,
 		const char *text, int *w, int *h);
 
+/**************************************************************************
+  X imaging utils
+**************************************************************************/
+
+cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
+		cairo_surface_t *default_icon);
+
 #endif /* BMPANEL2_WIDGET_UTILS_H */

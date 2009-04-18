@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #define MAX_ALLOCA 2048
+
+#define CLEAR_STRUCT(s) ((void)memset((s), 0, sizeof(*(s)))) 
 
 /**************************************************************************
   message utils
@@ -60,9 +63,9 @@ struct memory_source {
 
 /* overheads */
 #ifdef NDEBUG
- #define MEMDEBUG_OVERHEAD (0)
+	#define MEMDEBUG_OVERHEAD (0)
 #else
- #define MEMDEBUG_OVERHEAD (sizeof(struct memory_stat))
+	#define MEMDEBUG_OVERHEAD (sizeof(struct memory_stat))
 #endif
 
 extern struct memory_source msrc_default;

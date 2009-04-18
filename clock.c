@@ -1,5 +1,4 @@
 #include <time.h>
-#include <string.h>
 #include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct theme_format_entry *e, 
@@ -9,7 +8,7 @@ static void draw(struct widget *w);
 static void clock_tick(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
 
-static int dnd_drop(struct drag_info *di);
+static void dnd_drop(struct drag_info *di);
 
 static struct widget_interface clock_interface = {
 	"clock",
@@ -81,7 +80,7 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 
 	char buftime[128];
 	struct tm tm;
-	memset(&tm, 0, sizeof(struct tm));
+	CLEAR_STRUCT(&tm);
 	strftime(buftime, sizeof(buftime), cw->theme.time_format, &tm);
 
 	text_extents(w->panel->layout, cw->theme.font.pfd, 
@@ -177,7 +176,7 @@ static void button_click(struct widget *w, XButtonEvent *e)
 		
 		char buftime[128];
 		struct tm tm;
-		memset(&tm, 0, sizeof(struct tm));
+		CLEAR_STRUCT(&tm);
 		strftime(buftime, sizeof(buftime), cw->theme.time_format, &tm);
 
 		text_extents(w->panel->layout, cw->theme.font.pfd, 
@@ -195,12 +194,11 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	}
 }
 
-static int dnd_drop(struct drag_info *di)
+static void dnd_drop(struct drag_info *di)
 {
 	if (di->dropped_on == 0)
-		return 0;
+		return;
 	printf("clock: something dropped here: %s -> %s (ignoring)\n",
 			di->taken_on->interface->theme_name,
 			di->dropped_on->interface->theme_name);
-	return -1;
 }
