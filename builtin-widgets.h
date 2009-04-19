@@ -37,13 +37,14 @@ struct taskbar_widget {
 	DECLARE_ARRAY(struct taskbar_task, tasks);
 	Window active;
 	int desktop;
+
+	Window dnd_win;
 };
 
 #define TASKBAR_TASK_LEFT_SIDE 0
 #define TASKBAR_TASK_RIGHT_SIDE 1
 
-struct taskbar_task *get_taskbar_task_at(struct widget *tb, int x, int y,
-		int *side_out);
+int get_taskbar_task_at(struct widget *tb, int x, int y, int *side_out);
 
 /**************************************************************************
   Clock

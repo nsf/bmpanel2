@@ -64,13 +64,13 @@ struct widget_interface {
 	 * "taken_x" 
 	 * "taken_y" - where drag was started, coordinates of the mouse
 	 *             press event.
+	 * "cur_x" 
+	 * "cur_y" - where mouse with virtual drag object is now
 	 */
 	void (*dnd_start)(struct drag_info *di);
 
-	/* D'n'D drag message is sent to the "taken_on" widget and in addition
-	 * to valid "dnd_start" variables contains valid "cur_x" and "cur_y".
-	 * This is the position of mouse cursor while it is moving with button
-	 * pressed.
+	/* D'n'D drag message is sent to the "taken_on" widget. Has the same
+	 * valid variables as above. 
 	 */
 	void (*dnd_drag)(struct drag_info *di);
 

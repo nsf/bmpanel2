@@ -130,7 +130,7 @@ static int find_last_task_by_desktop(struct taskbar_widget *tw, int desktop)
 	int t = -1;
 	size_t i;
 	for (i = 0; i < tw->tasks_n; ++i) {
-		if (tw->tasks[i].desktop == desktop)
+		if (tw->tasks[i].desktop <= desktop)
 			t = (int)i;
 	}
 	return t;
@@ -143,6 +143,8 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	if (x_is_window_hidden(c, win))
 		return;
 
+	XSelectInput(c->dpy, win, PropertyChangeMask);
+
 	t.win = win;
 	t.name = x_alloc_window_name(c, win); 
 	if (tw->theme.default_icon)
@@ -150,6 +152,8 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	else
 		t.icon = 0;
 	t.desktop = x_get_window_desktop(c, win);
+
+
 
 	int i = find_last_task_by_desktop(tw, t.desktop);
 	if (i == -1)
@@ -252,6 +256,7 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 	update_desktop(tw, c);
 	update_active(tw, c);
 	update_tasks(tw, c);
+	tw->dnd_win = None;
 
 	return 0;
 }
@@ -379,20 +384,66 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		if (e->atom == c->atoms[XATOM_NET_ACTIVE_WINDOW]) {
 			update_active(tw, c);
 			w->needs_expose = 1;
+			return;
 		}
 		if (e->atom == c->atoms[XATOM_NET_CURRENT_DESKTOP]) {
 			update_desktop(tw, c);
 			w->needs_expose = 1;
+			return;
 		}
 		if (e->atom == c->atoms[XATOM_NET_CLIENT_LIST]) {
 			update_tasks(tw, c);
 			w->needs_expose = 1;
+			return;
+		}
+	}
+
+	int ti = find_task_by_window(tw, e->window);
+	if (ti == -1)
+		return;
+
+	if (e->atom == c->atoms[XATOM_NET_WM_DESKTOP]) {
+		struct taskbar_task t = tw->tasks[ti];
+		t.desktop = x_get_window_desktop(c, t.win);
+
+		ARRAY_REMOVE(tw->tasks, ti);
+		int insert_after = find_last_task_by_desktop(tw, t.desktop);
+		if (insert_after == -1)
+			ARRAY_APPEND(tw->tasks, t);
+		else
+			ARRAY_INSERT_AFTER(tw->tasks, insert_after, t);
+		w->needs_expose = 1;
+		return;
+	}
+
+	if (e->atom == c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME] ||
+	    e->atom == c->atoms[XATOM_NET_WM_ICON_NAME] || 
+	    e->atom == XA_WM_ICON_NAME || 
+	    e->atom == c->atoms[XATOM_NET_WM_VISIBLE_NAME] ||
+	    e->atom == c->atoms[XATOM_NET_WM_NAME] || 
+	    e->atom == XA_WM_NAME)
+	{
+		struct taskbar_task *t = &tw->tasks[ti];
+		xfree(t->name);
+		t->name = x_alloc_window_name(c, t->win);
+		w->needs_expose = 1;
+		return;
+	}
+
+	if (tw->theme.default_icon) {
+		if (e->atom == c->atoms[XATOM_NET_WM_ICON] ||
+		    e->atom == XA_WM_HINTS)
+		{
+			struct taskbar_task *t = &tw->tasks[ti];
+			cairo_surface_destroy(t->icon);
+			t->icon = get_window_icon(c, t->win, tw->theme.default_icon);
+			w->needs_expose = 1;
+			return;
 		}
 	}
 }
 
-struct taskbar_task *get_taskbar_task_at(struct widget *w, int x, int y,
-		int *side_out)
+int get_taskbar_task_at(struct widget *w, int x, int y, int *side_out)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 
@@ -416,10 +467,10 @@ struct taskbar_task *get_taskbar_task_at(struct widget *w, int x, int y,
 				else
 					*side_out = TASKBAR_TASK_RIGHT_SIDE;
 			}
-			return t;			
+			return (int)i;			
 		}
 	}
-	return 0;
+	return -1;
 }
 
 static void activate_task(struct x_connection *c, struct taskbar_task *t)
@@ -443,10 +494,13 @@ static void activate_task(struct x_connection *c, struct taskbar_task *t)
 static void button_click(struct widget *w, XButtonEvent *e)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-	struct taskbar_task *t = get_taskbar_task_at(w, e->x, e->y, 0);
+	int ti = get_taskbar_task_at(w, e->x, e->y, 0);
+	if (ti == -1)
+		return;
+	struct taskbar_task *t = &tw->tasks[ti];
 	struct x_connection *c = &w->panel->connection;
 
-	if (t && e->button == 1 && e->type == ButtonRelease) {
+	if (e->button == 1 && e->type == ButtonRelease) {
 		if (tw->active == t->win) {
 			XIconifyWindow(c->dpy, t->win, c->screen);
 		} else {
@@ -461,30 +515,55 @@ static void button_click(struct widget *w, XButtonEvent *e)
 
 static void mouse_enter(struct widget *w)
 {
-	printf("taskbar: mouse_enter\n");
 }
 
 static void mouse_leave(struct widget *w)
 {
-	printf("taskbar: mouse_leave\n");
 }
 
 static void dnd_start(struct drag_info *di)
 {
-	printf("taskbar: dnd start! (%d %d)\n", di->taken_x, di->taken_y);
+	struct taskbar_widget *tw = (struct taskbar_widget*)di->taken_on->private;
+	struct x_connection *c = &di->taken_on->panel->connection;
+	struct panel *p = di->taken_on->panel;
+
+	int ti = get_taskbar_task_at(di->taken_on, di->taken_x, di->taken_y, 0);
+	if (ti == -1)
+		return;
+
+	struct taskbar_task *t = &tw->tasks[ti];
+	
+	int iconw = 24; 
+	int iconh = 24; 
+	if (t->icon) {
+		iconw = cairo_image_surface_get_width(t->icon);
+		iconh = cairo_image_surface_get_width(t->icon);
+	}
+
+	XSetWindowAttributes attrs;
+	attrs.background_pixel = 0;
+	attrs.override_redirect = True;
+	
+	tw->dnd_win = XCreateWindow(c->dpy, c->root, di->cur_x, di->cur_y, 
+			iconw, iconh, 0, CopyFromParent, InputOutput, 
+			c->default_visual, CWOverrideRedirect | CWBackPixel, &attrs);
+	XMapWindow(c->dpy, tw->dnd_win);
 }
 
 static void dnd_drag(struct drag_info *di)
 {
-	printf("taskbar: dnd drag: %d %d\n", di->cur_x, di->cur_y);
+	struct taskbar_widget *tw = (struct taskbar_widget*)di->taken_on->private;
+	struct x_connection *c = &di->taken_on->panel->connection;
+	if (tw->dnd_win != None)
+		XMoveWindow(c->dpy, tw->dnd_win, di->cur_x, di->cur_y);
 }
 
 static void dnd_drop(struct drag_info *di)
 {
-	if (!di->dropped_on)
-		printf("taskbar: dnd drop (dropped to nowhere)\n");
-	else
-		printf("taskbar: dnd drop (%s: %d %d)\n", 
-			di->dropped_on->interface->theme_name, 
-			di->dropped_x, di->dropped_y);
+	struct taskbar_widget *tw = (struct taskbar_widget*)di->taken_on->private;
+	struct x_connection *c = &di->taken_on->panel->connection;
+	if (tw->dnd_win != None) {
+		XDestroyWindow(c->dpy, tw->dnd_win);
+		tw->dnd_win = None;
+	}
 }

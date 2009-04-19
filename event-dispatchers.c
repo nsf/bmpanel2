@@ -89,8 +89,8 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 
 	/* drag'n'drop moving */
 	if (p->dnd.taken_on) {
-		p->dnd.cur_x = e->x;
-		p->dnd.cur_y = e->y;
+		p->dnd.cur_x = e->x_root;
+		p->dnd.cur_y = e->y_root;
 		struct widget *w = p->dnd.taken_on;
 		if (w->interface->dnd_drag)
 			(*w->interface->dnd_drag)(&p->dnd);
@@ -106,6 +106,8 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 		p->dnd.taken_on = w;
 		p->dnd.taken_x = p->last_click_x;
 		p->dnd.taken_y = p->last_click_y;
+		p->dnd.cur_x = e->x_root;
+		p->dnd.cur_y = e->y_root;
 		if (w->interface->dnd_start)
 			(*w->interface->dnd_start)(&p->dnd);
 
