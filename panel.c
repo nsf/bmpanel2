@@ -332,7 +332,7 @@ static void expose_whole_panel(struct panel *panel)
 
 	XCopyArea(dpy, panel->bg, panel->win, dgc, 0, 0, 
 			panel->width, panel->height, 0, 0);
-	XSync(dpy, 0);
+	XFlush(dpy);
 	panel->needs_expose = 0;
 }
 
@@ -358,7 +358,7 @@ static void expose_panel(struct panel *panel)
 			w->needs_expose = 0;
 		}
 	}
-	XSync(dpy, 0);
+	XFlush(dpy);
 }
 
 int create_panel(struct panel *panel, struct theme_format_tree *tree)
@@ -409,7 +409,7 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 
 	/* all ok, map window */
 	XMapWindow(c->dpy, panel->win);
-	XSync(c->dpy, 0);
+	XFlush(c->dpy);
 	expose_panel(panel);
 
 	return 0;

@@ -30,7 +30,6 @@ struct taskbar_theme {
 	int icon_offset[2];
 
 	cairo_surface_t *separator;
-	int spacing;
 };
 
 struct taskbar_widget {
@@ -39,6 +38,12 @@ struct taskbar_widget {
 	Window active;
 	int desktop;
 };
+
+#define TASKBAR_TASK_LEFT_SIDE 0
+#define TASKBAR_TASK_RIGHT_SIDE 1
+
+struct taskbar_task *get_taskbar_task_at(struct widget *tb, int x, int y,
+		int *side_out);
 
 /**************************************************************************
   Clock

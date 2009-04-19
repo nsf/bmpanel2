@@ -5,6 +5,7 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
+static void prop_change(struct widget *w, XPropertyEvent *e);
 
 static void mouse_enter(struct widget *w);
 static void mouse_leave(struct widget *w);
@@ -21,7 +22,7 @@ static struct widget_interface taskbar_interface = {
 	draw,
 	button_click,
 	0, /* clock_tick */
-	0, /* prop_change */
+	prop_change,
 	mouse_enter,
 	mouse_leave,
 	0, /* mouse_motion */
@@ -91,7 +92,6 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 	}
 
 	tt->separator = parse_image_part_named("separator", e, tree);
-	tt->spacing = parse_int("spacing", e, 0);
 
 	return 0;
 
@@ -145,7 +145,10 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 
 	t.win = win;
 	t.name = x_alloc_window_name(c, win); 
-	t.icon = get_window_icon(c, win, tw->theme.default_icon);
+	if (tw->theme.default_icon)
+		t.icon = get_window_icon(c, win, tw->theme.default_icon);
+	else
+		t.icon = 0;
 	t.desktop = x_get_window_desktop(c, win);
 
 	int i = find_last_task_by_desktop(tw, t.desktop);
@@ -162,7 +165,8 @@ static void remove_task(struct taskbar_widget *tw, Window win)
 		xwarning("taskbar: Trying to delete non-existent window");
 	else {
 		xfree(tw->tasks[i].name);
-		cairo_surface_destroy(tw->tasks[i].icon);
+		if (tw->tasks[i].icon)
+			cairo_surface_destroy(tw->tasks[i].icon);
 		ARRAY_REMOVE(tw->tasks, i);
 	}
 }
@@ -170,7 +174,8 @@ static void remove_task(struct taskbar_widget *tw, Window win)
 static void remove_task_i(struct taskbar_widget *tw, size_t i)
 {
 	xfree(tw->tasks[i].name);
-	cairo_surface_destroy(tw->tasks[i].icon);
+	if (tw->tasks[i].icon)
+		cairo_surface_destroy(tw->tasks[i].icon);
 	ARRAY_REMOVE(tw->tasks, i);
 }
 
@@ -179,7 +184,8 @@ static void free_tasks(struct taskbar_widget *tw)
 	size_t i;
 	for (i = 0; i < tw->tasks_n; ++i) {
 		xfree(tw->tasks[i].name);
-		cairo_surface_destroy(tw->tasks[i].icon);
+		if (tw->tasks[i].icon)
+			cairo_surface_destroy(tw->tasks[i].icon);
 	}
 	FREE_ARRAY(tw->tasks);
 }
@@ -207,10 +213,10 @@ static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
 	size_t i, j;
 	for (i = 0; i < tw->tasks_n; ++i) {
 		struct taskbar_task *t = &tw->tasks[i];
-		int delete = 0;
+		int delete = 1;
 		for (j = 0; j < num; ++j) {
 			if (wins[j] == t->win) {
-				delete = 1;
+				delete = 0;
 				break;
 			}
 		}
@@ -260,19 +266,72 @@ static void destroy_widget_private(struct widget *w)
 
 static void draw_task(struct widget *wi, struct taskbar_task *task, int x, int w)
 {
-	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-	cairo_t *cr = w->panel->cr;
+	struct taskbar_widget *tw = (struct taskbar_widget*)wi->private;
+	cairo_t *cr = wi->panel->cr;
 
+
+	/* calculations */
 	struct triple_image *tbt = (task->win == tw->active) ? 
 			&tw->theme.pressed.background :
 			&tw->theme.idle.background;
+	struct text_info *font = (task->win == tw->active) ?
+			&tw->theme.pressed.font :
+			&tw->theme.idle.font;
+	int leftw = 0;
+	int centerw = 0;
+	int rightw = 0;
+	if (tbt->left)
+		leftw = cairo_image_surface_get_width(tbt->left);
+	if (tbt->right)
+		rightw = cairo_image_surface_get_width(tbt->right);
+	centerw = w - leftw - rightw;
+	
+	int iconw = 0;
+	int iconh = 0;
+	if (tw->theme.default_icon) {
+		iconw = cairo_image_surface_get_width(tw->theme.default_icon);
+		iconh = cairo_image_surface_get_height(tw->theme.default_icon);
+	}
 
-	x += tw->theme.buttons_spacing;
-	w -= tw->theme.buttons_spacing * 2;
+	int textw = centerw - (iconw + tw->theme.icon_offset[0]);
 
-	/* draw button background */
-	/* draw icon if any */
-	/* draw task text */
+	/* background */
+	int xx = x;
+	if (leftw)
+		blit_image(tbt->left, cr, xx, wi->y);
+	xx += leftw;
+	pattern_image(tbt->center, cr, xx, wi->y, centerw);
+	xx += centerw;
+	if (rightw)
+		blit_image(tbt->right, cr, xx, wi->y);
+	xx -= centerw;
+
+	/* icon */
+	if (iconw && iconh) {
+		int yy = wi->y + (wi->height - iconh) / 2;
+		xx += tw->theme.icon_offset[0];
+		yy += tw->theme.icon_offset[1];
+		blit_image(task->icon, cr, xx, yy);
+	}
+	xx += iconw; 
+	
+	/* text */
+	draw_text(cr, wi->panel->layout, font, task->name, xx, wi->y, textw,
+			wi->height);
+}
+
+static int count_tasks_on_desktop(struct taskbar_widget *tw, int desktop)
+{
+	int count = 0;
+	size_t i;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		if (tw->tasks[i].desktop == desktop ||
+		    tw->tasks[i].desktop == -1) /* count "all desktops" too */
+		{
+			count++;
+		}
+	}
+	return count;
 }
 
 static void draw(struct widget *w)
@@ -284,24 +343,120 @@ static void draw(struct widget *w)
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	cairo_t *cr = w->panel->cr;
 
-	int x = w->x;
-	blit_image(tw->theme.idle.background.left, cr, x, w->y);
-	x += cairo_image_surface_get_width(tw->theme.idle.background.left);
-	pattern_image(tw->theme.idle.background.center, cr, x, w->y, 100);
-	x += 100;
-	blit_image(tw->theme.idle.background.right, cr, x, w->y);
-	x += cairo_image_surface_get_width(tw->theme.idle.background.right);
+	int count = count_tasks_on_desktop(tw, tw->desktop);
+	if (!count)
+		return;
 
-	struct triple_image *tbt = &tw->theme.pressed.background;
-	blit_image(tbt->left, cr, x, w->y);
-	x += cairo_image_surface_get_width(tbt->left);
-	pattern_image(tbt->center, cr, x, w->y, 100);
-	x += 100;
-	blit_image(tbt->right, cr, x, w->y);
+	int taskw = w->width / count;
+	int x = w->x;
+	size_t i;
+
+	for (i = 0; i < tw->tasks_n; ++i) {
+		struct taskbar_task *t = &tw->tasks[i];
+		
+		if (t->desktop != tw->desktop &&
+		    t->desktop != -1)
+		{
+			continue;
+		}
+
+		/* save position for other events */
+		t->x = x;
+		t->w = taskw;
+
+		draw_task(w, t, x, taskw);
+		/* TODO: separators and last button correction */
+		x += taskw;
+	}
+}
+
+static void prop_change(struct widget *w, XPropertyEvent *e)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	struct x_connection *c = &w->panel->connection;
+
+	if (e->window == c->root) {
+		if (e->atom == c->atoms[XATOM_NET_ACTIVE_WINDOW]) {
+			update_active(tw, c);
+			w->needs_expose = 1;
+		}
+		if (e->atom == c->atoms[XATOM_NET_CURRENT_DESKTOP]) {
+			update_desktop(tw, c);
+			w->needs_expose = 1;
+		}
+		if (e->atom == c->atoms[XATOM_NET_CLIENT_LIST]) {
+			update_tasks(tw, c);
+			w->needs_expose = 1;
+		}
+	}
+}
+
+struct taskbar_task *get_taskbar_task_at(struct widget *w, int x, int y,
+		int *side_out)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+
+	size_t i;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		struct taskbar_task *t = &tw->tasks[i];
+		if (t->desktop != tw->desktop &&
+		    t->desktop != -1)
+		{
+			continue;
+		}
+
+		if (x < (t->x + t->w) && x > t->x &&
+		    y > w->y && y < (w->y + w->width)) 
+		{
+			/* our candidate */
+			if (side_out) {
+				x -= t->x;
+				if (x < t->w / 2)
+					*side_out = TASKBAR_TASK_LEFT_SIDE;
+				else
+					*side_out = TASKBAR_TASK_RIGHT_SIDE;
+			}
+			return t;			
+		}
+	}
+	return 0;
+}
+
+static void activate_task(struct x_connection *c, struct taskbar_task *t)
+{
+	XClientMessageEvent e;
+
+	e.type = ClientMessage;
+	e.window = t->win;
+	e.message_type = c->atoms[XATOM_NET_ACTIVE_WINDOW];
+	e.format = 32;
+	e.data.l[0] = 2;
+	e.data.l[1] = CurrentTime;
+	e.data.l[2] = 0;
+	e.data.l[3] = 0;
+	e.data.l[4] = 0;
+
+	XSendEvent(c->dpy, c->root, False, SubstructureNotifyMask |
+			SubstructureRedirectMask, (XEvent*)&e);
 }
 
 static void button_click(struct widget *w, XButtonEvent *e)
 {
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	struct taskbar_task *t = get_taskbar_task_at(w, e->x, e->y, 0);
+	struct x_connection *c = &w->panel->connection;
+
+	if (t && e->button == 1 && e->type == ButtonRelease) {
+		if (tw->active == t->win) {
+			XIconifyWindow(c->dpy, t->win, c->screen);
+		} else {
+			activate_task(c, t);
+			
+			XWindowChanges wc;
+			wc.stack_mode = Above;
+			XConfigureWindow(c->dpy, t->win, CWStackMode, &wc);
+		}
+	}
 }
 
 static void mouse_enter(struct widget *w)

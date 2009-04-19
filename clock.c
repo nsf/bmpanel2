@@ -6,9 +6,6 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void clock_tick(struct widget *w);
-static void button_click(struct widget *w, XButtonEvent *e);
-
-static void dnd_drop(struct drag_info *di);
 
 static struct widget_interface clock_interface = {
 	"clock",
@@ -16,15 +13,15 @@ static struct widget_interface clock_interface = {
 	create_widget_private,
 	destroy_widget_private,
 	draw,
-	button_click, /* XXX: tmp */
+	0, /* button_click */
 	clock_tick, /* clock_tick */
 	0, /* prop_change */
 	0, /* mouse_enter */
 	0, /* mouse_leave */
 	0, /* mouse_motion */
-	0,
-	0,
-	dnd_drop
+	0, /* dnd_start */
+	0, /* dnd_drag */
+	0 /* dnd_drop */
 };
 
 void register_clock()
@@ -47,8 +44,11 @@ static int parse_clock_theme(struct clock_theme *ct,
 		return xerror("Can't parse 'font' clock entry");
 	}
 
+	/* TODO: remove these spacings, they can be emulated with image tweaks */
+	/* TODO: create an example of how they are tweaked */
 	ct->text_spacing = parse_int("text_spacing", e, 0);
 	ct->spacing = parse_int("spacing", e, 0);
+
 	ct->time_format = parse_string("time_format", e, "%H:%M:%S");
 
 	return 0;
@@ -164,41 +164,3 @@ static void clock_tick(struct widget *w)
 	w->needs_expose = 1;
 }
 
-static void button_click(struct widget *w, XButtonEvent *e)
-{
-	struct clock_widget *cw = (struct clock_widget*)w->private;
-
-	if (cw->theme.text_spacing < 30) {
-		cw->theme.text_spacing += 30;
-		/* get widget width */
-		int text_width = 0;
-		int pics_width = 0;
-		
-		char buftime[128];
-		struct tm tm;
-		CLEAR_STRUCT(&tm);
-		strftime(buftime, sizeof(buftime), cw->theme.time_format, &tm);
-
-		text_extents(w->panel->layout, cw->theme.font.pfd, 
-				buftime, &text_width, 0);
-
-		if (cw->theme.background.left)
-			pics_width += cairo_image_surface_get_width(cw->theme.background.left);
-		if (cw->theme.background.right)
-			pics_width += cairo_image_surface_get_width(cw->theme.background.right);
-		w->width = text_width + pics_width + cw->theme.text_spacing +
-			cw->theme.spacing * 2;
-		recalculate_widgets_sizes(w->panel);
-	} else {
-		g_main_quit(w->panel->loop);
-	}
-}
-
-static void dnd_drop(struct drag_info *di)
-{
-	if (di->dropped_on == 0)
-		return;
-	printf("clock: something dropped here: %s -> %s (ignoring)\n",
-			di->taken_on->interface->theme_name,
-			di->dropped_on->interface->theme_name);
-}
