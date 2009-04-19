@@ -83,26 +83,15 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 		goto parse_taskbar_button_theme_error_pressed;
 	}
 
-
 	struct theme_format_entry *ee = find_theme_format_entry(e, "default_icon");
-	if (!ee) {
-		xwarning("Can't find 'default_icon' taskbar image entry");
-		goto parse_taskbar_theme_error_default_icon;
+	if (ee) {
+		tt->default_icon = parse_image_part(ee, tree);
+		tt->icon_offset[0] = tt->icon_offset[1] = 0;
+		parse_2ints(tt->icon_offset, "offset", ee);
 	}
-
-	tt->default_icon = parse_image_part(ee, tree);
-	if (!tt->default_icon) {
-		xwarning("Can't parse 'default_icon' taskbar image");
-		goto parse_taskbar_theme_error_default_icon;
-	}
-
-	tt->icon_offset[0] = tt->icon_offset[1] = 0;
-	parse_2ints(tt->icon_offset, "offset", ee);
 
 	return 0;
 
-parse_taskbar_theme_error_default_icon:
-	free_taskbar_state(&tt->pressed);
 parse_taskbar_button_theme_error_pressed:
 	free_taskbar_state(&tt->idle);
 parse_taskbar_button_theme_error_idle:
@@ -270,7 +259,7 @@ static void draw_task(struct widget *w, struct taskbar_task *task, int x, int w)
 
 static void draw(struct widget *w)
 {
-	/* I think it's a good idea to calculate all button positions here, and
+	/* I think it's a good idea to calculate all buttons positions here, and
 	 * cache these data for later use in other message handlers. User
 	 * interacts with what he/she sees, right? 
 	 */
