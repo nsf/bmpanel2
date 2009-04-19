@@ -28,6 +28,10 @@ struct taskbar_theme {
 	struct taskbar_state pressed;
 	cairo_surface_t *default_icon;
 	int icon_offset[2];
+
+	cairo_surface_t *separator;
+	int spacing;
+	int buttons_spacing;
 };
 
 struct taskbar_widget {

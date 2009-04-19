@@ -90,6 +90,10 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 		parse_2ints(tt->icon_offset, "offset", ee);
 	}
 
+	tt->separator = parse_image_part_named("separator", e, tree);
+	tt->spacing = parse_int("spacing", e, 0);
+	tt->buttons_spacing = parse_int("buttons_spacing", e, 0);
+
 	return 0;
 
 parse_taskbar_button_theme_error_pressed:
@@ -102,7 +106,10 @@ static void free_taskbar_theme(struct taskbar_theme *tt)
 {
 	free_taskbar_state(&tt->idle);
 	free_taskbar_state(&tt->pressed);
-	cairo_surface_destroy(tt->default_icon);
+	if (tt->default_icon)
+		cairo_surface_destroy(tt->default_icon);
+	if (tt->separator)
+		cairo_surface_destroy(tt->separator);
 }
 
 /**************************************************************************
@@ -252,7 +259,7 @@ static void destroy_widget_private(struct widget *w)
 	xfree(tw);
 }
 
-static void draw_task(struct widget *w, struct taskbar_task *task, int x, int w)
+static void draw_task(struct widget *wi, struct taskbar_task *task, int x, int w)
 {
 
 }
