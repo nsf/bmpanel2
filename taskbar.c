@@ -92,7 +92,6 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 
 	tt->separator = parse_image_part_named("separator", e, tree);
 	tt->spacing = parse_int("spacing", e, 0);
-	tt->buttons_spacing = parse_int("buttons_spacing", e, 0);
 
 	return 0;
 
@@ -261,7 +260,19 @@ static void destroy_widget_private(struct widget *w)
 
 static void draw_task(struct widget *wi, struct taskbar_task *task, int x, int w)
 {
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	cairo_t *cr = w->panel->cr;
 
+	struct triple_image *tbt = (task->win == tw->active) ? 
+			&tw->theme.pressed.background :
+			&tw->theme.idle.background;
+
+	x += tw->theme.buttons_spacing;
+	w -= tw->theme.buttons_spacing * 2;
+
+	/* draw button background */
+	/* draw icon if any */
+	/* draw task text */
 }
 
 static void draw(struct widget *w)

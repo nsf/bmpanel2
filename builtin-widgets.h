@@ -31,7 +31,6 @@ struct taskbar_theme {
 
 	cairo_surface_t *separator;
 	int spacing;
-	int buttons_spacing;
 };
 
 struct taskbar_widget {
