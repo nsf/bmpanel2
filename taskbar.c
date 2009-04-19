@@ -83,11 +83,21 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 		goto parse_taskbar_button_theme_error_pressed;
 	}
 
-	tt->default_icon = parse_image_part_named("default_icon", e, tree);
+
+	struct theme_format_entry *ee = find_theme_format_entry(e, "default_icon");
+	if (!ee) {
+		xwarning("Can't find 'default_icon' taskbar image entry");
+		goto parse_taskbar_theme_error_default_icon;
+	}
+
+	tt->default_icon = parse_image_part(ee, tree);
 	if (!tt->default_icon) {
 		xwarning("Can't parse 'default_icon' taskbar image");
 		goto parse_taskbar_theme_error_default_icon;
 	}
+
+	tt->icon_offset[0] = tt->icon_offset[1] = 0;
+	parse_2ints(tt->icon_offset, "offset", ee);
 
 	return 0;
 
@@ -142,8 +152,6 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	t.name = x_alloc_window_name(c, win); 
 	t.icon = get_window_icon(c, win, tw->theme.default_icon);
 	t.desktop = x_get_window_desktop(c, win);
-	t.iconified = x_is_window_iconified(c, win); 
-	t.focused = (tw->focused == win);
 
 	int i = find_last_task_by_desktop(tw, t.desktop);
 	if (i == -1)
@@ -181,13 +189,22 @@ static void free_tasks(struct taskbar_widget *tw)
 	FREE_ARRAY(tw->tasks);
 }
 
+static void update_active(struct taskbar_widget *tw, struct x_connection *c)
+{
+	tw->active = x_get_prop_window(c, c->root, 
+			c->atoms[XATOM_NET_ACTIVE_WINDOW]);
+}
+
+static void update_desktop(struct taskbar_widget *tw, struct x_connection *c)
+{
+	tw->desktop = x_get_prop_int(c, c->root, 
+			c->atoms[XATOM_NET_CURRENT_DESKTOP]);
+}
+
 static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
 {
 	Window *wins;
 	int num;
-	
-	tw->focused = x_get_prop_window(c, c->root, 
-			c->atoms[XATOM_NET_ACTIVE_WINDOW]);
 
 	wins = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_CLIENT_LIST], 
 			XA_WINDOW, &num);
@@ -231,6 +248,8 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 	w->private = tw;
 
 	struct x_connection *c = &w->panel->connection;
+	update_desktop(tw, c);
+	update_active(tw, c);
 	update_tasks(tw, c);
 
 	return 0;
@@ -244,12 +263,21 @@ static void destroy_widget_private(struct widget *w)
 	xfree(tw);
 }
 
+static void draw_task(struct widget *w, struct taskbar_task *task, int x, int w)
+{
+
+}
+
 static void draw(struct widget *w)
 {
+	/* I think it's a good idea to calculate all button positions here, and
+	 * cache these data for later use in other message handlers. User
+	 * interacts with what he/she sees, right? 
+	 */
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	cairo_t *cr = w->panel->cr;
+
 	int x = w->x;
-	int i;
 	blit_image(tw->theme.idle.background.left, cr, x, w->y);
 	x += cairo_image_surface_get_width(tw->theme.idle.background.left);
 	pattern_image(tw->theme.idle.background.center, cr, x, w->y, 100);

@@ -29,10 +29,10 @@ static int parse_color(unsigned char *out, struct theme_format_entry *e)
 	return -1;
 }
 
-static int parse_offset(int *out, struct theme_format_entry *e)
+int parse_2ints(int *out, const char *name, struct theme_format_entry *e)
 {
 	out[0] = out[1] = 0;
-	const char *v = find_theme_format_entry_value(e, "offset");
+	const char *v = find_theme_format_entry_value(e, name);
 	if (v) {
 		if (2 == sscanf(v, "%d %d", &out[0], &out[1]))
 			return 0;
@@ -137,7 +137,7 @@ int parse_text_info(struct text_info *out, const char *name,
 
 	out->pfd = pango_font_description_from_string(ee->value);
 	parse_color(out->color, ee);
-	parse_offset(out->offset, ee);
+	parse_2ints(out->offset, "offset", ee);
 	out->align = parse_align(ee);
 
 	return 0;

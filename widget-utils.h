@@ -42,6 +42,9 @@ int parse_text_info(struct text_info *out, const char *name,
 		struct theme_format_entry *e);
 void free_text_info(struct text_info *fi);
 
+/* complicated strings */
+int parse_2ints(int *out, const char *name, struct theme_format_entry *e);
+
 /* simple things (int, string, etc.) */
 int parse_int(const char *name, struct theme_format_entry *e, int def);
 char *parse_string(const char *name, struct theme_format_entry *e, const char *def);

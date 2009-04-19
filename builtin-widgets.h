@@ -14,8 +14,8 @@ struct taskbar_task {
 	cairo_surface_t *icon;
 	Window win;
 	int desktop;
-	int iconified;
-	int focused;
+	int x;
+	int w;
 };
 
 struct taskbar_state {
@@ -27,12 +27,13 @@ struct taskbar_theme {
 	struct taskbar_state idle;
 	struct taskbar_state pressed;
 	cairo_surface_t *default_icon;
+	int icon_offset[2];
 };
 
 struct taskbar_widget {
 	struct taskbar_theme theme;
 	DECLARE_ARRAY(struct taskbar_task, tasks);
-	Window focused;
+	Window active;
 	int desktop;
 };
 
