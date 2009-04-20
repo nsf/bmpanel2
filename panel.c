@@ -474,6 +474,7 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 {
 	struct panel *p = data;
 	Display *dpy = p->connection.dpy;
+	GC dgc = p->connection.default_gc;
 	size_t i;
 	struct widget *w;
 
@@ -488,7 +489,9 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 			break;
 
 		case Expose:
-			p->needs_expose = 1;
+			XCopyArea(dpy, p->bg, p->win, dgc, 0, 0, 
+					p->width, p->height, 0, 0);
+			XFlush(dpy);
 			break;
 		
 		case ButtonRelease:

@@ -32,6 +32,10 @@ struct drag_info {
 
 	int cur_x;
 	int cur_y;
+
+	int cur_root_x;
+	int cur_root_y;
+
 };
 
 /**************************************************************************
@@ -58,26 +62,10 @@ struct widget_interface {
 	void (*mouse_enter)(struct widget *w);
 	void (*mouse_leave)(struct widget *w);
 	void (*mouse_motion)(struct widget *w, XMotionEvent *e);
-	/* When D'n'D starts, it contains following valid variables:
-	 * "taken_on" - widget on which drag was started, this widget recieves
-	 *              "dnd_start" message.
-	 * "taken_x" 
-	 * "taken_y" - where drag was started, coordinates of the mouse
-	 *             press event.
-	 * "cur_x" 
-	 * "cur_y" - where mouse with virtual drag object is now
-	 */
-	void (*dnd_start)(struct drag_info *di);
-
-	/* D'n'D drag message is sent to the "taken_on" widget. Has the same
-	 * valid variables as above. 
-	 */
-	void (*dnd_drag)(struct drag_info *di);
-
-	/* This message is sent to a "dropped_on" widget first, and then to a
-	 * "taken_on" widget.
-	 */
-	void (*dnd_drop)(struct drag_info *di);
+	
+	void (*dnd_start)(struct widget *w, struct drag_info *di);
+	void (*dnd_drag)(struct widget *w, struct drag_info *di);
+	void (*dnd_drop)(struct widget *w, struct drag_info *di);
 };
 
 struct widget {

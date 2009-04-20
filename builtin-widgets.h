@@ -39,6 +39,7 @@ struct taskbar_widget {
 	int desktop;
 
 	Window dnd_win;
+	Window taken;
 };
 
 #define TASKBAR_TASK_LEFT_SIDE 0

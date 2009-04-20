@@ -10,9 +10,9 @@ static void prop_change(struct widget *w, XPropertyEvent *e);
 static void mouse_enter(struct widget *w);
 static void mouse_leave(struct widget *w);
 
-static void dnd_start(struct drag_info *di);
-static void dnd_drag(struct drag_info *di);
-static void dnd_drop(struct drag_info *di);
+static void dnd_start(struct widget *w, struct drag_info *di);
+static void dnd_drag(struct widget *w, struct drag_info *di);
+static void dnd_drop(struct widget *w, struct drag_info *di);
 
 static struct widget_interface taskbar_interface = {
 	"taskbar",
@@ -298,7 +298,7 @@ static void draw_task(struct widget *wi, struct taskbar_task *task, int x, int w
 		iconh = cairo_image_surface_get_height(tw->theme.default_icon);
 	}
 
-	int textw = centerw - (iconw + tw->theme.icon_offset[0]);
+	int textw = centerw - (iconw + tw->theme.icon_offset[0]) - rightw;
 
 	/* background */
 	int xx = x;
@@ -373,6 +373,7 @@ static void draw(struct widget *w)
 		/* TODO: separators and last button correction */
 		x += taskw;
 	}
+	printf("draw\n");
 }
 
 static void prop_change(struct widget *w, XPropertyEvent *e)
@@ -521,11 +522,11 @@ static void mouse_leave(struct widget *w)
 {
 }
 
-static void dnd_start(struct drag_info *di)
+static void dnd_start(struct widget *w, struct drag_info *di)
 {
-	struct taskbar_widget *tw = (struct taskbar_widget*)di->taken_on->private;
-	struct x_connection *c = &di->taken_on->panel->connection;
-	struct panel *p = di->taken_on->panel;
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	struct x_connection *c = &w->panel->connection;
+	struct panel *p = w->panel;
 
 	int ti = get_taskbar_task_at(di->taken_on, di->taken_x, di->taken_y, 0);
 	if (ti == -1)
@@ -544,26 +545,59 @@ static void dnd_start(struct drag_info *di)
 	attrs.background_pixel = 0;
 	attrs.override_redirect = True;
 	
-	tw->dnd_win = XCreateWindow(c->dpy, c->root, di->cur_x, di->cur_y, 
+	tw->dnd_win = XCreateWindow(c->dpy, c->root, di->cur_root_x, di->cur_root_y, 
 			iconw, iconh, 0, CopyFromParent, InputOutput, 
 			c->default_visual, CWOverrideRedirect | CWBackPixel, &attrs);
 	XMapWindow(c->dpy, tw->dnd_win);
+	tw->taken = t->win;
 }
 
-static void dnd_drag(struct drag_info *di)
+static void dnd_drag(struct widget *w, struct drag_info *di)
 {
-	struct taskbar_widget *tw = (struct taskbar_widget*)di->taken_on->private;
-	struct x_connection *c = &di->taken_on->panel->connection;
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	struct x_connection *c = &w->panel->connection;
 	if (tw->dnd_win != None)
-		XMoveWindow(c->dpy, tw->dnd_win, di->cur_x, di->cur_y);
+		XMoveWindow(c->dpy, tw->dnd_win, di->cur_root_x, di->cur_root_y);
 }
 
-static void dnd_drop(struct drag_info *di)
+static void dnd_drop(struct widget *w, struct drag_info *di)
 {
-	struct taskbar_widget *tw = (struct taskbar_widget*)di->taken_on->private;
-	struct x_connection *c = &di->taken_on->panel->connection;
-	if (tw->dnd_win != None) {
-		XDestroyWindow(c->dpy, tw->dnd_win);
-		tw->dnd_win = None;
+	/* ignore dragged data from other widgets */
+	if (di->taken_on != w)
+		return;
+
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	struct x_connection *c = &w->panel->connection;
+
+	/* check if we have something draggable */
+	if (tw->dnd_win != None && tw->taken != None) {
+		int ttaken = find_task_by_window(tw, tw->taken);
+		int side;
+		int tdropped = get_taskbar_task_at(w, 
+				di->dropped_x, di->dropped_y, &side);
+		if (di->taken_on == di->dropped_on && 
+			ttaken != -1 && tdropped != -1) 
+		{
+			/* task move */
+			if (tw->tasks[ttaken].desktop == tw->tasks[tdropped].desktop)
+			{
+				/* if the desktop is the same.. move task */
+				struct taskbar_task t = tw->tasks[ttaken];
+				ARRAY_REMOVE(tw->tasks, ttaken);
+				if (tdropped > ttaken)
+					tdropped -= 1;
+				if (side == TASKBAR_TASK_LEFT_SIDE)
+					ARRAY_INSERT_BEFORE(tw->tasks, tdropped, t);
+				else 
+					ARRAY_INSERT_AFTER(tw->tasks, tdropped, t);
+				w->needs_expose = 1;
+			}
+		} else if (!di->dropped_on) {
+			/* out of the panel */
+		}
 	}
+
+	XDestroyWindow(c->dpy, tw->dnd_win);
+	tw->dnd_win = None;
+	tw->taken = None;
 }

@@ -35,7 +35,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 					p->dnd.dropped_x = e->x;
 					p->dnd.dropped_y = e->y;
 					if (w->interface->dnd_drop)
-						(*w->interface->dnd_drop)(&p->dnd);		
+						(*w->interface->dnd_drop)(w, &p->dnd);	
 				}
 			}
 		}
@@ -43,7 +43,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 	if (e->type == ButtonRelease && p->dnd.taken_on) {
 		struct widget *w = p->dnd.taken_on;
 		if (w->interface->dnd_drop && p->dnd.taken_on != p->dnd.dropped_on)
-			(*w->interface->dnd_drop)(&p->dnd);
+			(*w->interface->dnd_drop)(w, &p->dnd);
 
 		CLEAR_STRUCT(&p->dnd);
 	}
@@ -89,11 +89,13 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 
 	/* drag'n'drop moving */
 	if (p->dnd.taken_on) {
-		p->dnd.cur_x = e->x_root;
-		p->dnd.cur_y = e->y_root;
+		p->dnd.cur_root_x = e->x_root;
+		p->dnd.cur_root_y = e->y_root;
+		p->dnd.cur_x = e->x;
+		p->dnd.cur_y = e->y;
 		struct widget *w = p->dnd.taken_on;
 		if (w->interface->dnd_drag)
-			(*w->interface->dnd_drag)(&p->dnd);
+			(*w->interface->dnd_drag)(w, &p->dnd);
 	}
 
 #define DRAG_THRESHOLD 5
@@ -106,10 +108,12 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 		p->dnd.taken_on = w;
 		p->dnd.taken_x = p->last_click_x;
 		p->dnd.taken_y = p->last_click_y;
-		p->dnd.cur_x = e->x_root;
-		p->dnd.cur_y = e->y_root;
+		p->dnd.cur_x = e->x;
+		p->dnd.cur_y = e->y;
+		p->dnd.cur_root_x = e->x_root;
+		p->dnd.cur_root_y = e->y_root;
 		if (w->interface->dnd_start)
-			(*w->interface->dnd_start)(&p->dnd);
+			(*w->interface->dnd_start)(w, &p->dnd);
 
 		p->last_click_widget = 0;
 		p->last_click_x = 0;
