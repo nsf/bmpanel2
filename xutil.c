@@ -5,6 +5,7 @@ static char *atom_names[] = {
 	"_NET_DESKTOP_NAMES",
 	"_NET_WM_STATE",
 	"_NET_ACTIVE_WINDOW",
+	"_NET_CLOSE_WINDOW",
 	"_NET_WM_NAME",
 	"_NET_WM_ICON_NAME",
 	"_NET_WM_VISIBLE_ICON_NAME",
@@ -113,7 +114,6 @@ int x_connect(struct x_connection *c, const char *display)
 	c->default_visual 	= DefaultVisual(c->dpy, c->screen);
 	c->default_colormap 	= DefaultColormap(c->dpy, c->screen);
 	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
-	c->default_gc		= DefaultGC(c->dpy, c->screen);
 	c->root 		= RootWindow(c->dpy, c->screen);
 	c->root_pixmap 		= x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
 
@@ -137,6 +137,39 @@ void x_disconnect(struct x_connection *c)
 	XCloseDisplay(c->dpy);
 }
 
+Window x_create_default_window(struct x_connection *c, int x, int y, 
+		unsigned int w, unsigned int h, unsigned long valuemask,
+		XSetWindowAttributes *attrs)
+{
+	return XCreateWindow(c->dpy, c->root, x, y, w, h, 0, c->default_depth,
+			InputOutput, c->default_visual, valuemask, attrs);
+}
+
+Pixmap x_create_default_pixmap(struct x_connection *c, unsigned int w,
+		unsigned int h)
+{
+	return XCreatePixmap(c->dpy, c->root, w, h, c->default_depth);
+}
+
+void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value)
+{
+	XChangeProperty(c->dpy, win, type, XA_CARDINAL, 32, 
+			PropModeReplace, (unsigned char*)&value, 1);
+}
+
+void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at)
+{
+	XChangeProperty(c->dpy, win, type, XA_ATOM, 32, 
+			PropModeReplace, (unsigned char*)&at, 1);
+}
+
+void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
+		const long *values, size_t len)
+{
+	XChangeProperty(c->dpy, win, type, XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char*)values, len);
+}
+
 int x_is_window_hidden(struct x_connection *c, Window win)
 {
 	Atom *data;
@@ -146,11 +179,15 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
 			XA_ATOM, &num);
 	if (data) {
-		if (*data == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK] ||
-		    *data == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP]) 
-		{
-			XFree(data);
-			return 1;
+		while (num) {
+			num--;
+			if (data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK] ||
+			    data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP]) 
+			{
+				XFree(data);
+				return 1;
+			}
+
 		}
 		XFree(data);
 	}

@@ -129,22 +129,22 @@ static void draw(struct widget *w)
 
 	/* left part */
 	if (cw->theme.background.left)
-		blit_image(cw->theme.background.left, cr, x, w->y);
+		blit_image(cw->theme.background.left, cr, x, 0);
 	x += leftw;
 
 	/* center part */
-	pattern_image(cw->theme.background.center, cr, x, w->y, 
+	pattern_image(cw->theme.background.center, cr, x, 0, 
 			centerw);
 	x += centerw;
 
 	/* right part */
 	if (cw->theme.background.right)
-		blit_image(cw->theme.background.right, cr, x, w->y);
+		blit_image(cw->theme.background.right, cr, x, 0);
 
 	/* text */
 	x -= centerw;
 	draw_text(cr, w->panel->layout, &cw->theme.font, buftime, 
-			x, w->y, centerw, w->height);
+			x, 0, centerw, w->panel->height);
 }
 
 static void clock_tick(struct widget *w)

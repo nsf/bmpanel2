@@ -72,11 +72,8 @@ struct widget {
 	struct widget_interface *interface;
 	struct panel *panel;
 
-	/* rectangle for event dispatching */
 	int x;
-	int y;
 	int width;
-	int height;
 
 	int needs_expose;
 

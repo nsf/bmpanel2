@@ -1,6 +1,6 @@
 #include "gui.h"
 
-static int point_in_rect(int px, int py, int x, int y, int w, int h)
+static inline int point_in_rect(int px, int py, int x, int y, int w, int h)
 {
 	return (px > x &&
 		px < x + w &&
@@ -20,7 +20,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 	size_t i;
 	for (i = 0; i < p->widgets_n; ++i) {
 		struct widget *w = &p->widgets[i];
-		if (point_in_rect(e->x, e->y, w->x, w->y, w->width, w->height)) {
+		if (point_in_rect(e->x, e->y, w->x, 0, w->width, p->height)) {
 			if (!p->dnd.taken_on) {
 				if (e->type == ButtonPress) {
 					p->last_click_widget = w;
@@ -38,6 +38,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 						(*w->interface->dnd_drop)(w, &p->dnd);	
 				}
 			}
+			break;
 		}
 	}
 	if (e->type == ButtonRelease && p->dnd.taken_on) {
@@ -60,7 +61,7 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 	/* motion events: enter, leave, motion */
 	for (i = 0; i < p->widgets_n; ++i) {
 		struct widget *w = &p->widgets[i];
-		if (point_in_rect(e->x, e->y, w->x, w->y, w->width, w->height)) {
+		if (point_in_rect(e->x, e->y, w->x, 0, w->width, p->height)) {
 			if (w == p->under_mouse) {
 				if (w->interface->mouse_motion)
 					(*w->interface->mouse_motion)(w, e);
@@ -79,11 +80,8 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 		}
 	}
 	if (!widget_under_mouse) {
-		if (p->under_mouse && 
-			p->under_mouse->interface->mouse_leave)
-		{
+		if (p->under_mouse && p->under_mouse->interface->mouse_leave)
 			(*p->under_mouse->interface->mouse_leave)(p->under_mouse);
-		}
 		p->under_mouse = 0;
 	}
 
@@ -124,11 +122,8 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 void disp_enter_leave_notify(struct panel *p, XCrossingEvent *e)
 {
 	if (e->type == LeaveNotify) {
-		if (p->under_mouse && 
-			p->under_mouse->interface->mouse_leave) 
-		{
+		if (p->under_mouse && p->under_mouse->interface->mouse_leave)
 			(*p->under_mouse->interface->mouse_leave)(p->under_mouse);
-		}
 		p->under_mouse = 0;
 	}
 }

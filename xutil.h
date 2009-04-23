@@ -4,13 +4,15 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#include <X11/Xcursor/Xcursor.h>
 #include "util.h"
 
-enum {
+enum x_atom {
 	XATOM_WM_STATE,
 	XATOM_NET_DESKTOP_NAMES,
 	XATOM_NET_WM_STATE,
 	XATOM_NET_ACTIVE_WINDOW,
+	XATOM_NET_CLOSE_WINDOW,
 	XATOM_NET_WM_NAME,
 	XATOM_NET_WM_ICON_NAME,
 	XATOM_NET_WM_VISIBLE_ICON_NAME,
@@ -52,7 +54,6 @@ struct x_connection {
 	Visual *default_visual;
 	Colormap default_colormap;
 	int default_depth;
-	GC default_gc;
 
 	Window root;
 	Pixmap root_pixmap;
@@ -63,6 +64,26 @@ struct x_connection {
 int x_connect(struct x_connection *c, const char *display);
 void x_disconnect(struct x_connection *c);
 
+/*
+ * default window is (ommiting 5 parameters):
+ *  parent = c->root
+ *  border_width = 0
+ *  depth = c->default_depth
+ *  class = InputOutput
+ *  visual = c->default_visual
+ */
+Window x_create_default_window(struct x_connection *c, int x, int y, 
+		unsigned int w, unsigned int h, unsigned long valuemask,
+		XSetWindowAttributes *attrs);
+
+/* 
+ * default pixmap is (ommiting 2 parameters):
+ *  d = c->root
+ *  depth = c->default_depth
+ */
+Pixmap x_create_default_pixmap(struct x_connection *c, unsigned int w,
+		unsigned int h);
+
 /* allocated by Xlib, should be released with XFree */
 void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 
 		Atom type, int *items);
@@ -71,6 +92,11 @@ int x_get_prop_int(struct x_connection *c, Window win, Atom at);
 Window x_get_prop_window(struct x_connection *c, Window win, Atom at);
 Pixmap x_get_prop_pixmap(struct x_connection *c, Window win, Atom at);
 int x_get_window_desktop(struct x_connection *c, Window win);
+
+void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value);
+void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at);
+void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
+		const long *values, size_t len);
 
 int x_is_window_hidden(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);

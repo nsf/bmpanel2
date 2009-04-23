@@ -6,9 +6,27 @@
 #include <stdint.h>
 #include <string.h>
 
+#define STRINGIZE_(x) #x
+#define STRINGIZE(x) STRINGIZE_(x)
+
 #define MAX_ALLOCA 2048
 
 #define CLEAR_STRUCT(s) ((void)memset((s), 0, sizeof(*(s)))) 
+
+#ifdef NDEBUG
+	#define ENSURE(cond, ...) ((void)0)
+#else
+ 	#define ENSURE(cond, ...)					\
+	do {								\
+		if (!(cond)) {						\
+			fprintf(stderr, "%s (%s:%d): ", STRINGIZE(cond),\
+					__FILE__, __LINE__, 		\
+					STRINGIZE(cond));		\
+			fprintf(stderr, __VA_ARGS__);			\
+			fprintf(stderr, "\n");				\
+		}							\
+	} while (0)
+#endif
 
 /**************************************************************************
   message utils

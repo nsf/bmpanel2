@@ -42,10 +42,7 @@ struct taskbar_widget {
 	Window taken;
 };
 
-#define TASKBAR_TASK_LEFT_SIDE 0
-#define TASKBAR_TASK_RIGHT_SIDE 1
-
-int get_taskbar_task_at(struct widget *tb, int x, int y, int *side_out);
+int get_taskbar_task_at(struct widget *tb, int x, int y);
 
 /**************************************************************************
   Clock

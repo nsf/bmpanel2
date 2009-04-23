@@ -71,6 +71,16 @@ static void get_position_and_strut(const struct x_connection *c,
 	}
 
 	*ox = x; *oy = y; *oh = h; *ow = w;
+	
+	static const struct {
+		int s, e;
+	} where[] = {
+		[PANEL_POSITION_TOP] = {8, 9},
+		[PANEL_POSITION_BOTTOM] = {10, 11}
+	};
+
+	strut[where[t->position].s] = x;
+	strut[where[t->position].e] = x+w;
 }
 
 static int create_window(struct panel *panel)
@@ -79,31 +89,30 @@ static int create_window(struct panel *panel)
 	struct panel_theme *t = &panel->theme;
 
 	int x,y,w,h;
-	long strut[4];
+	long strut[12] = {0};
 	long tmp;
 	Window win;
 	XSetWindowAttributes attrs;
 	
 	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
 
-	panel->bg = XCreatePixmap(c->dpy, c->root, w, h, c->default_depth);
+	/* background pixmap */
+	panel->bg = x_create_default_pixmap(c, w, h);
 	if (panel->bg == None)
 		return xerror("Failed to create background pixmap");
 	
-	attrs.background_pixmap = None;
-
-	panel->win = XCreateWindow(c->dpy, c->root, x, y, w, h, 0, 
-			c->default_depth, InputOutput, 
-			c->default_visual, CWBackPixmap, &attrs);
+	attrs.background_pixmap = panel->bg;
+	attrs.event_mask = ExposureMask | StructureNotifyMask |
+			ButtonPressMask | ButtonReleaseMask | 
+			PointerMotionMask | EnterWindowMask | LeaveWindowMask;
+	
+	/* panel window */
+	panel->win = x_create_default_window(c, x, y, w, h, 
+			CWBackPixmap | CWEventMask, &attrs);
 	if (panel->win == None) {
 		XFreePixmap(c->dpy, panel->bg);
 		return xerror("Failed to create window");
 	}
-
-	XSelectInput(c->dpy, panel->win, 
-			ExposureMask | StructureNotifyMask |
-			ButtonPressMask | ButtonReleaseMask | 
-			PointerMotionMask | EnterWindowMask | LeaveWindowMask);
 
 	panel->x = x;
 	panel->y = y;
@@ -111,32 +120,14 @@ static int create_window(struct panel *panel)
 	panel->height = h;
 
 	/* NETWM struts */
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_STRUT], XA_CARDINAL, 32, 
-			PropModeReplace, (unsigned char*)strut, 4);
+	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
+	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
+			strut, 12);
 
-	static const struct {
-		int s, e;
-	} where[] = {
-		[PANEL_POSITION_TOP] = {8, 9},
-		[PANEL_POSITION_BOTTOM] = {10, 11}
-	};
-
-	long strutp[12] = {strut[0], strut[1], strut[2], strut[3],};
-
-	strutp[where[t->position].s] = x;
-	strutp[where[t->position].e] = x+w;
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
-			XA_CARDINAL, 32, PropModeReplace, (unsigned char*)strutp, 12);
-
-	/* desktops */
-	tmp = -1;
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], XA_CARDINAL, 
-			32, PropModeReplace, (unsigned char*)&tmp, 1);
-
-	/* window type */
-	tmp = c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK];
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], XA_ATOM, 
-			32, PropModeReplace, (unsigned char*)&tmp, 1);
+	/* desktops and window type */
+	x_set_prop_int(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], -1);
+	x_set_prop_atom(c, panel->win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
+			c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK]);
 
 	/* place window on it's position */
 	XSizeHints size_hints;
@@ -165,14 +156,11 @@ static int create_window(struct panel *panel)
 			(unsigned char*)&mwm, sizeof(struct mwmhints) / 4);
 	#undef MWM_HINTS_DECORATIONS
 
-	/* set classhint */
-	XClassHint *ch;
-	if ((ch = XAllocClassHint())) {
-		ch->res_name = "panel";
-		ch->res_class = "bmpanel";
-		XSetClassHint(c->dpy, panel->win, ch);
-		XFree(ch);
-	}
+	/* classhint */
+	XClassHint ch;
+	ch.res_name = "panel";
+	ch.res_class = "bmpanel";
+	XSetClassHint(c->dpy, panel->win, &ch);
 
 	return 0;
 }
@@ -225,9 +213,6 @@ static int calculate_widgets_sizes(struct panel *panel)
 				separators++;
 		} else
 			num_fill++;
-
-		panel->widgets[i].y = 0;
-		panel->widgets[i].height = panel->height;
 	}
 
 	total_separators_width = separators * separator_width;
@@ -303,7 +288,6 @@ static int create_drawing_context(struct panel *panel)
 static void expose_whole_panel(struct panel *panel)
 {
 	Display *dpy = panel->connection.dpy;
-	GC dgc = panel->connection.default_gc;
 	int sepw = 0;
 	if (panel->theme.separator)
 		sepw += cairo_image_surface_get_width(panel->theme.separator);
@@ -330,8 +314,7 @@ static void expose_whole_panel(struct panel *panel)
 
 	}
 
-	XCopyArea(dpy, panel->bg, panel->win, dgc, 0, 0, 
-			panel->width, panel->height, 0, 0);
+	XClearWindow(dpy, panel->win);
 	XFlush(dpy);
 	panel->needs_expose = 0;
 }
@@ -339,7 +322,6 @@ static void expose_whole_panel(struct panel *panel)
 static void expose_panel(struct panel *panel)
 {
 	Display *dpy = panel->connection.dpy;
-	GC dgc = panel->connection.default_gc;
 
 	if (panel->needs_expose) {
 		expose_whole_panel(panel);
@@ -353,8 +335,8 @@ static void expose_panel(struct panel *panel)
 			pattern_image(panel->theme.background, panel->cr, 
 					w->x, 0, w->width);
 			(*w->interface->draw)(w);
-			XCopyArea(dpy, panel->bg, panel->win, dgc, w->x, w->y, 
-					w->width, w->height, w->x, w->y);
+			XClearArea(dpy, panel->win, w->x, 0, 
+					w->width, panel->height, False);
 			w->needs_expose = 0;
 		}
 	}
@@ -474,7 +456,6 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 {
 	struct panel *p = data;
 	Display *dpy = p->connection.dpy;
-	GC dgc = p->connection.default_gc;
 	size_t i;
 	struct widget *w;
 
@@ -489,8 +470,7 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 			break;
 
 		case Expose:
-			XCopyArea(dpy, p->bg, p->win, dgc, 0, 0, 
-					p->width, p->height, 0, 0);
+			XClearWindow(dpy, p->win);
 			XFlush(dpy);
 			break;
 		
