@@ -12,7 +12,7 @@ static int parse_position(const char *pos)
 		return PANEL_POSITION_TOP;
 	else if (strcmp("bottom", pos) == 0)
 		return PANEL_POSITION_BOTTOM;
-	xwarning("Unknown position type: %s, back to default 'top'", pos);
+	XWARNING("Unknown position type: %s, back to default 'top'", pos);
 	return PANEL_POSITION_TOP;
 }
 
@@ -21,7 +21,7 @@ static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree 
 	CLEAR_STRUCT(theme);
 	struct theme_format_entry *e = find_theme_format_entry(&tree->root, "panel");
 	if (!e)
-		return xerror("Failed to find 'panel' section in theme format file");
+		return XERROR("Failed to find 'panel' section in theme format file");
 
 	const char *v;
 	struct theme_format_entry *ee;
@@ -33,7 +33,7 @@ static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree 
 	
 	theme->background = parse_image_part_named("background", e, tree);
 	if (!theme->background)
-		return xerror("Missing 'background' image in panel section");
+		return XERROR("Missing 'background' image in panel section");
 
 	theme->separator = parse_image_part_named("separator", e, tree);
 
@@ -99,7 +99,7 @@ static int create_window(struct panel *panel)
 	/* background pixmap */
 	panel->bg = x_create_default_pixmap(c, w, h);
 	if (panel->bg == None)
-		return xerror("Failed to create background pixmap");
+		return XERROR("Failed to create background pixmap");
 	
 	attrs.background_pixmap = panel->bg;
 	attrs.event_mask = ExposureMask | StructureNotifyMask |
@@ -111,7 +111,7 @@ static int create_window(struct panel *panel)
 			CWBackPixmap | CWEventMask, &attrs);
 	if (panel->win == None) {
 		XFreePixmap(c->dpy, panel->bg);
-		return xerror("Failed to create window");
+		return XERROR("Failed to create window");
 	}
 
 	panel->x = x;
@@ -173,7 +173,7 @@ static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tr
 		struct widget_interface *we = lookup_widget_interface(e->name);
 		if (we) {
 			if (panel->widgets_n == PANEL_MAX_WIDGETS)
-				return xerror("error: Widgets limit reached");
+				return XERROR("error: Widgets limit reached");
 			
 			struct widget *w = &panel->widgets[panel->widgets_n];
 
@@ -184,7 +184,7 @@ static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tr
 			if ((*we->create_widget_private)(w, e, tree) == 0)
 				panel->widgets_n++;
 			else
-				xwarning("Failed to create widget: %s", e->name);
+				XWARNING("Failed to create widget: \"%s\"", e->name);
 		}
 	}
 	return 0;
@@ -218,12 +218,13 @@ static int calculate_widgets_sizes(struct panel *panel)
 	total_separators_width = separators * separator_width;
 
 	if (num_fill != 1)
-		return xerror("There always should be one widget with SIZE_FILL");
+		return XERROR("There always should be at least one widget with a "
+			      "SIZE_FILL size type (taskbar)");
 
 	if (total_constants_width + total_separators_width > 
 			panel->width - min_fill_size)
 	{
-		return xerror("Too many widgets here, try to remove one or more");
+		return XERROR("Too many widgets here, try to remove one or more");
 	}
 
 	for (i = 0; i < panel->widgets_n; ++i) {
@@ -258,7 +259,7 @@ static int calculate_widgets_sizes(struct panel *panel)
 void recalculate_widgets_sizes(struct panel *p)
 {
 	if (calculate_widgets_sizes(p) != 0)
-		xwarning("That's really bad, it should't happen");
+		XWARNING("That's really bad, it should't happen");
 }
 
 static int create_drawing_context(struct panel *panel)
@@ -271,7 +272,7 @@ static int create_drawing_context(struct panel *panel)
 
 	if (cairo_surface_status(bgs) != CAIRO_STATUS_SUCCESS) {
 		cairo_surface_destroy(bgs);
-		return xerror("Failed to create cairo surface");
+		return XERROR("Failed to create cairo surface");
 	}
 
 	panel->cr = cairo_create(bgs);
@@ -279,7 +280,7 @@ static int create_drawing_context(struct panel *panel)
 
 	if (cairo_status(panel->cr) != CAIRO_STATUS_SUCCESS) {
 		cairo_destroy(panel->cr);
-		return xerror("Failed to create cairo drawing context");
+		return XERROR("Failed to create cairo drawing context");
 	}
 
 	return 0;
@@ -351,13 +352,13 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 	/* connect to X server */
 	/* TODO: error handlers */
 	if (x_connect(&panel->connection, 0)) {
-		xwarning("Failed to connect to X server");
+		XWARNING("Failed to connect to X server");
 		goto create_panel_error_x;
 	}
 
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree)) {
-		xwarning("Failed to load theme format file");
+		XWARNING("Failed to load theme format file");
 		goto create_panel_error_theme;
 	}
 
@@ -366,12 +367,12 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 
 	/* create window */
 	if (create_window(panel)) {
-		xwarning("Can't create panel window");
+		XWARNING("Can't create panel window");
 		goto create_panel_error_win;
 	}
 
 	if (create_drawing_context(panel)) {
-		xwarning("Failed to create drawing context");
+		XWARNING("Failed to create drawing context");
 		goto create_panel_error_drawing_context;
 	}
 
@@ -380,12 +381,12 @@ int create_panel(struct panel *panel, struct theme_format_tree *tree)
 	
 	/* parse panel widgets */
 	if (parse_panel_widgets(panel, tree)) {
-		xwarning("Failed to load one of panel's widgets");
+		XWARNING("Failed to load one of panel's widgets");
 		goto create_panel_error_widgets;
 	}
 
 	if (calculate_widgets_sizes(panel)) {
-		xwarning("Failed to calculate widgets sizes");
+		XWARNING("Failed to calculate widgets sizes");
 		goto create_panel_error_widgets_sizes;
 	}
 
@@ -466,6 +467,8 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 		switch (e.type) {
 		
 		case NoExpose:
+		case MapNotify:
+		case ReparentNotify:
 			/* skip? */
 			break;
 
@@ -493,7 +496,8 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 			break;
 		
 		default:
-			xwarning("Unknown XEvent (type: %d)", e.type);
+			XWARNING("Unknown XEvent (type: %d, win: %d)", 
+				 e.type, e.xany.window);
 			break;
 		}
 	}

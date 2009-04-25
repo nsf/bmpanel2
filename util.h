@@ -20,10 +20,10 @@
 	do {								\
 		if (!(cond)) {						\
 			fprintf(stderr, "%s (%s:%d): ", STRINGIZE(cond),\
-					__FILE__, __LINE__, 		\
-					STRINGIZE(cond));		\
+				pretty_print_FILE(__FILE__), __LINE__);	\
 			fprintf(stderr, __VA_ARGS__);			\
 			fprintf(stderr, "\n");				\
+			exit(EXIT_FAILURE);				\
 		}							\
 	} while (0)
 #endif
@@ -32,9 +32,16 @@
   message utils
 **************************************************************************/
 
-int xerror(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
-void xwarning(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
-void xdie(const char *fmt, ...) __attribute__((format (printf, 1, 2)));
+#define XERROR(...) xerror(pretty_print_FILE(__FILE__), __LINE__, __VA_ARGS__)
+#define XWARNING(...) xwarning(pretty_print_FILE(__FILE__), __LINE__, __VA_ARGS__)
+#define XDIE(...) xdie(pretty_print_FILE(__FILE__), __LINE__, __VA_ARGS__)
+
+int xerror(const char *file, unsigned int line, const char *fmt, ...);
+void xwarning(const char *file, unsigned int line, const char *fmt, ...);
+void xdie(const char *file, unsigned int line, const char *fmt, ...);
+
+#define PRETTY_PRINT_FILE_BASE "bmpanel2"
+const char *pretty_print_FILE(const char *file);
 
 /**************************************************************************
   memory utils

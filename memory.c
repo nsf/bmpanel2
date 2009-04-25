@@ -29,7 +29,7 @@ void *impl_xmalloc(size_t size, struct memory_source *src)
 		ret = malloc(size + MEMDEBUG_OVERHEAD);
 
 	if (!ret)
-		xdie("Out of memory, xmalloc failed.");
+		XDIE("Out of memory, xmalloc failed.");
 
 	return ret;
 }
@@ -74,7 +74,7 @@ void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, uns
 		ret = malloc(size + MEMDEBUG_OVERHEAD);
 
 	if (!ret)
-		xdie("Out of memory, xmalloc(z) failed.");
+		XDIE("Out of memory, xmalloc(z) failed.");
 
 	struct memory_stat *stat = (struct memory_stat*)ret;
 	stat->file = file;

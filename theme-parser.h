@@ -12,6 +12,9 @@ struct theme_format_entry {
 
 	size_t children_n;
 	struct theme_format_entry *children;
+
+	size_t line;
+	/* TODO: line counter */
 };
 
 /* A theme format tree representation. 

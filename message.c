@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include "util.h"
 
-int xerror(const char *fmt, ...)
+int xerror(const char *file, unsigned int line, const char *fmt, ...)
 {
 	va_list args;
 
+	fprintf(stderr, "(%s:%u) ", file, line);
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	fputs("\n", stderr);
@@ -14,23 +15,31 @@ int xerror(const char *fmt, ...)
 	return -1;
 }
 
-void xwarning(const char *fmt, ...)
+void xwarning(const char *file, unsigned int line, const char *fmt, ...)
 {
 	va_list args;
 
+	fprintf(stderr, "(%s:%u) ", file, line);
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	fputs("\n", stderr);
 	va_end(args);
 }
 
-void xdie(const char *fmt, ...)
+void xdie(const char *file, unsigned int line, const char *fmt, ...)
 {
 	va_list args;
 
+	fprintf(stderr, "FATAL (%s:%u) ", file, line);
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	fputs("\n", stderr);
 	va_end(args);
 	exit(EXIT_FAILURE);
+}
+
+const char *pretty_print_FILE(const char *file)
+{
+	const char *base = strstr(file, PRETTY_PRINT_FILE_BASE);
+	return ((base) ? base + strlen(PRETTY_PRINT_FILE_BASE) + 1 : file);
 }

@@ -35,7 +35,7 @@ do {										\
 #else
 	#define CHECK_ARRAY_BOUNDS(array, index)				\
 		if (index >= array##_n) {					\
-			xwarning("array: bounds break: (r: %u, n: %u)", 	\
+			XWARNING("Array: bounds were broken: (r: %u, n: %u)", 	\
 					index, array##_n);			\
 			break;							\
 		}

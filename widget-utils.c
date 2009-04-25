@@ -9,10 +9,15 @@
 static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 		struct theme_format_entry *e)
 {
-	const char *v = find_theme_format_entry_value(e, "xywh");
-	if (v) {
-		if (4 == sscanf(v, "%d:%d:%d:%d", x, y, w, h))
+	/* XXX */
+	struct theme_format_entry *ee = find_theme_format_entry(e, "xywh");
+	if (ee && ee->value) {
+		if (4 == sscanf(ee->value, "%d:%d:%d:%d", x, y, w, h))
 			return 0;
+		else
+			XWARNING("Failed to parse \"xywh\" value, "
+				 "the format is: \"%%d:%%d:%%d:%%d\" (line: %u)",
+				 ee->line);
 	}
 	return -1;
 }
@@ -21,10 +26,14 @@ static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 static int parse_color(unsigned char *out, struct theme_format_entry *e)
 {
 	out[0] = out[1] = out[2] = 0;
-	const char *v = find_theme_format_entry_value(e, "color");
-	if (v) {
-		if (3 == sscanf(v, "%d %d %d", &out[0], &out[1], &out[2]))
+	struct theme_format_entry *ee = find_theme_format_entry(e, "color");
+	if (ee && ee->value) {
+		if (3 == sscanf(ee->value, "%d %d %d", &out[0], &out[1], &out[2]))
 			return 0;
+		else
+			XWARNING("Failed to parse \"color\" value, "
+				 "the format is: \"%%d %%d %%d\" (line: %u)",
+				 ee->line);
 	}
 	return -1;
 }
@@ -32,27 +41,32 @@ static int parse_color(unsigned char *out, struct theme_format_entry *e)
 int parse_2ints(int *out, const char *name, struct theme_format_entry *e)
 {
 	out[0] = out[1] = 0;
-	const char *v = find_theme_format_entry_value(e, name);
-	if (v) {
-		if (2 == sscanf(v, "%d %d", &out[0], &out[1]))
+	struct theme_format_entry *ee = find_theme_format_entry(e, name);
+	if (ee && ee->value) {
+		if (2 == sscanf(ee->value, "%d %d", &out[0], &out[1]))
 			return 0;
+		else
+			XWARNING("Failed to parse 2 ints \"%s\" value, "
+				 "the format is: \"%%d %%d\" (line: %u)", 
+				 name, ee->line);
 	}
 	return -1;
 }
 
 static int parse_align(struct theme_format_entry *e)
 {
-	const char *v = find_theme_format_entry_value(e, "align");
-	if (!v)
+	struct theme_format_entry *ee = find_theme_format_entry(e, "align");
+	if (!ee || !ee->value)
 		return TEXT_ALIGN_CENTER;
 
-	if (strcmp("left", v) == 0)
+	if (strcmp("left", ee->value) == 0)
 		return TEXT_ALIGN_LEFT;
-	else if (strcmp("right", v) == 0)
+	else if (strcmp("right", ee->value) == 0)
 		return TEXT_ALIGN_RIGHT;
-	else if (strcmp("center", v) == 0)
+	else if (strcmp("center", ee->value) == 0)
 		return TEXT_ALIGN_CENTER;
-	xwarning("Unknown align type: %s, back to default 'center'", v);
+	XWARNING("Unknown align type: \"%s\", back to default \"center\""
+		 " (line: %d)", ee->value, ee->line);
 	return TEXT_ALIGN_CENTER;
 }
 
@@ -70,7 +84,10 @@ cairo_surface_t *parse_image_part(struct theme_format_entry *e,
 		file = xmalloc(filestrlen);
 	else
 		file = alloca(filestrlen);
-	sprintf(file, "%s/%s", tree->dir, e->value);
+	if (!strcmp(tree->dir, "."))
+		strcpy(file, e->value);
+	else
+		sprintf(file, "%s/%s", tree->dir, e->value);
 
 	/* load file */
 	if (parse_image_dimensions(&x,&y,&w,&h,e) == 0)
@@ -79,7 +96,8 @@ cairo_surface_t *parse_image_part(struct theme_format_entry *e,
 		img = get_image(file);
 	
 	if (!img)
-		xwarning("Failed to get image: %s", file);
+		XWARNING("Failed to get image part (line: %u): %s", 
+			 e->line, file);
 
 	/* free path */
 	if (filestrlen > MAX_ALLOCA)
@@ -102,7 +120,8 @@ int parse_triple_image(struct triple_image *tbt, struct theme_format_entry *e,
 {
 	tbt->center = parse_image_part_named("center", e, tree);
 	if (!tbt->center)
-		return xerror("Can't parse 'center' image of taskbar button theme");
+		return XERROR("Failed to parse \"center\" image in a "
+			      "triple image pack");
 
 	tbt->left = parse_image_part_named("left", e, tree);
 	tbt->right = parse_image_part_named("right", e, tree);
@@ -231,8 +250,9 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	offsetx += ti->offset[0];
 	offsety += ti->offset[1];
 
-	cairo_translate(cr, x + offsetx, y + offsety);
+	cairo_translate(cr, x, y);
 	cairo_rectangle(cr, 0, 0, w, h);
+	cairo_translate(cr, offsetx, offsety);
 	cairo_clip(cr);
 	pango_cairo_update_layout(cr, dest);
 	pango_cairo_show_layout(cr, dest);

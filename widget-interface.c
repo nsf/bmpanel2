@@ -8,7 +8,7 @@ static struct widget_interface *widget_interfaces[MAX_WIDGET_INTERFACES];
 int register_widget_interface(struct widget_interface *wc)
 {
 	if (widget_interfaces_n == MAX_WIDGET_INTERFACES)
-		return xerror("Widget interfacees limit reached");
+		return XERROR("Widget interfaces limit was reached");
 	widget_interfaces[widget_interfaces_n++] = wc;
 	return 0;
 }

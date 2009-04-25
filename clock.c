@@ -37,11 +37,11 @@ static int parse_clock_theme(struct clock_theme *ct,
 		struct theme_format_entry *e, struct theme_format_tree *tree)
 {
 	if (parse_triple_image_named(&ct->background, "background", e, tree))
-		return xerror("Can't parse 'background' clock triple");
+		return XERROR("Can't parse 'background' clock triple");
 
 	if (parse_text_info(&ct->font, "font", e)) {
 		free_triple_image(&ct->background);
-		return xerror("Can't parse 'font' clock entry");
+		return XERROR("Can't parse 'font' clock entry");
 	}
 
 	/* TODO: remove these spacings, they can be emulated with image tweaks */

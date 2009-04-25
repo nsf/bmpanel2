@@ -6,6 +6,7 @@
  */
 struct parse_context {
 	char *cur;
+	size_t line;
 };
 
 /* predeclarations */
@@ -111,6 +112,7 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
  */
 static int parse_format_entry(struct theme_format_entry *te, int indent_level, struct parse_context *ctx)
 {
+	te->line = ctx->line;
 	/* extract name */
 	char *start = ctx->cur;
 	while (*ctx->cur != ' ' 
@@ -137,6 +139,7 @@ static int parse_format_entry(struct theme_format_entry *te, int indent_level, s
 		/* these two cases mean we're done here */
 		case '\n':
 			ctx->cur++; /* next line */
+			ctx->line++;
 		case '\0':
 			break;
 		default:
@@ -149,6 +152,7 @@ static int parse_format_entry(struct theme_format_entry *te, int indent_level, s
 			te->value = vstart;
 			*vend = '\0';
 			ctx->cur++; /* next line */
+			ctx->line++;
 	}
 	
 	/* delayed nullifing */
@@ -204,6 +208,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 			while (*ctx->cur != '\n' && *ctx->cur != '\0')
 				ctx->cur++;
 			if (*ctx->cur) {
+				ctx->line++;
 				ctx->cur++;
 				continue;
 			}
@@ -224,7 +229,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
  */
 static int parse_theme_format_string(struct theme_format_entry *tree, char *str)
 {
-	struct parse_context ctx = {str};
+	struct parse_context ctx = {str, 1};
 	CLEAR_STRUCT(tree);
 	/* trick the parser with -1 and parse zero-indent entries as children
 	   of the root entry */
@@ -251,16 +256,16 @@ int load_theme_format_tree(struct theme_format_tree *tree, const char *path)
 		xfree(theme_file);
 
 	if (!f)
-		return xerror("Failed to open theme file in dir: %s", path);
+		return XERROR("Failed to open theme file in dir: %s", path);
 
 	if (fseek(f, 0, SEEK_END) == -1)
-		return xerror("Theme file fseek failed");
+		return XERROR("Theme file fseek failed");
 	fsize = ftell(f);
 	if (fsize == -1)
-		return xerror("Theme file ftell failed");
+		return XERROR("Theme file ftell failed");
 	size = (size_t)fsize;
 	if (fseek(f, 0, SEEK_SET) == -1)
-		return xerror("Theme file fseek failed");
+		return XERROR("Theme file fseek failed");
 
 	/* read file contents to buffer */
 	buf = xmalloc(size+1);
@@ -268,7 +273,7 @@ int load_theme_format_tree(struct theme_format_tree *tree, const char *path)
 	read = fread(buf, 1, size, f);
 	if (read != size) {
 		xfree(buf);
-		return xerror("Read error in theme file in dir: %s", path);
+		return XERROR("Read error in theme file in dir: %s", path);
 	}
 
 	fclose(f);
@@ -277,7 +282,7 @@ int load_theme_format_tree(struct theme_format_tree *tree, const char *path)
 	int children_n = parse_theme_format_string(&tree->root, buf);
 	if (children_n == 0) {
 		xfree(buf);
-		return xerror("Theme format file is empty in dir: %s", path);
+		return XERROR("Theme format file is empty in dir: %s", path);
 	}
 
 	/* assign buffer and dir */

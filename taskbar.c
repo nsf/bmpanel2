@@ -47,13 +47,12 @@ static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
 	if (!ee)
 		return -1;
 
-	if (parse_triple_image(&ts->background, ee, tree)) {
-		xwarning("Can't parse taskbar button theme background");
+	if (parse_triple_image(&ts->background, ee, tree))
 		goto parse_taskbar_state_error_background;
-	}
 
 	if (parse_text_info(&ts->font, "font", ee)) {
-		xwarning("Can't parse taskbar button theme font");
+		XWARNING("Failed to parse \"font\" element in taskbar "
+			 "button state theme");
 		goto parse_taskbar_state_error_font;
 	}
 
@@ -75,12 +74,12 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 		struct theme_format_entry *e, struct theme_format_tree *tree)
 {
 	if (parse_taskbar_state(&tt->idle, "idle", e, tree)) {
-		xwarning("Can't parse 'idle' taskbar button theme");
+		XWARNING("Failed to parse \"idle\" taskbar button state theme");
 		goto parse_taskbar_button_theme_error_idle;
 	}
 
 	if (parse_taskbar_state(&tt->pressed, "pressed", e, tree)) {
-		xwarning("Can't parse 'pressed' taskbar button theme");
+		XWARNING("Failed to parse \"pressed\" taskbar button state theme");
 		goto parse_taskbar_button_theme_error_pressed;
 	}
 
@@ -525,6 +524,9 @@ static void button_click(struct widget *w, XButtonEvent *e)
 			wc.stack_mode = Above;
 			XConfigureWindow(c->dpy, t->win, CWStackMode, &wc);
 		}
+	}
+	if (e->button == 2) {
+		g_main_loop_quit(w->panel->loop);
 	}
 }
 
