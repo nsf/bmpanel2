@@ -1,22 +1,34 @@
 #include <stdio.h>
 #include "gui.h"
 #include "theme-parser.h"
+#include "xdg.h"
 
 int main(int argc, char **argv)
 {
 	struct theme_format_tree tree;
 	struct panel p;
 
-	if (0 != load_theme_format_tree(&tree, "."))
-		xdie("Failed to load theme file");
+	size_t dirs_n, i;
+	char **dirs = get_XDG_CONFIG_DIRS(&dirs_n);
+	printf("---- config dirs ----\n");
+	for (i = 0; i < dirs_n; ++i)
+		printf("%s\n", dirs[i]);
+	free_XDG(dirs);
+	
+	dirs = get_XDG_DATA_DIRS(&dirs_n);
+	printf("---- data dirs ----\n");
+	for (i = 0; i < dirs_n; ++i)
+		printf("%s\n", dirs[i]);
+	free_XDG(dirs);
 
-	printf("theme from dir: '%s' loaded\n", tree.dir);
+	if (0 != load_theme_format_tree(&tree, "."))
+		XDIE("Failed to load theme file");
 	
 	register_taskbar();
 	register_clock();
 
 	if (0 != create_panel(&p, &tree))
-		xdie("Failed to create panel");
+		XDIE("Failed to create a panel");
 
 	panel_main_loop(&p);
 
