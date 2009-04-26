@@ -236,7 +236,8 @@ static int parse_theme_format_string(struct theme_format_entry *tree, char *str)
 	return parse_children(tree, -1, &ctx);
 }
 
-int load_theme_format_tree(struct theme_format_tree *tree, const char *path)
+int load_theme_format_tree(struct theme_format_tree *tree, const char *path,
+			   const char *filename)
 {
 	long fsize;
 	size_t size;
@@ -244,13 +245,13 @@ int load_theme_format_tree(struct theme_format_tree *tree, const char *path)
 	char *buf;
 	FILE *f;
 	char *theme_file;
-	size_t theme_file_strlen = strlen(path) + 7;
+	size_t theme_file_strlen = strlen(path) + 1 + strlen(filename) + 1;
 
 	if (theme_file_strlen > MAX_ALLOCA)
 		theme_file = xmalloc(theme_file_strlen);
 	else
 		theme_file = alloca(theme_file_strlen);
-	sprintf(theme_file, "%s/theme", path);
+	sprintf(theme_file, "%s/%s", path, filename);
 	f = fopen(theme_file, "rb");
 	if (theme_file_strlen > MAX_ALLOCA)
 		xfree(theme_file);

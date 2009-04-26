@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 		printf("%s\n", dirs[i]);
 	free_XDG(dirs);
 
-	if (0 != load_theme_format_tree(&tree, "."))
+	if (0 != load_theme_format_tree(&tree, ".", "theme"))
 		XDIE("Failed to load theme file");
 	
 	register_taskbar();

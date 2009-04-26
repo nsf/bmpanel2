@@ -36,16 +36,17 @@ struct theme_format_tree {
 	struct theme_format_entry root;
 };
 
-/* Load the "tree" from a file located at "path"/theme. The "tree" structure
- * should be empty (all zeroes) or uninitialized (stack garbage). After
- * successful loading "tree" should be released using "free_theme_format_tree"
- * function when the data isn't needed anymore.
+/* Load the "tree" from a file located at "path"/"filename". The "tree"
+ * structure should be empty (all zeroes) or uninitialized (stack garbage).
+ * After successful loading "tree" should be released using
+ * "free_theme_format_tree" function when the data isn't needed anymore.
  *
  * RETURNS
  * 	true - success.
  * 	false - error (logged to stderr).
  */
-int load_theme_format_tree(struct theme_format_tree *tree, const char *path);
+int load_theme_format_tree(struct theme_format_tree *tree, const char *path,
+			   const char *filename);
 void free_theme_format_tree(struct theme_format_tree *tree);
 
 /* Find child entry of entry "e" with name "name".

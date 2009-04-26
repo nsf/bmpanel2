@@ -344,7 +344,6 @@ static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
 
 int get_taskbar_task_at(struct widget *w, int x, int y)
 {
-	/* TODO: we can find task faster, since they all have same width */
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 
 	size_t i;
@@ -427,7 +426,6 @@ static void draw(struct widget *w)
 
 		draw_task(t, &tw->theme, cr, w->panel->layout,
 				x, taskw, t->win == tw->active);
-		/* TODO: separators */
 		x += taskw;
 	}
 }
