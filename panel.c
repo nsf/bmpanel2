@@ -386,9 +386,9 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 	}
 
 	/* all ok, map window */
+	expose_panel(panel);
 	XMapWindow(c->dpy, panel->win);
 	XFlush(c->dpy);
-	expose_panel(panel);
 
 	return 0;
 
