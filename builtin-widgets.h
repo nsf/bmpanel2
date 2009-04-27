@@ -66,12 +66,26 @@ struct desktops_state {
 	cairo_surface_t *left_corner;
 	struct triple_image background;
 	cairo_surface_t *right_corner;
+
 	struct text_info font;
+};
+
+struct desktops_desktop {
+	char *name;
+	int x;
+	int w;
 };
 
 struct desktops_theme {
 	struct desktops_state idle;
 	struct desktops_state pressed;
+	cairo_surface_t *separator;
+};
+
+struct desktops_widget {
+	struct desktops_theme theme;
+	DECLARE_ARRAY(struct desktops_desktop, desktops);
+	int active;
 };
 
 /**************************************************************************
