@@ -49,7 +49,7 @@ static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
 		return -1;
 	}
 
-	if (parse_triple_image(&ts->background, ee, tree))
+	if (parse_triple_image(&ts->background, ee, tree, 1))
 		goto parse_taskbar_state_error_background;
 
 	if (parse_text_info_named(&ts->font, "font", ee, 1))

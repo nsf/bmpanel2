@@ -35,7 +35,8 @@ cairo_surface_t *parse_image_part_named(const char *name,
 /* triple image */
 int parse_triple_image(struct triple_image *tri, 
 		       struct config_format_entry *e, 
-		       struct config_format_tree *tree);
+		       struct config_format_tree *tree,
+		       int required);
 int parse_triple_image_named(struct triple_image *tri, 
 			     const char *name, 
 			     struct config_format_entry *e, 

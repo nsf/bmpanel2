@@ -86,6 +86,7 @@ void register_taskbar();
 void register_desktop_switcher();
 void register_systray();
 void register_clock();
+void register_decor();
 
 /**************************************************************************
   Panel

@@ -6,22 +6,12 @@ struct config_format_tree g_settings;
 
 #define BMPANEL2_CONFIG_FILE "bmpanel2/bmpanel2rc"
 
-int is_file_exists(const char *path)
-{
-	FILE *f = fopen(path, "r");
-	if (f) {
-		fclose(f);
-		return 1;
-	}
-	return 0;
-}
-
 void load_settings()
 {
 	char buf[4096];
 	size_t config_dirs_len;
 	char **config_dirs = get_XDG_CONFIG_DIRS(&config_dirs_len);
-	int exists = 0;
+	int found = 0;
 
 	size_t i;
 	for (i = 0; i < config_dirs_len; ++i) {
@@ -29,13 +19,13 @@ void load_settings()
 			 config_dirs[i]);
 		buf[sizeof(buf)-1] = '\0';
 		if (is_file_exists(buf)) {
-			exists = 1;
+			found = 1;
 			break;
 		}
 	}
 	free_XDG(config_dirs);
 
-	if (exists)
+	if (found)
 		load_config_format_tree(&g_settings, buf);
 }
 

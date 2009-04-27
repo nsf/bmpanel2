@@ -58,4 +58,28 @@ struct clock_widget {
 	struct clock_theme theme;
 };
 
+/**************************************************************************
+  Desktop switcher
+**************************************************************************/
+
+struct desktops_state {
+	cairo_surface_t *left_corner;
+	struct triple_image background;
+	cairo_surface_t *right_corner;
+	struct text_info font;
+};
+
+struct desktops_theme {
+	struct desktops_state idle;
+	struct desktops_state pressed;
+};
+
+/**************************************************************************
+  Decor
+**************************************************************************/
+
+struct decor_widget {
+	cairo_surface_t *image;
+};
+
 #endif /* BMPANEL2_BUILTIN_WIDGETS_H */

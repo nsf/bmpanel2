@@ -127,10 +127,10 @@ cairo_surface_t *parse_image_part_named(const char *name,
 }
 
 int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e, 
-		       struct config_format_tree *tree)
+		       struct config_format_tree *tree, int required)
 {
-	tbt->center = parse_image_part_named("center", e, tree, 1);
-	if (!tbt->center)
+	tbt->center = parse_image_part_named("center", e, tree, required);
+	if (!tbt->center && required)
 		return -1;
 
 	tbt->left = parse_image_part_named("left", e, tree, 0);
@@ -149,12 +149,13 @@ int parse_triple_image_named(struct triple_image *tri, const char *name,
 		return -1;
 	}
 
-	return parse_triple_image(tri, ee, tree);
+	return parse_triple_image(tri, ee, tree, required);
 }
 
 void free_triple_image(struct triple_image *tbt)
 {
-	cairo_surface_destroy(tbt->center);
+	if (tbt->center)
+		cairo_surface_destroy(tbt->center);
 	if (tbt->left) 
 		cairo_surface_destroy(tbt->left);
 	if (tbt->right) 

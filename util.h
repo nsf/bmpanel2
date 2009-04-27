@@ -1,6 +1,7 @@
 #ifndef BMPANEL2_UTIL_H 
 #define BMPANEL2_UTIL_H
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -27,6 +28,16 @@
 		}							\
 	} while (0)
 #endif
+
+static inline int is_file_exists(const char *file)
+{
+	FILE *f = fopen(file, "r");
+	if (f) {
+		fclose(f);
+		return 1;
+	}
+	return 0;
+}
 
 /**************************************************************************
   message utils

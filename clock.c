@@ -14,7 +14,7 @@ static struct widget_interface clock_interface = {
 	destroy_widget_private,
 	draw,
 	0, /* button_click */
-	clock_tick, /* clock_tick */
+	clock_tick,
 	0, /* prop_change */
 	0, /* mouse_enter */
 	0, /* mouse_leave */
@@ -36,14 +36,10 @@ void register_clock()
 static int parse_clock_theme(struct clock_theme *ct, 
 		struct config_format_entry *e, struct config_format_tree *tree)
 {
-	if (parse_triple_image_named(&ct->background, "background", e, tree, 1))
+	if (parse_text_info_named(&ct->font, "font", e, 1))
 		return -1;
 
-	if (parse_text_info_named(&ct->font, "font", e, 1)) {
-		free_triple_image(&ct->background);
-		return -1;
-	}
-
+	parse_triple_image_named(&ct->background, "background", e, tree, 0);
 	ct->time_format = parse_string("time_format", e, "%H:%M:%S");
 
 	return 0;
@@ -82,10 +78,13 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	text_extents(w->panel->layout, cw->theme.font.pfd, 
 			buftime, &text_width, 0);
 
-	if (cw->theme.background.left)
-		pics_width += cairo_image_surface_get_width(cw->theme.background.left);
-	if (cw->theme.background.right)
-		pics_width += cairo_image_surface_get_width(cw->theme.background.right);
+	/* background is drawn only if the center is here */
+	if (cw->theme.background.center) {
+		if (cw->theme.background.left)
+			pics_width += cairo_image_surface_get_width(cw->theme.background.left);
+		if (cw->theme.background.right)
+			pics_width += cairo_image_surface_get_width(cw->theme.background.right);
+	}
 	w->width = text_width + pics_width;
 	w->private = cw;
 	return 0;
@@ -116,28 +115,33 @@ static void draw(struct widget *w)
 	/* calcs */
 	int leftw = 0;
 	int rightw = 0;
-	if (cw->theme.background.left)
-		leftw += cairo_image_surface_get_width(cw->theme.background.left);
-	if (cw->theme.background.right)
-		rightw += cairo_image_surface_get_width(cw->theme.background.right);
-	int centerw = w->width - leftw - rightw;
+	int centerw = w->width;
 
-	/* left part */
-	if (cw->theme.background.left)
-		blit_image(cw->theme.background.left, cr, x, 0);
-	x += leftw;
+	/* draw background only if the center image is here */
+	if (cw->theme.background.center) {
+		if (cw->theme.background.left)
+			leftw += cairo_image_surface_get_width(cw->theme.background.left);
+		if (cw->theme.background.right)
+			rightw += cairo_image_surface_get_width(cw->theme.background.right);
+		centerw -= leftw + rightw;
 
-	/* center part */
-	pattern_image(cw->theme.background.center, cr, x, 0, 
-			centerw);
-	x += centerw;
+		/* left part */
+		if (cw->theme.background.left)
+			blit_image(cw->theme.background.left, cr, x, 0);
+		x += leftw;
 
-	/* right part */
-	if (cw->theme.background.right)
-		blit_image(cw->theme.background.right, cr, x, 0);
+		/* center part */
+		pattern_image(cw->theme.background.center, cr, x, 0, 
+				centerw);
+		x += centerw;
+
+		/* right part */
+		if (cw->theme.background.right)
+			blit_image(cw->theme.background.right, cr, x, 0);
+		x -= centerw;
+	}
 
 	/* text */
-	x -= centerw;
 	draw_text(cr, w->panel->layout, &cw->theme.font, buftime, 
 			x, 0, centerw, w->panel->height);
 }

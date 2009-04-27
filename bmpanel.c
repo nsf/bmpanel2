@@ -4,6 +4,36 @@
 #include "xdg.h"
 #include "settings.h"
 
+void load_theme(struct config_format_tree *tree, const char *name)
+{
+	char buf[4096];
+	size_t data_dirs_len;
+	char **data_dirs = get_XDG_DATA_DIRS(&data_dirs_len);
+	int found = 0;
+
+	size_t i;
+	for (i = 0; i < data_dirs_len; ++i) {
+		snprintf(buf, sizeof(buf), "%s/bmpanel2/themes/%s/theme",
+			 data_dirs[i], name);
+		buf[sizeof(buf)-1] = '\0';
+		if (is_file_exists(buf)) {
+			found = 1;
+			break;
+		}
+	}
+	free_XDG(data_dirs);
+
+	if (found) {
+		if (0 != load_config_format_tree(tree, buf))
+			XDIE("Failed to load theme: %s", name);
+	} else {
+		/* try to load it in-place */
+		snprintf(buf, sizeof(buf), "%s/theme", name);
+		if (0 != load_config_format_tree(tree, buf))
+			XDIE("Failed to load theme: %s", name);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	struct config_format_tree tree;
@@ -15,11 +45,11 @@ int main(int argc, char **argv)
 	if (!theme_name)
 		theme_name = "native";
 
-	if (0 != load_config_format_tree(&tree, "theme"))
-		XDIE("Failed to load theme file");
+	load_theme(&tree, theme_name);
 	
 	register_taskbar();
 	register_clock();
+	register_decor();
 
 	if (0 != create_panel(&p, &tree))
 		XDIE("Failed to create a panel");
