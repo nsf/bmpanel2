@@ -7,9 +7,6 @@ static void draw(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
 static void prop_change(struct widget *w, XPropertyEvent *e);
 
-static void mouse_enter(struct widget *w);
-static void mouse_leave(struct widget *w);
-
 static void dnd_start(struct widget *w, struct drag_info *di);
 static void dnd_drag(struct widget *w, struct drag_info *di);
 static void dnd_drop(struct widget *w, struct drag_info *di);
@@ -153,7 +150,7 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	if (i == -1)
 		ARRAY_APPEND(tw->tasks, t);
 	else
-		ARRAY_INSERT_AFTER(tw->tasks, i, t);
+		ARRAY_INSERT_AFTER(tw->tasks, (size_t)i, t);
 }
 
 static void remove_task(struct taskbar_widget *tw, size_t i)
@@ -278,12 +275,12 @@ static void move_task(struct taskbar_widget *tw, int what, int where)
 	struct taskbar_task t = tw->tasks[what];
 	if (what == where)
 		return;
-	ARRAY_REMOVE(tw->tasks, what);
+	ARRAY_REMOVE(tw->tasks, (size_t)what);
 	if (where > what) {
 		where -= 1;
-		ARRAY_INSERT_AFTER(tw->tasks, where, t);
+		ARRAY_INSERT_AFTER(tw->tasks, (size_t)where, t);
 	} else {
-		ARRAY_INSERT_BEFORE(tw->tasks, where, t);
+		ARRAY_INSERT_BEFORE(tw->tasks, (size_t)where, t);
 	}
 }
 
@@ -311,7 +308,8 @@ static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
 	wins = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_CLIENT_LIST], 
 			XA_WINDOW, &num);
 
-	size_t i, j;
+	size_t i;
+	int j;
 	for (i = 0; i < tw->tasks_n; ++i) {
 		struct taskbar_task *t = &tw->tasks[i];
 		int delete = 1;
@@ -325,9 +323,9 @@ static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
 			remove_task(tw, i--);
 	}
 
-	for (i = 0; i < num; ++i) {
-		if (find_task_by_window(tw, wins[i]) == -1)
-			add_task(tw, c, wins[i]);
+	for (j = 0; j < num; ++j) {
+		if (find_task_by_window(tw, wins[j]) == -1)
+			add_task(tw, c, wins[j]);
 	}
 	
 	XFree(wins);
@@ -337,7 +335,7 @@ static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
   Taskbar interface
 **************************************************************************/
 
-int get_taskbar_task_at(struct widget *w, int x, int y)
+static int get_taskbar_task_at(struct widget *w, int x)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 
@@ -460,12 +458,12 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		struct taskbar_task t = tw->tasks[ti];
 		t.desktop = x_get_window_desktop(c, t.win);
 
-		ARRAY_REMOVE(tw->tasks, ti);
+		ARRAY_REMOVE(tw->tasks, (size_t)ti);
 		int insert_after = find_last_task_by_desktop(tw, t.desktop);
 		if (insert_after == -1)
 			ARRAY_APPEND(tw->tasks, t);
 		else
-			ARRAY_INSERT_AFTER(tw->tasks, insert_after, t);
+			ARRAY_INSERT_AFTER(tw->tasks, (size_t)insert_after, t);
 		w->needs_expose = 1;
 		return;
 	}
@@ -502,7 +500,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 static void button_click(struct widget *w, XButtonEvent *e)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-	int ti = get_taskbar_task_at(w, e->x, e->y);
+	int ti = get_taskbar_task_at(w, e->x);
 	if (ti == -1)
 		return;
 	struct taskbar_task *t = &tw->tasks[ti];
@@ -528,9 +526,8 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	struct x_connection *c = &w->panel->connection;
-	struct panel *p = w->panel;
 
-	int ti = get_taskbar_task_at(di->taken_on, di->taken_x, di->taken_y);
+	int ti = get_taskbar_task_at(di->taken_on, di->taken_x);
 	if (ti == -1)
 		return;
 
@@ -586,7 +583,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 	/* check if we have something draggable */
 	if (tw->taken != None) {
 		int taken = find_task_by_window(tw, tw->taken);
-		int dropped = get_taskbar_task_at(w, di->dropped_x, di->dropped_y);
+		int dropped = get_taskbar_task_at(w, di->dropped_x);
 		if (di->taken_on == di->dropped_on && 
 		    taken != -1 && dropped != -1 &&
 		    tw->tasks[taken].desktop == tw->tasks[dropped].desktop)

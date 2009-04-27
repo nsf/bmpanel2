@@ -28,7 +28,7 @@ static int parse_color(unsigned char *out, struct config_format_entry *e)
 	out[0] = out[1] = out[2] = 0;
 	struct config_format_entry *ee = find_config_format_entry(e, "color");
 	if (ee && ee->value) {
-		if (3 == sscanf(ee->value, "%d %d %d", &out[0], &out[1], &out[2]))
+		if (3 == sscanf(ee->value, "%hhu %hhu %hhu", &out[0], &out[1], &out[2]))
 			return 0;
 		else
 			XWARNING("Failed to parse \"color\" value, "
@@ -330,8 +330,8 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 	array = xmalloc(sizeof(uint32_t) * size);
 	for (i = 0; i < size; ++i) {
 		unsigned char *a, *d;
-		a = (char*)&array[i];
-		d = (char*)&locdata[i];
+		a = (unsigned char*)&array[i];
+		d = (unsigned char*)&locdata[i];
 		a[0] = d[0];
 		a[1] = d[1];
 		a[2] = d[2];

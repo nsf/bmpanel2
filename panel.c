@@ -23,11 +23,9 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 	if (!e)
 		return XERROR("Failed to find 'panel' section in theme format file");
 
-	const char *v;
-	struct config_format_entry *ee;
 
 	theme->position = PANEL_POSITION_TOP; /* default */
-	v = find_config_format_entry_value(e, "position");
+	const char *v = find_config_format_entry_value(e, "position");
 	if (v)
 		theme->position = parse_position(v);
 	
@@ -90,8 +88,6 @@ static int create_window(struct panel *panel)
 
 	int x,y,w,h;
 	long strut[12] = {0};
-	long tmp;
-	Window win;
 	XSetWindowAttributes attrs;
 	
 	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
@@ -237,7 +233,7 @@ static int calculate_widgets_sizes(struct panel *panel)
 			x += separator_width;
 	}
 
-	for (i = panel->widgets_n - 1; i >= 0; --i) {
+	for (i = panel->widgets_n - 1;; --i) {
 		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_FILL)
 			break;
 
@@ -363,7 +359,6 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 	}
 
 	struct x_connection *c = &panel->connection;
-	struct panel_theme *t = &panel->theme;
 
 	/* create window */
 	if (create_window(panel)) {
@@ -432,14 +427,6 @@ void destroy_panel(struct panel *panel)
 	x_disconnect(&panel->connection);
 }
 
-static int point_in_rect(int px, int py, int x, int y, int w, int h)
-{
-	return (px > x &&
-		px < x + w &&
-		py > y &&
-		py < y + h);
-}
-
 static gboolean panel_second_timeout(gpointer data)
 {
 	struct panel *p = data;
@@ -451,14 +438,14 @@ static gboolean panel_second_timeout(gpointer data)
 			(*w->interface->clock_tick)(w);
 	}
 	expose_panel(p);
+	return TRUE;
 }
 
 static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
 {
+	//ENSURE(condition == G_IO_IN, "Input condition failed");
 	struct panel *p = data;
 	Display *dpy = p->connection.dpy;
-	size_t i;
-	struct widget *w;
 
 	while (XPending(dpy)) {
 		XEvent e;

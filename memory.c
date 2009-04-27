@@ -104,7 +104,7 @@ void *impl_xmallocz(size_t size, struct memory_source *src, const char *file, un
 	return ret;
 }
 
-void impl_xfree(void *ptr, struct memory_source *src, const char *file, unsigned int line)
+void impl_xfree(void *ptr, struct memory_source *src)
 {
 	if (src->free && (src->flags & MEMSRC_RETURN_IMMEDIATELY)) {
 		(*src->free)(ptr, src);
@@ -135,7 +135,6 @@ char *impl_xstrdup(const char *str, struct memory_source *src, const char *file,
 	char *ret = impl_xmalloc(len+1, src, file, line);
 	return strcpy(ret, str);
 }
-#endif
 /**************************************************************************
   Debug report utils
 **************************************************************************/
@@ -200,6 +199,7 @@ static void print_source_stat_ascii(struct memory_source *src)
 		printf("\\============+============+===============================================/\n");
 	}
 }
+#endif
 
 void xmemstat(struct memory_source **sources, size_t n, bool ascii)
 {

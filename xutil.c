@@ -208,7 +208,7 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 
 int x_is_window_iconified(struct x_connection *c, Window win)
 {
-	long *data;
+	unsigned long *data;
 	int ret = 0;
 
 	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE], 

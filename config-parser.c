@@ -178,7 +178,7 @@ static int parse_children(struct config_format_entry *te, int indent_level, stru
 {
 	int children_indent = -1;
 	size_t children = 0;
-	char *pos;
+	char *pos = ctx->cur;
 	te->children_n = count_children(indent_level, ctx, &children_indent);
 	/* if there is no children, return immediately */
 	if (!te->children_n)
@@ -316,7 +316,7 @@ void free_config_format_tree(struct config_format_tree *tree)
 struct config_format_entry *find_config_format_entry(struct config_format_entry *e, 
 		const char *name)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < e->children_n; ++i) {
 		if (strcmp(e->children[i].name, name) == 0)
 			return &e->children[i];

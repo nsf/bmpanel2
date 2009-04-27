@@ -15,7 +15,6 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 		p->last_click_x = 0;
 		p->last_click_y = 0;
 	}
-	int drag_status = -1;
 
 	size_t i;
 	for (i = 0; i < p->widgets_n; ++i) {

@@ -125,17 +125,17 @@ extern struct memory_source msrc_default;
 #else
 	#define xmalloc(a) 	impl_xmalloc((a), &msrc_default, __FILE__, __LINE__)
 	#define xmallocz(a) 	impl_xmallocz((a), &msrc_default, __FILE__, __LINE__)
-	#define xfree(a) 	impl_xfree((a), &msrc_default, __FILE__, __LINE__)
+	#define xfree(a) 	impl_xfree((a), &msrc_default)
 	#define xstrdup(a) 	impl_xstrdup((a), &msrc_default, __FILE__, __LINE__)
 	
 	#define xmalloc_from_source(a, s) 	impl_xmalloc((a), (s), __FILE__, __LINE__)
 	#define xmallocz_from_source(a, s) 	impl_xmallocz((a), (s), __FILE__, __LINE__)
-	#define xfree_from_source(a, s) 	impl_xfree((a), (s), __FILE__, __LINE__)
+	#define xfree_from_source(a, s) 	impl_xfree((a), (s))
 	#define xstrdup_from_source(a, s) 	impl_xstrdup((a), (s), __FILE__, __LINE__)
 
 	void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, unsigned int line);
 	void *impl_xmallocz(size_t size, struct memory_source *src, const char *file, unsigned int line);
-	void impl_xfree(void *ptr, struct memory_source *src, const char *file, unsigned int line);
+	void impl_xfree(void *ptr, struct memory_source *src);
 	char *impl_xstrdup(const char *str, struct memory_source *src, const char *file, unsigned int line);
 #endif
 
