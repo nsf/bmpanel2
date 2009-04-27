@@ -62,6 +62,6 @@ int main(int argc, char **argv)
 
 	free_settings();
 
-	xmemstat(0, 0, false);
+	xmemstat(0, 0, 1);
 	return EXIT_SUCCESS;
 }

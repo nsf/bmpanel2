@@ -204,14 +204,12 @@ static int calculate_widgets_sizes(struct panel *panel)
 	size_t i;
 
 	for (i = 0; i < panel->widgets_n; ++i) {
-		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_CONSTANT) {
+		struct widget *w = &panel->widgets[i];
+		if (w->interface->size_type == WIDGET_SIZE_CONSTANT) {
 			num_constant++;
-			total_constants_width += panel->widgets[i].width;
-			if (panel->widgets[i].width && 
-			    !panel->widgets[i].no_separator)
-			{
+			total_constants_width += w->width;
+			if (w->width && !w->no_separator)
 				separators++;
-			}
 		} else
 			num_fill++;
 	}
@@ -223,7 +221,7 @@ static int calculate_widgets_sizes(struct panel *panel)
 			      "SIZE_FILL size type (taskbar)");
 
 	if (total_constants_width + total_separators_width > 
-			panel->width - min_fill_size)
+	    panel->width - min_fill_size)
 	{
 		return XERROR("Too many widgets here, try to remove one or more");
 	}

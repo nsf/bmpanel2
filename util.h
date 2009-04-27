@@ -139,11 +139,11 @@ extern struct memory_source msrc_default;
 	char *impl_xstrdup(const char *str, struct memory_source *src, const char *file, unsigned int line);
 #endif
 
+/* #define MEMDEBUG_ASCII_STATS 1 */ 
 /*
  * Prints out an info table about memory sources array "sources" of size "n".
- * If "ascii" is true, prints using ASCII characters only. Else, uses unicode 
- * box drawing characters.
+ * "details" boolean for detailed statistics (memleaks).
  */
-void xmemstat(struct memory_source **sources, size_t n, bool ascii);
+void xmemstat(struct memory_source **sources, size_t n, int details);
 
 #endif /* BMPANEL2_UTIL_H */

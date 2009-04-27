@@ -138,7 +138,8 @@ char *impl_xstrdup(const char *str, struct memory_source *src, const char *file,
 /**************************************************************************
   Debug report utils
 **************************************************************************/
-static void print_source_stat(struct memory_source *src)
+#ifndef MEMDEBUG_ASCII_STATS
+static void print_source_stat(struct memory_source *src, int details)
 {
 	int diff = (int)src->allocs - src->frees;
 
@@ -150,7 +151,7 @@ static void print_source_stat(struct memory_source *src)
 	printf("┃ Diff:        %-58d ┃\n", diff);
 	printf("┃ Bytes taken: %-58u ┃\n", src->bytes);
 	printf("┃  + overhead: %-58d ┃\n", diff * MEMDEBUG_OVERHEAD);
-	if (!diff || !src->stat_list) {
+	if (!diff || !src->stat_list || !details) {
 		printf("┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n");
 	} else {
 		printf("┠────────────┬────────────┬───────────────────────────────────────────────┨\n");
@@ -168,8 +169,8 @@ static void print_source_stat(struct memory_source *src)
 		printf("┗━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n");
 	}
 }
-
-static void print_source_stat_ascii(struct memory_source *src)
+#else
+static void print_source_stat(struct memory_source *src, int details)
 {
 	int diff = (int)src->allocs - src->frees;
 
@@ -181,7 +182,7 @@ static void print_source_stat_ascii(struct memory_source *src)
 	printf("| Diff:        %-58d |\n", diff);
 	printf("| Bytes taken: %-58u |\n", src->bytes);
 	printf("|  + overhead: %-58d |\n", diff * MEMDEBUG_OVERHEAD);
-	if (!diff || !src->stat_list) {
+	if (!diff || !src->stat_list || !details) {
 		printf("\\=========================================================================/\n");
 	} else {
 		printf("+------------+------------+-----------------------------------------------+\n");
@@ -199,9 +200,10 @@ static void print_source_stat_ascii(struct memory_source *src)
 		printf("\\============+============+===============================================/\n");
 	}
 }
-#endif
+#endif /* #ifndef else MEMDEBUG_ASCII_STATS */
+#endif /* #ifdef else NDEBUG */
 
-void xmemstat(struct memory_source **sources, size_t n, bool ascii)
+void xmemstat(struct memory_source **sources, size_t n, int details)
 {
 #ifdef NDEBUG
 	printf("Memory debug is disabled\n");
@@ -209,10 +211,7 @@ void xmemstat(struct memory_source **sources, size_t n, bool ascii)
 	size_t i;
 
 	printf("\033[32m");
-	if (ascii) 
-		print_source_stat_ascii(&msrc_default);
-	else
-		print_source_stat(&msrc_default);
+	print_source_stat(&msrc_default, details);
 	
 	for (i = 0; i < n; ++i) {
 		if (i % 2)
@@ -220,10 +219,7 @@ void xmemstat(struct memory_source **sources, size_t n, bool ascii)
 		else 
 			printf("\033[0m");
 
-		if (ascii)
-			print_source_stat_ascii(sources[i]);
-		else
-			print_source_stat(sources[i]);
+		print_source_stat(sources[i], details);
 	}
 	printf("\033[0m");
 	fflush(stdout);
