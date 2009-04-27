@@ -1,8 +1,8 @@
 #include <time.h>
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct theme_format_entry *e, 
-		struct theme_format_tree *tree);
+static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void clock_tick(struct widget *w);
@@ -34,20 +34,15 @@ void register_clock()
 **************************************************************************/
 
 static int parse_clock_theme(struct clock_theme *ct, 
-		struct theme_format_entry *e, struct theme_format_tree *tree)
+		struct config_format_entry *e, struct config_format_tree *tree)
 {
-	if (parse_triple_image_named(&ct->background, "background", e, tree))
-		return XERROR("Can't parse 'background' clock triple");
+	if (parse_triple_image_named(&ct->background, "background", e, tree, 1))
+		return -1;
 
-	if (parse_text_info(&ct->font, "font", e)) {
+	if (parse_text_info_named(&ct->font, "font", e, 1)) {
 		free_triple_image(&ct->background);
-		return XERROR("Can't parse 'font' clock entry");
+		return -1;
 	}
-
-	/* TODO: remove these spacings, they can be emulated with image tweaks */
-	/* TODO: create an example of how they are tweaked */
-	ct->text_spacing = parse_int("text_spacing", e, 0);
-	ct->spacing = parse_int("spacing", e, 0);
 
 	ct->time_format = parse_string("time_format", e, "%H:%M:%S");
 
@@ -65,12 +60,13 @@ static void free_clock_theme(struct clock_theme *ct)
   Clock interface
 **************************************************************************/
 
-static int create_widget_private(struct widget *w, struct theme_format_entry *e, 
-		struct theme_format_tree *tree)
+static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+		struct config_format_tree *tree)
 {
 	struct clock_widget *cw = xmallocz(sizeof(struct clock_widget));
 	if (parse_clock_theme(&cw->theme, e, tree)) {
 		xfree(cw);
+		XWARNING("Failed to parse clock theme");
 		return -1;
 	}
 
@@ -90,8 +86,7 @@ static int create_widget_private(struct widget *w, struct theme_format_entry *e,
 		pics_width += cairo_image_surface_get_width(cw->theme.background.left);
 	if (cw->theme.background.right)
 		pics_width += cairo_image_surface_get_width(cw->theme.background.right);
-	w->width = text_width + pics_width + cw->theme.text_spacing +
-		cw->theme.spacing * 2;
+	w->width = text_width + pics_width;
 	w->private = cw;
 	return 0;
 }
@@ -116,7 +111,7 @@ static void draw(struct widget *w)
 
 	/* drawing */
 	cairo_t *cr = w->panel->cr;
-	int x = w->x + cw->theme.spacing;
+	int x = w->x;
 
 	/* calcs */
 	int leftw = 0;
@@ -125,7 +120,7 @@ static void draw(struct widget *w)
 		leftw += cairo_image_surface_get_width(cw->theme.background.left);
 	if (cw->theme.background.right)
 		rightw += cairo_image_surface_get_width(cw->theme.background.right);
-	int centerw = w->width - cw->theme.spacing * 2 - leftw - rightw;
+	int centerw = w->width - leftw - rightw;
 
 	/* left part */
 	if (cw->theme.background.left)

@@ -1,27 +1,21 @@
 #include <stdio.h>
 #include "gui.h"
-#include "theme-parser.h"
+#include "config-parser.h"
 #include "xdg.h"
+#include "settings.h"
 
 int main(int argc, char **argv)
 {
-	struct theme_format_tree tree;
+	struct config_format_tree tree;
 	struct panel p;
 
-	size_t dirs_n, i;
-	char **dirs = get_XDG_CONFIG_DIRS(&dirs_n);
-	printf("---- config dirs ----\n");
-	for (i = 0; i < dirs_n; ++i)
-		printf("%s\n", dirs[i]);
-	free_XDG(dirs);
-	
-	dirs = get_XDG_DATA_DIRS(&dirs_n);
-	printf("---- data dirs ----\n");
-	for (i = 0; i < dirs_n; ++i)
-		printf("%s\n", dirs[i]);
-	free_XDG(dirs);
+	load_settings();
+	const char *theme_name = find_config_format_entry_value(&g_settings.root,
+								"theme");
+	if (!theme_name)
+		theme_name = "native";
 
-	if (0 != load_theme_format_tree(&tree, ".", "theme"))
+	if (0 != load_config_format_tree(&tree, "theme"))
 		XDIE("Failed to load theme file");
 	
 	register_taskbar();
@@ -33,8 +27,10 @@ int main(int argc, char **argv)
 	panel_main_loop(&p);
 
 	destroy_panel(&p);
-	free_theme_format_tree(&tree);
+	free_config_format_tree(&tree);
 	clean_image_cache();
+
+	free_settings();
 
 	xmemstat(0, 0, false);
 	return EXIT_SUCCESS;

@@ -1,7 +1,7 @@
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct theme_format_entry *e, 
-		struct theme_format_tree *tree);
+static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
@@ -41,20 +41,19 @@ void register_taskbar()
 **************************************************************************/
 
 static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
-		struct theme_format_entry *e, struct theme_format_tree *tree)
+		struct config_format_entry *e, struct config_format_tree *tree)
 {
-	struct theme_format_entry *ee = find_theme_format_entry(e, name);
-	if (!ee)
+	struct config_format_entry *ee = find_config_format_entry(e, name);
+	if (!ee) {
+		required_entry_not_found(e, name);
 		return -1;
+	}
 
 	if (parse_triple_image(&ts->background, ee, tree))
 		goto parse_taskbar_state_error_background;
 
-	if (parse_text_info(&ts->font, "font", ee)) {
-		XWARNING("Failed to parse \"font\" element in taskbar "
-			 "button state theme");
+	if (parse_text_info_named(&ts->font, "font", ee, 1))
 		goto parse_taskbar_state_error_font;
-	}
 
 	return 0;
 
@@ -71,26 +70,22 @@ static void free_taskbar_state(struct taskbar_state *ts)
 }
 
 static int parse_taskbar_theme(struct taskbar_theme *tt, 
-		struct theme_format_entry *e, struct theme_format_tree *tree)
+		struct config_format_entry *e, struct config_format_tree *tree)
 {
-	if (parse_taskbar_state(&tt->idle, "idle", e, tree)) {
-		XWARNING("Failed to parse \"idle\" taskbar button state theme");
+	if (parse_taskbar_state(&tt->idle, "idle", e, tree))
 		goto parse_taskbar_button_theme_error_idle;
-	}
 
-	if (parse_taskbar_state(&tt->pressed, "pressed", e, tree)) {
-		XWARNING("Failed to parse \"pressed\" taskbar button state theme");
+	if (parse_taskbar_state(&tt->pressed, "pressed", e, tree))
 		goto parse_taskbar_button_theme_error_pressed;
-	}
 
-	struct theme_format_entry *ee = find_theme_format_entry(e, "default_icon");
+	struct config_format_entry *ee = find_config_format_entry(e, "default_icon");
 	if (ee) {
-		tt->default_icon = parse_image_part(ee, tree);
+		tt->default_icon = parse_image_part(ee, tree, 0);
 		tt->icon_offset[0] = tt->icon_offset[1] = 0;
 		parse_2ints(tt->icon_offset, "offset", ee);
 	}
 
-	tt->separator = parse_image_part_named("separator", e, tree);
+	tt->separator = parse_image_part_named("separator", e, tree, 0);
 
 	return 0;
 
@@ -361,12 +356,13 @@ int get_taskbar_task_at(struct widget *w, int x, int y)
 	return -1;
 }
 
-static int create_widget_private(struct widget *w, struct theme_format_entry *e, 
-		struct theme_format_tree *tree)
+static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+		struct config_format_tree *tree)
 {
 	struct taskbar_widget *tw = xmallocz(sizeof(struct taskbar_widget));
 	if (parse_taskbar_theme(&tw->theme, e, tree)) {
 		xfree(tw);
+		XWARNING("Failed to parse taskbar theme");
 		return -1;
 	}
 

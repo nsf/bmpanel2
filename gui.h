@@ -6,7 +6,7 @@
 #include <glib.h>
 #include "util.h"
 #include "xutil.h"
-#include "theme-parser.h"
+#include "config-parser.h"
 
 /**************************************************************************
   Image cache
@@ -51,8 +51,8 @@ struct widget_interface {
 	const char *theme_name;
 	int size_type;
 	
-	int (*create_widget_private)(struct widget *w, struct theme_format_entry *e, 
-			struct theme_format_tree *tree);
+	int (*create_widget_private)(struct widget *w, struct config_format_entry *e, 
+			struct config_format_tree *tree);
 	void (*destroy_widget_private)(struct widget *w);
 	void (*draw)(struct widget *w);
 	void (*button_click)(struct widget *w, XButtonEvent *e);
@@ -136,7 +136,7 @@ struct panel {
 	int last_click_y;
 };
 
-int create_panel(struct panel *panel, struct theme_format_tree *tree);
+int create_panel(struct panel *panel, struct config_format_tree *tree);
 void destroy_panel(struct panel *panel);
 void panel_main_loop(struct panel *panel);
 

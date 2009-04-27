@@ -15,8 +15,6 @@ static struct image *load_image_from_file(const char *path)
 	cairo_surface_t *surface = cairo_image_surface_create_from_png(path);
 	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
 		cairo_surface_destroy(surface);
-		XWARNING("Failed to load cairo png surface "
-			 "(file doesn't exist?): %s", path);
 		return 0;
 	}
 
@@ -47,7 +45,7 @@ static void try_add_image_to_cache(struct image *img)
 static void free_image(struct image *img)
 {
 	if (cairo_surface_get_reference_count(img->surface) > 1)
-		XWARNING("image: \"%s\" has big ref count", img->filename);
+		XWARNING("Image: \"%s\" has big ref count", img->filename);
 	xfree(img->filename);
 	cairo_surface_destroy(img->surface);
 	xfree(img);
@@ -73,10 +71,8 @@ cairo_surface_t *get_image(const char *path)
 cairo_surface_t *get_image_part(const char *path, int x, int y, int w, int h)
 {
 	cairo_surface_t *source = get_image(path);
-	if (!source) {
-		XWARNING("Can't get image: %s", path);
+	if (!source)
 		return 0;
-	}
 
 	cairo_surface_t *dest = cairo_image_surface_create(
 			cairo_image_surface_get_format(source),

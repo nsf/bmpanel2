@@ -51,8 +51,6 @@ int get_taskbar_task_at(struct widget *tb, int x, int y);
 struct clock_theme {
 	struct triple_image background;
 	struct text_info font;
-	int text_spacing;
-	int spacing;
 	char *time_format;
 };
 

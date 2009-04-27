@@ -7,10 +7,10 @@
 **************************************************************************/
 
 static int parse_image_dimensions(int *x, int *y, int *w, int *h,
-		struct theme_format_entry *e)
+		struct config_format_entry *e)
 {
 	/* XXX */
-	struct theme_format_entry *ee = find_theme_format_entry(e, "xywh");
+	struct config_format_entry *ee = find_config_format_entry(e, "xywh");
 	if (ee && ee->value) {
 		if (4 == sscanf(ee->value, "%d:%d:%d:%d", x, y, w, h))
 			return 0;
@@ -23,10 +23,10 @@ static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 }
 
 
-static int parse_color(unsigned char *out, struct theme_format_entry *e)
+static int parse_color(unsigned char *out, struct config_format_entry *e)
 {
 	out[0] = out[1] = out[2] = 0;
-	struct theme_format_entry *ee = find_theme_format_entry(e, "color");
+	struct config_format_entry *ee = find_config_format_entry(e, "color");
 	if (ee && ee->value) {
 		if (3 == sscanf(ee->value, "%d %d %d", &out[0], &out[1], &out[2]))
 			return 0;
@@ -38,10 +38,10 @@ static int parse_color(unsigned char *out, struct theme_format_entry *e)
 	return -1;
 }
 
-int parse_2ints(int *out, const char *name, struct theme_format_entry *e)
+int parse_2ints(int *out, const char *name, struct config_format_entry *e)
 {
 	out[0] = out[1] = 0;
-	struct theme_format_entry *ee = find_theme_format_entry(e, name);
+	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (ee && ee->value) {
 		if (2 == sscanf(ee->value, "%d %d", &out[0], &out[1]))
 			return 0;
@@ -53,9 +53,9 @@ int parse_2ints(int *out, const char *name, struct theme_format_entry *e)
 	return -1;
 }
 
-static int parse_align(struct theme_format_entry *e)
+static int parse_align(struct config_format_entry *e)
 {
-	struct theme_format_entry *ee = find_theme_format_entry(e, "align");
+	struct config_format_entry *ee = find_config_format_entry(e, "align");
 	if (!ee || !ee->value)
 		return TEXT_ALIGN_CENTER;
 
@@ -70,8 +70,9 @@ static int parse_align(struct theme_format_entry *e)
 	return TEXT_ALIGN_CENTER;
 }
 
-cairo_surface_t *parse_image_part(struct theme_format_entry *e,
-		struct theme_format_tree *tree)
+cairo_surface_t *parse_image_part(struct config_format_entry *e,
+				  struct config_format_tree *tree,
+				  int required)
 {
 	cairo_surface_t *img;
 	int x,y,w,h;
@@ -84,7 +85,7 @@ cairo_surface_t *parse_image_part(struct theme_format_entry *e,
 		file = xmalloc(filestrlen);
 	else
 		file = alloca(filestrlen);
-	if (!strcmp(tree->dir, "."))
+	if (!strcmp(tree->dir, ""))
 		strcpy(file, e->value);
 	else
 		sprintf(file, "%s/%s", tree->dir, e->value);
@@ -95,9 +96,14 @@ cairo_surface_t *parse_image_part(struct theme_format_entry *e,
 	else
 		img = get_image(file);
 	
-	if (!img)
-		XWARNING("Failed to get image part (line: %u): %s", 
-			 e->line, file);
+	if (!img) {
+		if (required)
+			XWARNING("Failed to load image \"%s\" which is required "
+				 "(line: %u)", file, e->line);
+		else
+			XWARNING("Failed to load image \"%s\" (line: %u)", 
+				 file, e->line);
+	}
 
 	/* free path */
 	if (filestrlen > MAX_ALLOCA)
@@ -106,34 +112,42 @@ cairo_surface_t *parse_image_part(struct theme_format_entry *e,
 	return img;
 }
 
-cairo_surface_t *parse_image_part_named(const char *name, struct theme_format_entry *e,
-		struct theme_format_tree *tree)
+cairo_surface_t *parse_image_part_named(const char *name, 
+					struct config_format_entry *e,
+					struct config_format_tree *tree, 
+					int required)
 {
-	struct theme_format_entry *ee = find_theme_format_entry(e, name);
-	if (!ee)
+	struct config_format_entry *ee = find_config_format_entry(e, name);
+	if (!ee) {
+		if (required)
+			required_entry_not_found(e, name);
 		return 0;
-	return parse_image_part(ee, tree);
+	}
+	return parse_image_part(ee, tree, required);
 }
 
-int parse_triple_image(struct triple_image *tbt, struct theme_format_entry *e, 
-		struct theme_format_tree *tree)
+int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e, 
+		       struct config_format_tree *tree)
 {
-	tbt->center = parse_image_part_named("center", e, tree);
+	tbt->center = parse_image_part_named("center", e, tree, 1);
 	if (!tbt->center)
-		return XERROR("Failed to parse \"center\" image in a "
-			      "triple image pack");
+		return -1;
 
-	tbt->left = parse_image_part_named("left", e, tree);
-	tbt->right = parse_image_part_named("right", e, tree);
+	tbt->left = parse_image_part_named("left", e, tree, 0);
+	tbt->right = parse_image_part_named("right", e, tree, 0);
 	return 0;
 }
 
-int parse_triple_image_named(struct triple_image *tri, const char *name,
-		struct theme_format_entry *e, struct theme_format_tree *tree)
+int parse_triple_image_named(struct triple_image *tri, const char *name, 
+			     struct config_format_entry *e, 
+			     struct config_format_tree *tree, int required)
 {
-	struct theme_format_entry *ee = find_theme_format_entry(e, name);
-	if (!ee)
+	struct config_format_entry *ee = find_config_format_entry(e, name);
+	if (!ee) {
+		if (required)
+			required_entry_not_found(e, name);
 		return -1;
+	}
 
 	return parse_triple_image(tri, ee, tree);
 }
@@ -147,19 +161,27 @@ void free_triple_image(struct triple_image *tbt)
 		cairo_surface_destroy(tbt->right);
 }
 
-int parse_text_info(struct text_info *out, const char *name, 
-		struct theme_format_entry *e)
+int parse_text_info(struct text_info *out, struct config_format_entry *e)
 {
-	struct theme_format_entry *ee = find_theme_format_entry(e, name);
-	if (!ee || !ee->value)
-		return -1;
-
-	out->pfd = pango_font_description_from_string(ee->value);
-	parse_color(out->color, ee);
-	parse_2ints(out->offset, "offset", ee);
-	out->align = parse_align(ee);
+	out->pfd = pango_font_description_from_string(e->value);
+	parse_color(out->color, e);
+	parse_2ints(out->offset, "offset", e);
+	out->align = parse_align(e);
 
 	return 0;
+}
+
+int parse_text_info_named(struct text_info *out, const char *name,
+			  struct config_format_entry *e, int required)
+{
+	struct config_format_entry *ee = find_config_format_entry(e, name);
+	if (!ee) {
+		if (required)
+			required_entry_not_found(e, name);
+		return -1;
+	}
+
+	return parse_text_info(out, ee);
 }
 
 void free_text_info(struct text_info *fi)
@@ -167,9 +189,9 @@ void free_text_info(struct text_info *fi)
 	pango_font_description_free(fi->pfd);
 }
 
-int parse_int(const char *name, struct theme_format_entry *e, int def)
+int parse_int(const char *name, struct config_format_entry *e, int def)
 {
-	const char *v = find_theme_format_entry_value(e, name);
+	const char *v = find_config_format_entry_value(e, name);
 	int i;
 	if (v) {
 		if (1 == sscanf(v, "%d", &i))
@@ -178,12 +200,21 @@ int parse_int(const char *name, struct theme_format_entry *e, int def)
 	return def;
 }
 
-char *parse_string(const char *name, struct theme_format_entry *e, const char *def)
+char *parse_string(const char *name, struct config_format_entry *e, const char *def)
 {
-	const char *v = find_theme_format_entry_value(e, name);
+	const char *v = find_config_format_entry_value(e, name);
 	if (v)
 		return xstrdup(v);
 	return xstrdup(def);
+}
+
+void required_entry_not_found(struct config_format_entry *e, const char *name)
+{
+	char buf[2048];
+	memset(buf, 0, sizeof(buf));
+	config_format_entry_path(buf, sizeof(buf), e);
+	XWARNING("Failed to find \"%s/%s\" entry which is required",
+		 buf, name);
 }
 
 /**************************************************************************

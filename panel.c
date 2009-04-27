@@ -16,26 +16,26 @@ static int parse_position(const char *pos)
 	return PANEL_POSITION_TOP;
 }
 
-static int load_panel_theme(struct panel_theme *theme, struct theme_format_tree *tree)
+static int load_panel_theme(struct panel_theme *theme, struct config_format_tree *tree)
 {
 	CLEAR_STRUCT(theme);
-	struct theme_format_entry *e = find_theme_format_entry(&tree->root, "panel");
+	struct config_format_entry *e = find_config_format_entry(&tree->root, "panel");
 	if (!e)
 		return XERROR("Failed to find 'panel' section in theme format file");
 
 	const char *v;
-	struct theme_format_entry *ee;
+	struct config_format_entry *ee;
 
 	theme->position = PANEL_POSITION_TOP; /* default */
-	v = find_theme_format_entry_value(e, "position");
+	v = find_config_format_entry_value(e, "position");
 	if (v)
 		theme->position = parse_position(v);
 	
-	theme->background = parse_image_part_named("background", e, tree);
+	theme->background = parse_image_part_named("background", e, tree, 1);
 	if (!theme->background)
-		return XERROR("Missing 'background' image in panel section");
+		return -1;
 
-	theme->separator = parse_image_part_named("separator", e, tree);
+	theme->separator = parse_image_part_named("separator", e, tree, 0);
 
 	return 0;
 }
@@ -165,11 +165,11 @@ static int create_window(struct panel *panel)
 	return 0;
 }
 
-static int parse_panel_widgets(struct panel *panel, struct theme_format_tree *tree)
+static int parse_panel_widgets(struct panel *panel, struct config_format_tree *tree)
 {
 	size_t i;
 	for (i = 0; i < tree->root.children_n; ++i) {
-		struct theme_format_entry *e = &tree->root.children[i];
+		struct config_format_entry *e = &tree->root.children[i];
 		struct widget_interface *we = lookup_widget_interface(e->name);
 		if (we) {
 			if (panel->widgets_n == PANEL_MAX_WIDGETS)
@@ -344,7 +344,7 @@ static void expose_panel(struct panel *panel)
 	XFlush(dpy);
 }
 
-int create_panel(struct panel *panel, struct theme_format_tree *tree)
+int create_panel(struct panel *panel, struct config_format_tree *tree)
 {
 	size_t i;
 	CLEAR_STRUCT(panel);

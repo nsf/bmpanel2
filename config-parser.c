@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "theme-parser.h"
+#include "config-parser.h"
 
 /* Tiny structure used for tracking current parsing position and probably other
  * parser related data (if any, currently none). 
@@ -10,7 +10,7 @@ struct parse_context {
 };
 
 /* predeclarations */
-static int parse_children(struct theme_format_entry *te, int indent_level, struct parse_context *ctx);
+static int parse_children(struct config_format_entry *te, int indent_level, struct parse_context *ctx);
 
 /* Count indent symbols (tabs and spaces) and advance parsing context to the
  * first non-indent symbol. 
@@ -110,9 +110,12 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
  * RETURNS
  * 	See "parse_children"...
  */
-static int parse_format_entry(struct theme_format_entry *te, int indent_level, struct parse_context *ctx)
+static int parse_format_entry(struct config_format_entry *te, 
+			      struct config_format_entry *parent,
+			      int indent_level, struct parse_context *ctx)
 {
 	te->line = ctx->line;
+	te->parent = parent;
 	/* extract name */
 	char *start = ctx->cur;
 	while (*ctx->cur != ' ' 
@@ -171,7 +174,7 @@ static int parse_format_entry(struct theme_format_entry *te, int indent_level, s
  * RETURNS
  * 	A number of child entries were parsed.
  */
-static int parse_children(struct theme_format_entry *te, int indent_level, struct parse_context *ctx)
+static int parse_children(struct config_format_entry *te, int indent_level, struct parse_context *ctx)
 {
 	int children_indent = -1;
 	size_t children = 0;
@@ -182,7 +185,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 		return 0;
 
 	/* allocate space for child entries */
-	te->children = xmallocz(sizeof(struct theme_format_entry) * te->children_n);
+	te->children = xmallocz(sizeof(struct config_format_entry) * te->children_n);
 
 	/* ok, this is the *main* parse loop actually, since parser starts from
 	   virtual root's children. */
@@ -191,7 +194,7 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 		int indent = count_and_skip_indent(ctx);
 		if (indent == children_indent && line_is_entry(*ctx->cur)) {
 			/* we're interested in this line (it's a child line) */
-			parse_format_entry(&te->children[children], indent, ctx);
+			parse_format_entry(&te->children[children], te, indent, ctx);
 			/* remember position after line [and its children] */
 			pos = ctx->cur; 
 			children++; /* we're did one more child */
@@ -221,13 +224,13 @@ static int parse_children(struct theme_format_entry *te, int indent_level, struc
 	return children;
 }
 
-/* Parse theme format tree from a null-terminated string. 
+/* Parse config format tree from a null-terminated string. 
  *
  * RETURNS
  * 	Non-zero on success. 
  * 	Zero on fail.
  */
-static int parse_theme_format_string(struct theme_format_entry *tree, char *str)
+static int parse_config_format_string(struct config_format_entry *tree, char *str)
 {
 	struct parse_context ctx = {str, 1};
 	CLEAR_STRUCT(tree);
@@ -236,80 +239,81 @@ static int parse_theme_format_string(struct theme_format_entry *tree, char *str)
 	return parse_children(tree, -1, &ctx);
 }
 
-int load_theme_format_tree(struct theme_format_tree *tree, const char *path,
-			   const char *filename)
+int load_config_format_tree(struct config_format_tree *tree, const char *path)
 {
 	long fsize;
 	size_t size;
 	size_t read;
 	char *buf;
 	FILE *f;
-	char *theme_file;
-	size_t theme_file_strlen = strlen(path) + 1 + strlen(filename) + 1;
 
-	if (theme_file_strlen > MAX_ALLOCA)
-		theme_file = xmalloc(theme_file_strlen);
-	else
-		theme_file = alloca(theme_file_strlen);
-	sprintf(theme_file, "%s/%s", path, filename);
-	f = fopen(theme_file, "rb");
-	if (theme_file_strlen > MAX_ALLOCA)
-		xfree(theme_file);
-
+	f = fopen(path, "rb");
 	if (!f)
-		return XERROR("Failed to open theme file in dir: %s", path);
+		return XERROR("Failed to open config file: %s", path);
 
-	if (fseek(f, 0, SEEK_END) == -1)
-		return XERROR("Theme file fseek failed");
+	if (fseek(f, 0, SEEK_END) == -1) {
+		fclose(f);
+		return XERROR("Config file fseek failed");
+	}
 	fsize = ftell(f);
-	if (fsize == -1)
-		return XERROR("Theme file ftell failed");
+	if (fsize == -1) {
+		fclose(f);
+		return XERROR("Config file ftell failed");
+	}
 	size = (size_t)fsize;
-	if (fseek(f, 0, SEEK_SET) == -1)
-		return XERROR("Theme file fseek failed");
+	if (fseek(f, 0, SEEK_SET) == -1) {
+		fclose(f);
+		return XERROR("Config file fseek failed");
+	}
 
 	/* read file contents to buffer */
 	buf = xmalloc(size+1);
 	buf[size] = '\0';
 	read = fread(buf, 1, size, f);
 	if (read != size) {
+		fclose(f);
 		xfree(buf);
-		return XERROR("Read error in theme file in dir: %s", path);
+		return XERROR("Read error in config file: %s", path);
 	}
 
 	fclose(f);
 
 	/* use string parsing function to actually parse */
-	int children_n = parse_theme_format_string(&tree->root, buf);
+	int children_n = parse_config_format_string(&tree->root, buf);
 	if (children_n == 0) {
 		xfree(buf);
-		return XERROR("Theme format file is empty in dir: %s", path);
+		return XERROR("Config format file is empty: %s", path);
 	}
 
 	/* assign buffer and dir */
 	tree->buf = buf;
 	tree->dir = xstrdup(path);
+	char *slash = strrchr(tree->dir, '/');
+	if (slash) {
+		*slash = '\0';
+	} else {
+		tree->dir[0] = '\0';
+	}
 	return 0;
 }
 
-static void free_theme_format_entry(struct theme_format_entry *e)
+static void free_config_format_entry(struct config_format_entry *e)
 {
 	size_t i;
 	for (i = 0; i < e->children_n; i++)
-		free_theme_format_entry(&e->children[i]);
+		free_config_format_entry(&e->children[i]);
 	if (e->children)
 		xfree(e->children);
 }
 
-/* Free theme format tree */
-void free_theme_format_tree(struct theme_format_tree *tree)
+void free_config_format_tree(struct config_format_tree *tree)
 {
-	free_theme_format_entry(&tree->root);
+	free_config_format_entry(&tree->root);
 	xfree(tree->buf);
 	xfree(tree->dir);
 }
 
-struct theme_format_entry *find_theme_format_entry(struct theme_format_entry *e, 
+struct config_format_entry *find_config_format_entry(struct config_format_entry *e, 
 		const char *name)
 {
 	int i;
@@ -320,9 +324,25 @@ struct theme_format_entry *find_theme_format_entry(struct theme_format_entry *e,
 	return 0;
 }
 
-const char *find_theme_format_entry_value(struct theme_format_entry *e, 
+const char *find_config_format_entry_value(struct config_format_entry *e, 
 		const char *name)
 {
-	struct theme_format_entry *ee = find_theme_format_entry(e, name);
+	struct config_format_entry *ee = find_config_format_entry(e, name);
 	return (ee) ? ee->value : 0;
+}
+
+void config_format_entry_path(char *buf, size_t size, struct config_format_entry *e)
+{
+	if (e->parent)
+		config_format_entry_path(buf, size, e->parent);
+
+	if (e->name) {
+		size_t buflen = strlen(buf);
+		size_t namelen = strlen(e->name);
+		if (size > buflen + namelen + 3) {
+			if (buflen)
+				strcat(buf, "/");
+			strcat(buf, e->name);
+		}
+	}
 }
