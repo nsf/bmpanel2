@@ -75,6 +75,7 @@ struct widget {
 	int width;
 
 	int needs_expose;
+	int no_separator;
 
 	void *private; /* private part */
 };

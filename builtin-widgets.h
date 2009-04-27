@@ -40,6 +40,8 @@ struct taskbar_widget {
 
 	Window dnd_win;
 	Window taken;
+
+	int task_death_threshold;
 };
 
 /**************************************************************************

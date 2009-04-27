@@ -1,3 +1,4 @@
+#include "settings.h"
 #include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
@@ -372,6 +373,10 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	update_active(tw, c);
 	update_tasks(tw, c);
 	tw->dnd_win = None;
+	tw->taken = None;
+	tw->task_death_threshold = parse_int("task_death_threshold", 
+					     &g_settings.root,
+					     50);
 
 	return 0;
 }
@@ -593,9 +598,11 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 			w->needs_expose = 1;
 		} else if (!di->dropped_on && taken != -1) {
 			/* out of the panel */
-			/* TODO: configurable death threshold */
-			if (di->cur_y < -50 || di->cur_y > w->panel->height + 50)
+			if (di->cur_y < -tw->task_death_threshold || 
+			    di->cur_y > w->panel->height + tw->task_death_threshold)
+			{
 				close_task(c, &tw->tasks[taken]);
+			}
 		}
 	}
 

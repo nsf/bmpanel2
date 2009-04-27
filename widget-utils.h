@@ -56,6 +56,7 @@ int parse_2ints(int *out, const char *name, struct config_format_entry *e);
 
 /* simple things (int, string, etc.) */
 int parse_int(const char *name, struct config_format_entry *e, int def);
+int parse_bool(const char *name, struct config_format_entry *e);
 char *parse_string(const char *name, struct config_format_entry *e, 
 		   const char *def);
 

@@ -201,6 +201,12 @@ int parse_int(const char *name, struct config_format_entry *e, int def)
 	return def;
 }
 
+int parse_bool(const char *name, struct config_format_entry *e)
+{
+	struct config_format_entry *ee = find_config_format_entry(e, name);
+	return (ee != 0);
+}
+
 char *parse_string(const char *name, struct config_format_entry *e, const char *def)
 {
 	const char *v = find_config_format_entry_value(e, name);

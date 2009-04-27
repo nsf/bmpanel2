@@ -177,10 +177,12 @@ static int parse_panel_widgets(struct panel *panel, struct config_format_tree *t
 			w->panel = panel;
 			w->needs_expose = 0;
 
-			if ((*we->create_widget_private)(w, e, tree) == 0)
+			if ((*we->create_widget_private)(w, e, tree) == 0) {
 				panel->widgets_n++;
-			else
+				w->no_separator = parse_bool("no_separator", e);
+			} else {
 				XWARNING("Failed to create widget: \"%s\"", e->name);
+			}
 		}
 	}
 	return 0;
@@ -205,8 +207,11 @@ static int calculate_widgets_sizes(struct panel *panel)
 		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_CONSTANT) {
 			num_constant++;
 			total_constants_width += panel->widgets[i].width;
-			if (panel->widgets[i].width)
+			if (panel->widgets[i].width && 
+			    !panel->widgets[i].no_separator)
+			{
 				separators++;
+			}
 		} else
 			num_fill++;
 	}
@@ -214,7 +219,7 @@ static int calculate_widgets_sizes(struct panel *panel)
 	total_separators_width = separators * separator_width;
 
 	if (num_fill != 1)
-		return XERROR("There always should be at least one widget with a "
+		return XERROR("There always should be exactly one widget with a "
 			      "SIZE_FILL size type (taskbar)");
 
 	if (total_constants_width + total_separators_width > 
@@ -224,22 +229,24 @@ static int calculate_widgets_sizes(struct panel *panel)
 	}
 
 	for (i = 0; i < panel->widgets_n; ++i) {
-		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_FILL)
+		struct widget *w = &panel->widgets[i];
+		if (w->interface->size_type == WIDGET_SIZE_FILL)
 			break;
 
-		panel->widgets[i].x = x;
-		x += panel->widgets[i].width;
-		if (panel->widgets[i].width)
+		w->x = x;
+		x += w->width;
+		if (w->width && !w->no_separator)
 			x += separator_width;
 	}
 
 	for (i = panel->widgets_n - 1;; --i) {
-		if (panel->widgets[i].interface->size_type == WIDGET_SIZE_FILL)
+		struct widget *w = &panel->widgets[i];
+		if (w->interface->size_type == WIDGET_SIZE_FILL)
 			break;
 
-		x2 -= panel->widgets[i].width;
-		panel->widgets[i].x = x2;
-		if (panel->widgets[i].width)
+		x2 -= w->width;
+		w->x = x2;
+		if (w->width && !w->no_separator)
 			x2 -= separator_width;
 	}
 
