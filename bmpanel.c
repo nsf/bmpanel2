@@ -47,6 +47,7 @@ int main(int argc, char **argv)
 
 	load_theme(&tree, theme_name);
 	
+	register_desktop_switcher();
 	register_taskbar();
 	register_clock();
 	register_decor();

@@ -56,7 +56,7 @@ static void get_position_and_strut(const struct x_connection *c,
 	int x,y,w,h;
 	x = c->workarea_x;
 	y = c->workarea_y;
-	h = cairo_image_surface_get_height(t->background);
+	h = image_height(t->background);
 	w = c->workarea_width;
 
 	strut[0] = strut[1] = strut[3] = 0;
@@ -197,9 +197,7 @@ static int calculate_widgets_sizes(struct panel *panel)
 	int x = 0;
 	int x2 = panel->width;
 	int separators = 0;
-	int separator_width = 0;
-	if (panel->theme.separator)
-		separator_width = cairo_image_surface_get_width(panel->theme.separator);
+	int separator_width = image_width(panel->theme.separator);
 	int total_separators_width = 0;
 	size_t i;
 
@@ -291,8 +289,7 @@ static void expose_whole_panel(struct panel *panel)
 {
 	Display *dpy = panel->connection.dpy;
 	int sepw = 0;
-	if (panel->theme.separator)
-		sepw += cairo_image_surface_get_width(panel->theme.separator);
+	sepw += image_width(panel->theme.separator);
 
 	size_t i;
 	for (i = 0; i < panel->widgets_n; ++i) {

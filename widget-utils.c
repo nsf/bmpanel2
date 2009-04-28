@@ -228,10 +228,24 @@ void required_entry_not_found(struct config_format_entry *e, const char *name)
   Drawing utils
 **************************************************************************/
 
+int image_width(cairo_surface_t *img)
+{
+	if (img)
+		return cairo_image_surface_get_width(img);
+	return 0;
+}
+
+int image_height(cairo_surface_t *img)
+{
+	if (img)
+		return cairo_image_surface_get_height(img);
+	return 0;
+}
+
 void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty)
 {
-	size_t sh = cairo_image_surface_get_height(src);
-	size_t sw = cairo_image_surface_get_width(src);
+	size_t sh = image_height(src);
+	size_t sw = image_width(src);
 
 	cairo_save(dest);
 	cairo_set_source_surface(dest, src, dstx, dsty);
@@ -244,7 +258,7 @@ void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty)
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
 		int dstx, int dsty, int w)
 {
-	size_t sh = cairo_image_surface_get_height(src);
+	size_t sh = image_height(src);
 
 	cairo_save(dest);
 	cairo_set_source_surface(dest, src, 0, 0);
@@ -457,11 +471,11 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 		return default_icon;
 	}
 
-	double w = cairo_image_surface_get_width(default_icon);
-	double h = cairo_image_surface_get_height(default_icon);
+	double w = image_width(default_icon);
+	double h = image_height(default_icon);
 
-	double ow = cairo_image_surface_get_width(ret);
-	double oh = cairo_image_surface_get_height(ret);
+	double ow = image_width(ret);
+	double oh = image_height(ret);
 
 	cairo_surface_t *sizedret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
 			w, h);

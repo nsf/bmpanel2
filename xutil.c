@@ -266,3 +266,22 @@ name_here:
 	XFree(name);
 	return ret;
 }
+
+void x_send_netwm_message(struct x_connection *c, Window win,
+		Atom a, long l0, long l1, long l2, long l3, long l4)
+{
+	XClientMessageEvent e;
+
+	e.type = ClientMessage;
+	e.window = win;
+	e.message_type = a;
+	e.format = 32;
+	e.data.l[0] = l0;
+	e.data.l[1] = l1;
+	e.data.l[2] = l2;
+	e.data.l[3] = l3;
+	e.data.l[4] = l4;
+
+	XSendEvent(c->dpy, c->root, False, SubstructureNotifyMask |
+			SubstructureRedirectMask, (XEvent*)&e);
+}

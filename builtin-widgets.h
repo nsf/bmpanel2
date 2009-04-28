@@ -74,6 +74,7 @@ struct desktops_desktop {
 	char *name;
 	int x;
 	int w;
+	int textw;
 };
 
 struct desktops_theme {

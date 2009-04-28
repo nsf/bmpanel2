@@ -197,23 +197,14 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	struct text_info *font = (active) ?
 			&theme->pressed.font :
 			&theme->idle.font;
-	int leftw = 0;
-	int centerw = 0;
-	int rightw = 0;
-	int height = cairo_image_surface_get_height(tbt->center);
-	if (tbt->left)
-		leftw = cairo_image_surface_get_width(tbt->left);
-	if (tbt->right)
-		rightw = cairo_image_surface_get_width(tbt->right);
-	centerw = w - leftw - rightw;
 	
-	int iconw = 0;
-	int iconh = 0;
-	if (theme->default_icon) {
-		iconw = cairo_image_surface_get_width(theme->default_icon);
-		iconh = cairo_image_surface_get_height(theme->default_icon);
-	}
-
+	int leftw = image_width(tbt->left);
+	int rightw = image_width(tbt->right);
+	int height = image_height(tbt->center);
+	int centerw = w - leftw - rightw;
+	
+	int iconw = image_width(theme->default_icon);
+	int iconh = image_height(theme->default_icon);
 	int textw = centerw - (iconw + theme->icon_offset[0]) - rightw;
 
 	/* background */
@@ -240,34 +231,15 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	draw_text(cr, layout, font, task->name, xx, 0, textw, height);
 }
 
-static void send_netwm_message(struct x_connection *c, struct taskbar_task *t,
-		Atom a, long l0, long l1, long l2, long l3, long l4)
-{
-	XClientMessageEvent e;
-
-	e.type = ClientMessage;
-	e.window = t->win;
-	e.message_type = a;
-	e.format = 32;
-	e.data.l[0] = l0;
-	e.data.l[1] = l1;
-	e.data.l[2] = l2;
-	e.data.l[3] = l3;
-	e.data.l[4] = l4;
-
-	XSendEvent(c->dpy, c->root, False, SubstructureNotifyMask |
-			SubstructureRedirectMask, (XEvent*)&e);
-}
-
 static inline void activate_task(struct x_connection *c, struct taskbar_task *t)
 {
-	send_netwm_message(c, t, c->atoms[XATOM_NET_ACTIVE_WINDOW], 
+	x_send_netwm_message(c, t->win, c->atoms[XATOM_NET_ACTIVE_WINDOW], 
 			2, CurrentTime, 0, 0, 0);
 }
 
 static inline void close_task(struct x_connection *c, struct taskbar_task *t)
 {
-	send_netwm_message(c, t, c->atoms[XATOM_NET_CLOSE_WINDOW],
+	x_send_netwm_message(c, t->win, c->atoms[XATOM_NET_CLOSE_WINDOW],
 			CurrentTime, 2, 0, 0, 0);
 }
 
@@ -539,8 +511,8 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 	struct taskbar_task *t = &tw->tasks[ti];
 	
 	if (t->icon) {
-		int iconw = cairo_image_surface_get_width(t->icon);
-		int iconh = cairo_image_surface_get_width(t->icon);
+		int iconw = image_width(t->icon);
+		int iconh = image_width(t->icon);
 		Pixmap bg = x_create_default_pixmap(c, iconw, iconh);
 		cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy,
 				bg, c->default_visual, iconw, iconh);

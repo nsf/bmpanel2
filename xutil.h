@@ -103,5 +103,7 @@ int x_is_window_iconified(struct x_connection *c, Window win);
 
 /* allocated by xstrdup, should be released with xfree */
 char *x_alloc_window_name(struct x_connection *c, Window win);
+void x_send_netwm_message(struct x_connection *c, Window win,
+		Atom a, long l0, long l1, long l2, long l3, long l4);
 
 #endif /* BMPANEL2_XUTIL_H */

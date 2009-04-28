@@ -42,7 +42,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		return -1;
 	}
 
-	w->width = cairo_image_surface_get_width(dw->image);
+	w->width = image_width(dw->image);
 	w->private = dw;
 	return 0;
 }

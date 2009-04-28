@@ -70,6 +70,11 @@ do { 										\
 	array##_alloc = 0;							\
 } while (0)
 
+#define CLEAR_ARRAY(array)							\
+do {										\
+	array##_n = 0;								\
+} while (0)
+
 #define ARRAY_INSERT_AFTER(array, index, elt)					\
 do {										\
 	CHECK_ARRAY_BOUNDS(array, index)					\

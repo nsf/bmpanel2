@@ -80,10 +80,8 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 
 	/* background is drawn only if the center is here */
 	if (cw->theme.background.center) {
-		if (cw->theme.background.left)
-			pics_width += cairo_image_surface_get_width(cw->theme.background.left);
-		if (cw->theme.background.right)
-			pics_width += cairo_image_surface_get_width(cw->theme.background.right);
+		pics_width += image_width(cw->theme.background.left);
+		pics_width += image_width(cw->theme.background.right);
 	}
 	w->width = text_width + pics_width;
 	w->private = cw;
@@ -119,14 +117,12 @@ static void draw(struct widget *w)
 
 	/* draw background only if the center image is here */
 	if (cw->theme.background.center) {
-		if (cw->theme.background.left)
-			leftw += cairo_image_surface_get_width(cw->theme.background.left);
-		if (cw->theme.background.right)
-			rightw += cairo_image_surface_get_width(cw->theme.background.right);
+		leftw += image_width(cw->theme.background.left);
+		rightw += image_width(cw->theme.background.right);
 		centerw -= leftw + rightw;
 
 		/* left part */
-		if (cw->theme.background.left)
+		if (leftw)
 			blit_image(cw->theme.background.left, cr, x, 0);
 		x += leftw;
 
@@ -136,7 +132,7 @@ static void draw(struct widget *w)
 		x += centerw;
 
 		/* right part */
-		if (cw->theme.background.right)
+		if (rightw)
 			blit_image(cw->theme.background.right, cr, x, 0);
 		x -= centerw;
 	}
