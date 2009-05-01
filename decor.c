@@ -5,27 +5,13 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 
-static struct widget_interface decor_interface = {
-	"decor",
-	WIDGET_SIZE_CONSTANT,
-	create_widget_private,
-	destroy_widget_private,
-	draw,
-	0, /* button_click */
-	0, /* clock_tick */
-	0, /* prop_change */
-	0, /* mouse_enter */
-	0, /* mouse_leave */
-	0, /* mouse_motion */
-	0, /* dnd_start */
-	0, /* dnd_drag */
-	0 /* dnd_drop */
+struct widget_interface decor_interface = {
+	.theme_name 		= "decor",
+	.size_type 		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private 	= create_widget_private,
+	.destroy_widget_private = destroy_widget_private,
+	.draw 			= draw
 };
-
-void register_decor()
-{
-	register_widget_interface(&decor_interface);
-}
 
 /**************************************************************************
   Decor interface

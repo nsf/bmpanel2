@@ -61,6 +61,9 @@ struct widget_interface {
 	void (*mouse_enter)(struct widget *w);
 	void (*mouse_leave)(struct widget *w);
 	void (*mouse_motion)(struct widget *w, XMotionEvent *e);
+	void (*configure)(struct widget *w, XConfigureEvent *e);
+	void (*client_msg)(struct widget *w, XClientMessageEvent *e);
+	void (*win_destroy)(struct widget *w, XDestroyWindowEvent *e);
 	
 	void (*dnd_start)(struct widget *w, struct drag_info *di);
 	void (*dnd_drag)(struct widget *w, struct drag_info *di);
@@ -82,12 +85,6 @@ struct widget {
 
 int register_widget_interface(struct widget_interface *wc);
 struct widget_interface *lookup_widget_interface(const char *themename);
-
-void register_taskbar();
-void register_desktop_switcher();
-void register_systray();
-void register_clock();
-void register_decor();
 
 /**************************************************************************
   Panel
@@ -149,5 +146,8 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e);
 void disp_motion_notify(struct panel *p, XMotionEvent *e);
 void disp_property_notify(struct panel *p, XPropertyEvent *e);
 void disp_enter_leave_notify(struct panel *p, XCrossingEvent *e);
+void disp_client_msg(struct panel *p, XClientMessageEvent *e);
+void disp_win_destroy(struct panel *p, XDestroyWindowEvent *e);
+void disp_configure(struct panel *p, XConfigureEvent *e);
 
 #endif /* BMPANEL2_GUI_H */

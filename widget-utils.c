@@ -501,3 +501,45 @@ get_window_icon_error_sizedret:
 	cairo_surface_destroy(ret);
 	return 0;
 }
+
+cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
+{
+	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy, 
+							     p, c->default_visual,
+							     w, h);
+	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+		cairo_surface_destroy(surface);
+		return 0;
+	}
+
+	cairo_t *cr = cairo_create(surface);
+	cairo_surface_destroy(surface);
+
+	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS) {
+		cairo_destroy(cr);
+		return 0;
+	}
+
+	return cr;
+}
+
+cairo_t *create_cairo_for_bitmap(struct x_connection *c, Pixmap p, int w, int h)
+{
+	cairo_surface_t *surface = cairo_xlib_surface_create_for_bitmap(
+			c->dpy, p, DefaultScreenOfDisplay(c->dpy), w, h);
+
+	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+		cairo_surface_destroy(surface);
+		return 0;
+	}
+
+	cairo_t *cr = cairo_create(surface);
+	cairo_surface_destroy(surface);
+
+	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS) {
+		cairo_destroy(cr);
+		return 0;
+	}
+
+	return cr;
+}

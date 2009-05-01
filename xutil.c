@@ -234,9 +234,10 @@ int x_is_window_iconified(struct x_connection *c, Window win)
 	return ret;
 }
 
-char *x_alloc_window_name(struct x_connection *c, Window win)
+char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 {
 	char *ret, *name = 0;
+	size_t oldlen = (old) ? strlen(old) : 0;
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME], 
 			c->atoms[XATOM_UTF8_STRING], 0);
 	if (name) 
@@ -260,9 +261,23 @@ char *x_alloc_window_name(struct x_connection *c, Window win)
 	if (name) 
 		goto name_here;
 
-	return xstrdup("<unknown>");
+	if (oldlen < 9) {
+		if (old)
+			xfree(old);
+		return xstrdup("<unknown>");
+	} else {
+		strcpy(old, "<unknown>");
+		return old;
+	}
 name_here:
-	ret = xstrdup(name);
+	if (oldlen < strlen(name)) {
+		if (old)
+			xfree(old);
+		ret = xstrdup(name);
+	} else {
+		strcpy(old, name);
+		ret = old;
+	}
 	XFree(name);
 	return ret;
 }

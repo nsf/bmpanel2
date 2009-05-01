@@ -42,7 +42,10 @@ struct taskbar_widget {
 	Window taken;
 
 	int task_death_threshold;
+	Cursor dnd_cur;
 };
+
+extern struct widget_interface taskbar_interface;
 
 /**************************************************************************
   Clock
@@ -57,6 +60,8 @@ struct clock_theme {
 struct clock_widget {
 	struct clock_theme theme;
 };
+
+extern struct widget_interface clock_interface;
 
 /**************************************************************************
   Desktop switcher
@@ -89,6 +94,8 @@ struct desktops_widget {
 	int active;
 };
 
+extern struct widget_interface desktops_interface;
+
 /**************************************************************************
   Decor
 **************************************************************************/
@@ -96,5 +103,25 @@ struct desktops_widget {
 struct decor_widget {
 	cairo_surface_t *image;
 };
+
+extern struct widget_interface decor_interface;
+
+/**************************************************************************
+  Systray
+**************************************************************************/
+
+struct systray_icon {
+	Window icon;
+	Window embedder;
+};
+
+struct systray_widget {
+	DECLARE_ARRAY(struct systray_icon, icons);
+	Atom tray_selection_atom;
+	Window selection_owner;
+	int icon_size[2];
+};
+
+extern struct widget_interface systray_interface;
 
 #endif /* BMPANEL2_BUILTIN_WIDGETS_H */

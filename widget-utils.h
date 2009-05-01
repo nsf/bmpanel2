@@ -84,6 +84,8 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
   X imaging utils
 **************************************************************************/
 
+cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h);
+cairo_t *create_cairo_for_bitmap(struct x_connection *c, Pixmap p, int w, int h);
 cairo_surface_t *get_window_icon(struct x_connection *c, Window win, 
 				 cairo_surface_t *default_icon);
 

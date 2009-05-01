@@ -94,8 +94,6 @@ static int create_window(struct panel *panel)
 
 	/* background pixmap */
 	panel->bg = x_create_default_pixmap(c, w, h);
-	if (panel->bg == None)
-		return XERROR("Failed to create background pixmap");
 	
 	attrs.background_pixmap = panel->bg;
 	attrs.event_mask = ExposureMask | StructureNotifyMask |
@@ -105,10 +103,6 @@ static int create_window(struct panel *panel)
 	/* panel window */
 	panel->win = x_create_default_window(c, x, y, w, h, 
 			CWBackPixmap | CWEventMask, &attrs);
-	if (panel->win == None) {
-		XFreePixmap(c->dpy, panel->bg);
-		return XERROR("Failed to create window");
-	}
 
 	panel->x = x;
 	panel->y = y;
@@ -457,6 +451,7 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 		
 		case NoExpose:
 		case MapNotify:
+		case UnmapNotify:
 		case ReparentNotify:
 			/* skip? */
 			break;
@@ -482,6 +477,18 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 		
 		case PropertyNotify:
 			disp_property_notify(p, &e.xproperty);
+			break;
+
+		case ClientMessage:
+			disp_client_msg(p, &e.xclient);
+			break;
+		
+		case ConfigureNotify:
+			disp_configure(p, &e.xconfigure);
+			break;
+
+		case DestroyNotify:
+			disp_win_destroy(p, &e.xdestroywindow);
 			break;
 		
 		default:

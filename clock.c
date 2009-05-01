@@ -7,27 +7,14 @@ static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void clock_tick(struct widget *w);
 
-static struct widget_interface clock_interface = {
-	"clock",
-	WIDGET_SIZE_CONSTANT,
-	create_widget_private,
-	destroy_widget_private,
-	draw,
-	0, /* button_click */
-	clock_tick,
-	0, /* prop_change */
-	0, /* mouse_enter */
-	0, /* mouse_leave */
-	0, /* mouse_motion */
-	0, /* dnd_start */
-	0, /* dnd_drag */
-	0 /* dnd_drop */
+struct widget_interface clock_interface = {
+	.theme_name 		= "clock",
+	.size_type 		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private 	= create_widget_private,
+	.destroy_widget_private = destroy_widget_private,
+	.draw 			= draw,
+	.clock_tick 		= clock_tick
 };
-
-void register_clock()
-{
-	register_widget_interface(&clock_interface);
-}
 
 /**************************************************************************
   Clock theme

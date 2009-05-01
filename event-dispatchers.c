@@ -136,3 +136,33 @@ void disp_property_notify(struct panel *p, XPropertyEvent *e)
 			(*w->interface->prop_change)(w, e);
 	}
 }
+
+void disp_client_msg(struct panel *p, XClientMessageEvent *e)
+{
+	size_t i;
+	for (i = 0; i < p->widgets_n; ++i) {
+		struct widget *w = &p->widgets[i];
+		if (w->interface->client_msg)
+			(*w->interface->client_msg)(w, e);
+	}
+}
+
+void disp_win_destroy(struct panel *p, XDestroyWindowEvent *e)
+{
+	size_t i;
+	for (i = 0; i < p->widgets_n; ++i) {
+		struct widget *w = &p->widgets[i];
+		if (w->interface->win_destroy)
+			(*w->interface->win_destroy)(w, e);
+	}
+}
+
+void disp_configure(struct panel *p, XConfigureEvent *e)
+{
+	size_t i;
+	for (i = 0; i < p->widgets_n; ++i) {
+		struct widget *w = &p->widgets[i];
+		if (w->interface->configure)
+			(*w->interface->configure)(w, e);
+	}
+}

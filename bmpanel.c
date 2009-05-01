@@ -3,6 +3,7 @@
 #include "config-parser.h"
 #include "xdg.h"
 #include "settings.h"
+#include "builtin-widgets.h"
 
 void load_theme(struct config_format_tree *tree, const char *name)
 {
@@ -47,10 +48,11 @@ int main(int argc, char **argv)
 
 	load_theme(&tree, theme_name);
 	
-	register_desktop_switcher();
-	register_taskbar();
-	register_clock();
-	register_decor();
+	register_widget_interface(&desktops_interface);
+	register_widget_interface(&taskbar_interface);
+	register_widget_interface(&clock_interface);
+	register_widget_interface(&decor_interface);
+	register_widget_interface(&systray_interface);
 
 	if (0 != create_panel(&p, &tree))
 		XDIE("Failed to create a panel");

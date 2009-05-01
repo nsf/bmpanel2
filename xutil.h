@@ -4,7 +4,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
-#include <X11/Xcursor/Xcursor.h>
+#include <X11/cursorfont.h>
+#include <X11/extensions/shape.h>
 #include "util.h"
 
 enum x_atom {
@@ -102,7 +103,7 @@ int x_is_window_hidden(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
 
 /* allocated by xstrdup, should be released with xfree */
-char *x_alloc_window_name(struct x_connection *c, Window win);
+char *x_realloc_window_name(struct x_connection *c, Window win, char *old);
 void x_send_netwm_message(struct x_connection *c, Window win,
 		Atom a, long l0, long l1, long l2, long l3, long l4);
 

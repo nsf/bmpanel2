@@ -12,27 +12,18 @@ static void dnd_start(struct widget *w, struct drag_info *di);
 static void dnd_drag(struct widget *w, struct drag_info *di);
 static void dnd_drop(struct widget *w, struct drag_info *di);
 
-static struct widget_interface taskbar_interface = {
-	"taskbar",
-	WIDGET_SIZE_FILL,
-	create_widget_private,
-	destroy_widget_private,
-	draw,
-	button_click,
-	0, /* clock_tick */
-	prop_change,
-	0, /* mouse_enter */
-	0, /* mouse_leave */
-	0, /* mouse_motion */
-	dnd_start,
-	dnd_drag,
-	dnd_drop
+struct widget_interface taskbar_interface = {
+	.theme_name 		= "taskbar",
+	.size_type 		= WIDGET_SIZE_FILL,
+	.create_widget_private 	= create_widget_private,
+	.destroy_widget_private = destroy_widget_private,
+	.draw 			= draw,
+	.button_click 		= button_click,
+	.prop_change 		= prop_change,
+	.dnd_start 		= dnd_start,
+	.dnd_drag 		= dnd_drag,
+	.dnd_drop 		= dnd_drop
 };
-
-void register_taskbar()
-{
-	register_widget_interface(&taskbar_interface);
-}
 
 /**************************************************************************
   Taskbar theme
@@ -138,7 +129,7 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	XSelectInput(c->dpy, win, PropertyChangeMask);
 
 	t.win = win;
-	t.name = x_alloc_window_name(c, win); 
+	t.name = x_realloc_window_name(c, win, 0); 
 	if (tw->theme.default_icon)
 		t.icon = get_window_icon(c, win, tw->theme.default_icon);
 	else
@@ -347,8 +338,8 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	tw->dnd_win = None;
 	tw->taken = None;
 	tw->task_death_threshold = parse_int("task_death_threshold", 
-					     &g_settings.root,
-					     50);
+					     &g_settings.root, 50);
+	tw->dnd_cur = XCreateFontCursor(c->dpy, XC_fleur);
 
 	return 0;
 }
@@ -358,6 +349,7 @@ static void destroy_widget_private(struct widget *w)
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	free_taskbar_theme(&tw->theme);
 	free_tasks(tw);
+	XFreeCursor(w->panel->connection.dpy, tw->dnd_cur);
 	xfree(tw);
 }
 
@@ -454,8 +446,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	    e->atom == XA_WM_NAME)
 	{
 		struct taskbar_task *t = &tw->tasks[ti];
-		xfree(t->name);
-		t->name = x_alloc_window_name(c, t->win);
+		t->name = x_realloc_window_name(c, t->win, t->name);
 		w->needs_expose = 1;
 		return;
 	}
@@ -499,6 +490,55 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	}
 }
 
+static Window create_window_for_dnd(struct x_connection *c, int x, int y,
+				    cairo_surface_t *icon)
+{
+	int iconw = image_width(icon);
+	int iconh = image_width(icon);
+
+	/* background with an icon */
+	Pixmap bg = x_create_default_pixmap(c, iconw, iconh);
+	cairo_t *cr = create_cairo_for_pixmap(c, bg, iconw, iconh);
+	if (!cr) {
+		XFreePixmap(c->dpy, bg);
+		return None;
+	}
+
+	cairo_set_source_rgba(cr, 0,0,0,1);
+	cairo_paint(cr);
+	blit_image(icon, cr, 0, 0);
+	cairo_destroy(cr);
+
+	XSetWindowAttributes attrs;
+	attrs.background_pixmap = bg;
+	attrs.override_redirect = True;
+
+	/* the window */
+	Window win = x_create_default_window(c, x, y, iconw, iconh, 
+			CWOverrideRedirect | CWBackPixmap, &attrs);
+	XFreePixmap(c->dpy, bg);
+
+	/* create shape for a window */
+	Pixmap mask = XCreatePixmap(c->dpy, c->root, iconw, iconh, 1);
+	cr = create_cairo_for_bitmap(c, mask, iconw, iconh);
+
+	if (!cr) {
+		XFreePixmap(c->dpy, mask);
+		return win;
+	}
+
+	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+	cairo_set_source_rgba(cr, 0,0,0,0);
+	cairo_paint(cr);
+	blit_image(icon, cr, 0, 0);
+	cairo_destroy(cr);
+
+	XShapeCombineMask(c->dpy, win, ShapeBounding, 0, 0, mask, ShapeSet);
+	XFreePixmap(c->dpy, mask);
+
+	return win;
+}
+
 static void dnd_start(struct widget *w, struct drag_info *di)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
@@ -509,34 +549,16 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 		return;
 
 	struct taskbar_task *t = &tw->tasks[ti];
-	
 	if (t->icon) {
-		int iconw = image_width(t->icon);
-		int iconh = image_width(t->icon);
-		Pixmap bg = x_create_default_pixmap(c, iconw, iconh);
-		cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy,
-				bg, c->default_visual, iconw, iconh);
-		cairo_t *cr = cairo_create(surface);
-		cairo_surface_destroy(surface);
-
-		blit_image(t->icon, cr, 0, 0);
-		cairo_destroy(cr);
-	
-		XSetWindowAttributes attrs;
-		attrs.background_pixmap = bg;
-		attrs.override_redirect = True;
-		
-		tw->dnd_win = x_create_default_window(c, di->cur_root_x, 
-				di->cur_root_y, iconw, iconh, 
-				CWOverrideRedirect | CWBackPixmap, &attrs);
-		XFreePixmap(c->dpy, bg);
-		XMapWindow(c->dpy, tw->dnd_win);
+		tw->dnd_win = create_window_for_dnd(c, 
+						    di->cur_root_x, 
+						    di->cur_root_y,
+						    t->icon);
+		if (tw->dnd_win != None)
+			XMapWindow(c->dpy, tw->dnd_win);
 	}
 
-	Cursor cur = XcursorLibraryLoadCursor(c->dpy, "grabbing");
-	XDefineCursor(c->dpy, w->panel->win, cur);
-	XFreeCursor(c->dpy, cur);
-
+	XDefineCursor(c->dpy, w->panel->win, tw->dnd_cur);
 	tw->taken = t->win;
 }
 
@@ -579,6 +601,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 	}
 
 	XUndefineCursor(c->dpy, w->panel->win);
+
 	if (tw->dnd_win != None) {
 		XDestroyWindow(c->dpy, tw->dnd_win);
 		tw->dnd_win = None;

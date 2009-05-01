@@ -9,27 +9,16 @@ static void prop_change(struct widget *w, XPropertyEvent *e);
 
 static void dnd_drop(struct widget *w, struct drag_info *di);
 
-static struct widget_interface desktops_interface = {
-	"desktop_switcher",
-	WIDGET_SIZE_CONSTANT,
-	create_widget_private,
-	destroy_widget_private,
-	draw,
-	button_click,
-	0, /* clock_tick */
-	prop_change,
-	0, /* mouse_enter */
-	0, /* mouse_leave */
-	0, /* mouse_motion */
-	0, /* dnd_start */
-	0, /* dnd_drag */
-	dnd_drop
+struct widget_interface desktops_interface = {
+	.theme_name 		= "desktop_switcher",
+	.size_type 		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private 	= create_widget_private,
+	.destroy_widget_private = destroy_widget_private,
+	.draw 			= draw,
+	.button_click 		= button_click,
+	.prop_change 		= prop_change,
+	.dnd_drop 		= dnd_drop
 };
-
-void register_desktop_switcher()
-{
-	register_widget_interface(&desktops_interface);
-}
 
 /**************************************************************************
   Desktop switcher theme

@@ -59,6 +59,21 @@ char *impl_xstrdup(const char *str, struct memory_source *src)
 /**************************************************************************
   Memory debug
 **************************************************************************/
+static void dump_to_file(size_t size, unsigned int allocs, int bytes)
+{
+	FILE *f = fopen(MEMDEBUG_FILE, "a");
+	if (!f)
+		return;
+
+	char buftime[128];
+	time_t current_time;
+	current_time = time(0);
+	strftime(buftime, sizeof(buftime), "%H:%M:%S", localtime(&current_time));
+	
+	fprintf(f, "%s %u %u %d\n", buftime, size, allocs, bytes);
+	fclose(f);
+}
+
 void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, unsigned int line)
 {
 	void *ret = 0;
@@ -92,6 +107,8 @@ void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, uns
 	}
 	src->allocs++;
 	src->bytes += size;
+	
+	dump_to_file(size, src->allocs, src->bytes);
 
 	ret += sizeof(struct memory_stat);
 	return ret;
