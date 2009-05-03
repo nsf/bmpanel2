@@ -317,7 +317,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 
 static void dnd_drop(struct widget *w, struct drag_info *di)
 {
-	if (strcmp(di->taken_on->interface->theme_name, "taskbar") != 0)
+	if (di->taken_on->interface != &taskbar_interface)
 		return;
 
 	struct taskbar_widget *tw = di->taken_on->private;
