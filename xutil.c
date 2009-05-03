@@ -261,7 +261,7 @@ char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 	if (name) 
 		goto name_here;
 
-	if (oldlen < 9) {
+	if (oldlen < 9 || !old) {
 		if (old)
 			xfree(old);
 		return xstrdup("<unknown>");
@@ -270,7 +270,7 @@ char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 		return old;
 	}
 name_here:
-	if (oldlen < strlen(name)) {
+	if (oldlen < strlen(name) || !old) {
 		if (old)
 			xfree(old);
 		ret = xstrdup(name);

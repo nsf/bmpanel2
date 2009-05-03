@@ -58,8 +58,6 @@ const char *pretty_print_FILE(const char *file);
   memory utils
 **************************************************************************/
 
-#define MEMDEBUG_FILE "memdebug.txt"
-
 /* Memory source helper macro */
 #define MEMSRC(name, malloc, free, flags) \
 	{name, 0, 0, 0, 0, (malloc), (free), (flags)}

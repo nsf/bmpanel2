@@ -47,6 +47,11 @@ struct drag_info {
 struct widget;
 struct panel;
 
+/** 
+ * Widget interface specification.
+ *
+ * This struct represents virtual funtions table.
+ */
 struct widget_interface {
 	const char *theme_name;
 	int size_type;

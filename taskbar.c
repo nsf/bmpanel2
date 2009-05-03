@@ -485,6 +485,7 @@ static void button_click(struct widget *w, XButtonEvent *e)
 			XConfigureWindow(c->dpy, t->win, CWStackMode, &wc);
 		}
 	}
+	/* XXX: temporary */
 	if (e->button == 2) {
 		g_main_loop_quit(w->panel->loop);
 	}
