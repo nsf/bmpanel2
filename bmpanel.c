@@ -5,7 +5,7 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
-void load_theme(struct config_format_tree *tree, const char *name)
+int try_load_theme(struct config_format_tree *tree, const char *name)
 {
 	char buf[4096];
 	size_t data_dirs_len;
@@ -26,27 +26,38 @@ void load_theme(struct config_format_tree *tree, const char *name)
 
 	if (found) {
 		if (0 != load_config_format_tree(tree, buf))
-			XDIE("Failed to load theme: %s", name);
+			return -1;
 	} else {
 		/* try to load it in-place */
 		snprintf(buf, sizeof(buf), "%s/theme", name);
 		if (0 != load_config_format_tree(tree, buf))
-			XDIE("Failed to load theme: %s", name);
+			return -1;
 	}
+
+	return 0;
 }
 
 int main(int argc, char **argv)
 {
 	struct config_format_tree tree;
 	struct panel p;
+	int theme_load_status = -1;
 
 	load_settings();
 	const char *theme_name = find_config_format_entry_value(&g_settings.root,
 								"theme");
-	if (!theme_name)
-		theme_name = "native";
+	if (theme_name)
+		theme_load_status = try_load_theme(&tree, theme_name);
 
-	load_theme(&tree, theme_name);
+	if (theme_load_status < 0) {
+		if (theme_name)
+			XWARNING("Failed to load theme: %s, "
+				 "trying default \"native\"", theme_name);
+		theme_load_status = try_load_theme(&tree, "native");
+	}
+
+	if (theme_load_status < 0)
+		XDIE("Failed to load theme: native");
 	
 	register_widget_interface(&desktops_interface);
 	register_widget_interface(&taskbar_interface);
