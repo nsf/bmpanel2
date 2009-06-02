@@ -72,6 +72,8 @@ int image_width(cairo_surface_t *img);
 int image_height(cairo_surface_t *img);
 
 void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty);
+void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
+		   int width, int height, int dstx, int dsty);
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
 		   int dstx, int dsty, int w);
 

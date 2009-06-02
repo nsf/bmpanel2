@@ -106,6 +106,8 @@ struct panel_theme {
 
 #define PANEL_MAX_WIDGETS 20
 
+struct render_interface;
+
 struct panel {
 	/* X stuff */
 	Window win;
@@ -138,7 +140,29 @@ struct panel {
 	struct widget *last_click_widget;
 	int last_click_x;
 	int last_click_y;
+
+	/* render interface */
+	struct render_interface *render;
+	void *render_private;
 };
+
+struct render_interface {
+	const char *name;
+	/* creates p->win and p->bg */
+	void (*create_win)(struct panel *p, int x, int y, 
+			   unsigned int w, unsigned int h, long event_mask);
+	int (*create_dc)(struct panel *p);
+
+	void (*blit)(struct panel *p, int x, int y, unsigned int w, unsigned int h);
+	void (*update_bg)(struct panel *p);
+
+	/* creates p->cr */
+	int (*create_private)(struct panel *p);
+	void (*free_private)(struct panel *p);
+};
+
+extern struct render_interface render_normal;
+extern struct render_interface render_pseudo;
 
 int create_panel(struct panel *panel, struct config_format_tree *tree);
 void destroy_panel(struct panel *panel);

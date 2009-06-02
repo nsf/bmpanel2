@@ -6,6 +6,7 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/extensions/shape.h>
+#include <X11/extensions/Xrender.h>
 #include "util.h"
 
 enum x_atom {
@@ -40,6 +41,7 @@ enum x_atom {
 	XATOM_COUNT
 };
 
+
 struct x_connection {
 	Display *dpy;
 
@@ -56,11 +58,15 @@ struct x_connection {
 	Colormap default_colormap;
 	int default_depth;
 
+	Visual *argb_visual;
+	Colormap argb_colormap;
+
 	Window root;
 	Pixmap root_pixmap;
 	
 	Atom atoms[XATOM_COUNT];
 };
+
 
 int x_connect(struct x_connection *c, const char *display);
 void x_disconnect(struct x_connection *c);
@@ -73,21 +79,21 @@ void x_disconnect(struct x_connection *c);
  *  class = InputOutput
  *  visual = c->default_visual
  */
-Window x_create_default_window(struct x_connection *c, int x, int y, 
-		unsigned int w, unsigned int h, unsigned long valuemask,
-		XSetWindowAttributes *attrs);
+Window x_create_default_window(struct x_connection *c, 
+			       int x, int y, unsigned int w, unsigned int h, 
+			       unsigned long valuemask, XSetWindowAttributes *attrs);
 
 /* 
  * default pixmap is (ommiting 2 parameters):
  *  d = c->root
  *  depth = c->default_depth
  */
-Pixmap x_create_default_pixmap(struct x_connection *c, unsigned int w,
-		unsigned int h);
+Pixmap x_create_default_pixmap(struct x_connection *c, 
+			       unsigned int w, unsigned int h);
 
 /* allocated by Xlib, should be released with XFree */
 void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 
-		Atom type, int *items);
+		      Atom type, int *items);
 
 int x_get_prop_int(struct x_connection *c, Window win, Atom at);
 Window x_get_prop_window(struct x_connection *c, Window win, Atom at);
@@ -97,14 +103,17 @@ int x_get_window_desktop(struct x_connection *c, Window win);
 void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value);
 void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at);
 void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
-		const long *values, size_t len);
+		      const long *values, size_t len);
 
 int x_is_window_hidden(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
 
 /* allocated by xstrdup, should be released with xfree */
 char *x_realloc_window_name(struct x_connection *c, Window win, char *old);
-void x_send_netwm_message(struct x_connection *c, Window win,
-		Atom a, long l0, long l1, long l2, long l3, long l4);
+void x_send_netwm_message(struct x_connection *c, Window win, 
+			  Atom a, long l0, long l1, long l2, long l3, long l4);
+
+void x_set_error_trap();
+int x_done_error_trap();
 
 #endif /* BMPANEL2_XUTIL_H */

@@ -1,6 +1,8 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
+/* TODO: _NET_WM_ICON_GEOMETRY */
+
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
@@ -123,7 +125,8 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 {
 	struct taskbar_task t;
 
-	if (x_is_window_hidden(c, win))
+	x_set_error_trap();
+	if (x_is_window_hidden(c, win) || x_done_error_trap())
 		return;
 
 	XSelectInput(c->dpy, win, PropertyChangeMask);
@@ -135,8 +138,6 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	else
 		t.icon = 0;
 	t.desktop = x_get_window_desktop(c, win);
-
-
 
 	int i = find_last_task_by_desktop(tw, t.desktop);
 	if (i == -1)
@@ -214,7 +215,10 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 		int yy = (height - iconh) / 2;
 		xx += theme->icon_offset[0];
 		yy += theme->icon_offset[1];
+		cairo_save(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 		blit_image(task->icon, cr, xx, yy);
+		cairo_restore(cr);
 	}
 	xx += iconw; 
 	

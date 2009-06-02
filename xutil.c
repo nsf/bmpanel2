@@ -1,5 +1,25 @@
 #include "xutil.h"
 
+/**************************************************************************
+  X error handlers
+**************************************************************************/
+
+static int X_error_handler(Display *dpy, XErrorEvent *error)
+{
+	char buf[1024];
+	if (error->error_code == BadWindow)
+		return 0;
+	XGetErrorText(dpy, error->error_code, buf, sizeof(buf));
+	XWARNING("X error: %s (resource id: %d)", buf, error->resourceid);
+	return 0;
+}
+
+static int X_io_error_handler(Display *dpy)
+{
+	XWARNING("fatal error, connection to X server lost? exiting...");
+	return 0;
+}
+
 static char *atom_names[] = {
 	"WM_STATE",
 	"_NET_DESKTOP_NAMES",
@@ -31,7 +51,8 @@ static char *atom_names[] = {
 	"_XROOTPMAP_ID"
 };
 
-void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, Atom type, int *items)
+void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 
+		      Atom type, int *items)
 {
 	Atom type_ret;
 	int format_ret;
@@ -94,12 +115,51 @@ int x_get_window_desktop(struct x_connection *c, Window win)
 	return x_get_prop_int(c, win, c->atoms[XATOM_NET_WM_DESKTOP]);
 }
 
+static Visual *find_argb_visual(struct x_connection *c)
+{
+	XVisualInfo *xvi;
+	XVisualInfo template;
+	int nvi, i;
+	XRenderPictFormat *format;
+	Visual *visual;
+	
+	template.screen = c->screen;
+	template.depth = 32;
+	template.class = TrueColor;
+	xvi = XGetVisualInfo(c->dpy,
+			     VisualScreenMask |
+			     VisualDepthMask |
+			     VisualClassMask,
+			     &template,
+			     &nvi);
+	if (xvi == 0)
+		return 0;
+	
+	visual = 0;
+	for (i = 0; i < nvi; i++) {
+		format = XRenderFindVisualFormat(c->dpy, xvi[i].visual);
+		if (format->type == PictTypeDirect && format->direct.alphaMask) {
+			visual = xvi[i].visual;
+			break;
+		}
+	}
+
+	XFree(xvi);
+	return visual;
+}
+
 int x_connect(struct x_connection *c, const char *display)
 {
 	CLEAR_STRUCT(c);
 	c->dpy = XOpenDisplay(display);
 	if (!c->dpy)
 		return 1;
+
+#ifndef NDEBUG
+	//XSynchronize(c->dpy, True);
+#endif
+	XSetErrorHandler(X_error_handler);
+	XSetIOErrorHandler(X_io_error_handler);
 	
 	/* get internal atoms */
 	XInternAtoms(c->dpy, atom_names, XATOM_COUNT, False, c->atoms);
@@ -116,6 +176,10 @@ int x_connect(struct x_connection *c, const char *display)
 	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
 	c->root 		= RootWindow(c->dpy, c->screen);
 	c->root_pixmap 		= x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
+	c->argb_visual 		= find_argb_visual(c);
+
+	if (c->argb_visual)
+		c->argb_colormap = XCreateColormap(c->dpy, c->root, c->argb_visual, AllocNone);
 
 	XSelectInput(c->dpy, c->root, PropertyChangeMask);
 
@@ -134,6 +198,8 @@ int x_connect(struct x_connection *c, const char *display)
 
 void x_disconnect(struct x_connection *c)
 {
+	if (c->argb_visual)
+		XFreeColormap(c->dpy, c->argb_colormap);
 	XCloseDisplay(c->dpy);
 }
 
@@ -299,4 +365,30 @@ void x_send_netwm_message(struct x_connection *c, Window win,
 
 	XSendEvent(c->dpy, c->root, False, SubstructureNotifyMask |
 			SubstructureRedirectMask, (XEvent*)&e);
+}
+
+/**************************************************************************
+  X error trap
+**************************************************************************/
+
+static int trapped_error;
+static int (*old_error_handler)(Display*, XErrorEvent*);
+
+static int X_error_trap(Display *dpy, XErrorEvent *error)
+{
+	trapped_error = -1;
+	return 0;
+}
+
+void x_set_error_trap()
+{
+	old_error_handler = XSetErrorHandler(X_error_trap);
+}
+
+int x_done_error_trap()
+{
+	XSetErrorHandler(old_error_handler);
+	int ret = trapped_error;
+	trapped_error = 0;
+	return ret;
 }

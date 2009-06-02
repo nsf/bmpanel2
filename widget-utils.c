@@ -247,9 +247,16 @@ void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty)
 	size_t sh = image_height(src);
 	size_t sw = image_width(src);
 
+	blit_image_ex(src, dest, 0, 0, sw, sh, dstx, dsty);
+}
+
+void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
+		   int width, int height, int dstx, int dsty)
+{
 	cairo_save(dest);
-	cairo_set_source_surface(dest, src, dstx, dsty);
-	cairo_rectangle(dest, dstx, dsty, sw, sh);
+	cairo_set_source_surface(dest, src, dstx-srcx, dsty-srcy);
+	cairo_translate(dest, dstx, dsty);
+	cairo_rectangle(dest, 0, 0, width, height);
 	cairo_clip(dest);
 	cairo_paint(dest);
 	cairo_restore(dest);
@@ -392,20 +399,27 @@ static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c,
 	int x = 0, y = 0;
 	unsigned int w = 0, h = 0, d = 0, bw = 0;
 	cairo_surface_t *ret = 0;
-	cairo_surface_t *sicon, *smask;
+	cairo_surface_t *sicon = 0, *smask = 0;
 	
 	XGetGeometry(c->dpy, icon, &root_ret, 
 			&x, &y, &w, &h, &bw, &d);
 
-	sicon = cairo_xlib_surface_create(c->dpy, icon, 
-			c->default_visual, w, h);
+	/* yep, it is that bad */
+	if (d == 1)
+		sicon = cairo_xlib_surface_create_for_bitmap(c->dpy, icon,
+				DefaultScreenOfDisplay(c->dpy), w, h);
+	else
+		sicon = cairo_xlib_surface_create(c->dpy, icon, 
+				c->default_visual, w, h);
 	if (cairo_surface_status(sicon) != CAIRO_STATUS_SUCCESS)
 		goto get_icon_from_pixmap_error_sicon;
 
-	smask = cairo_xlib_surface_create_for_bitmap(c->dpy, icon_mask,
-			DefaultScreenOfDisplay(c->dpy), w, h);
-	if (cairo_surface_status(smask) != CAIRO_STATUS_SUCCESS)
-		goto get_icon_from_pixmap_error_smask;
+	if (icon_mask != None) {
+		smask = cairo_xlib_surface_create_for_bitmap(c->dpy, icon_mask,
+				DefaultScreenOfDisplay(c->dpy), w, h);
+		if (cairo_surface_status(smask) != CAIRO_STATUS_SUCCESS)
+			goto get_icon_from_pixmap_error_smask;
+	}
 
 	ret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
 	if (cairo_surface_status(ret) != CAIRO_STATUS_SUCCESS)
@@ -416,17 +430,23 @@ static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c,
 		goto get_icon_from_pixmap_error_cr;
 
 	/* fill with transparent (alpha == 0) */
+
+	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 	cairo_set_source_rgba(cr, 0, 0, 0, 0);
 	cairo_paint(cr);
 
 	/* draw icon with mask */
 	cairo_set_source_surface(cr, sicon, 0, 0);
-	cairo_mask_surface(cr, smask, 0, 0);
+	if (smask)
+		cairo_mask_surface(cr, smask, 0, 0);
+	else
+		cairo_paint(cr);
 
 	/* clean up */
 	cairo_destroy(cr);
 	cairo_surface_destroy(sicon);
-	cairo_surface_destroy(smask);
+	if (smask)
+		cairo_surface_destroy(smask);
 
 	return ret;
 

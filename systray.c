@@ -195,6 +195,10 @@ static void draw(struct widget *w)
 				  sw->icon_size[0], sw->icon_size[1]);
 		XMoveWindow(c->dpy, sw->icons[i].icon, 0, 0);
 		XMapRaised(c->dpy, sw->icons[i].embedder);
+		/*
+		XClearWindow(c->dpy, sw->icons[i].embedder);
+		XClearWindow(c->dpy, sw->icons[i].icon);
+		*/
 		x += sw->icon_size[0];
 	}
 }

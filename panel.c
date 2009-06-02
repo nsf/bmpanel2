@@ -49,6 +49,11 @@ static void free_panel_theme(struct panel_theme *theme)
   Panel
 **************************************************************************/
 
+static void select_render_interface(struct panel *p)
+{
+	p->render = &render_normal;
+}
+
 static void get_position_and_strut(const struct x_connection *c, 
 		const struct panel_theme *t, int *ox, int *oy, 
 		int *ow, int *oh, long *strut)
@@ -88,21 +93,13 @@ static int create_window(struct panel *panel)
 
 	int x,y,w,h;
 	long strut[12] = {0};
-	XSetWindowAttributes attrs;
 	
 	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
 
-	/* background pixmap */
-	panel->bg = x_create_default_pixmap(c, w, h);
-	
-	attrs.background_pixmap = panel->bg;
-	attrs.event_mask = ExposureMask | StructureNotifyMask |
-			ButtonPressMask | ButtonReleaseMask | 
-			PointerMotionMask | EnterWindowMask | LeaveWindowMask;
-	
-	/* panel window */
-	panel->win = x_create_default_window(c, x, y, w, h, 
-			CWBackPixmap | CWEventMask, &attrs);
+	(*panel->render->create_win)(panel, x, y, w, h, 
+			ExposureMask | StructureNotifyMask | ButtonPressMask |
+			ButtonReleaseMask | PointerMotionMask | EnterWindowMask |
+			LeaveWindowMask);
 
 	panel->x = x;
 	panel->y = y;
@@ -257,31 +254,13 @@ void recalculate_widgets_sizes(struct panel *p)
 
 static int create_drawing_context(struct panel *panel)
 {
-	struct x_connection *c = &panel->connection;
-
-	cairo_surface_t *bgs = cairo_xlib_surface_create(c->dpy, 
-			panel->bg, c->default_visual, 
-			panel->width, panel->height);
-
-	if (cairo_surface_status(bgs) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(bgs);
-		return XERROR("Failed to create cairo surface");
-	}
-
-	panel->cr = cairo_create(bgs);
-	cairo_surface_destroy(bgs);
-
-	if (cairo_status(panel->cr) != CAIRO_STATUS_SUCCESS) {
-		cairo_destroy(panel->cr);
-		return XERROR("Failed to create cairo drawing context");
-	}
-
-	return 0;
+	return (*panel->render->create_dc)(panel);
 }
 
 static void expose_whole_panel(struct panel *panel)
 {
 	Display *dpy = panel->connection.dpy;
+
 	int sepw = 0;
 	sepw += image_width(panel->theme.separator);
 
@@ -295,8 +274,10 @@ static void expose_whole_panel(struct panel *panel)
 
 		/* background */
 		pattern_image(panel->theme.background, panel->cr, x, 0, w);
+
 		/* widget contents */
 		(*wi->interface->draw)(wi);
+
 		/* separator */
 		x += w;
 		if (panel->theme.separator && panel->widgets_n - 1 != i)
@@ -307,7 +288,7 @@ static void expose_whole_panel(struct panel *panel)
 
 	}
 
-	XClearWindow(dpy, panel->win);
+	(*panel->render->blit)(panel, 0, 0, panel->width, panel->height);
 	XFlush(dpy);
 	panel->needs_expose = 0;
 }
@@ -328,8 +309,8 @@ static void expose_panel(struct panel *panel)
 			pattern_image(panel->theme.background, panel->cr, 
 					w->x, 0, w->width);
 			(*w->interface->draw)(w);
-			XClearArea(dpy, panel->win, w->x, 0, 
-					w->width, panel->height, False);
+			(*panel->render->blit)(panel, w->x, 0, 
+					       w->width, panel->height);
 			w->needs_expose = 0;
 		}
 	}
@@ -342,7 +323,6 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 	CLEAR_STRUCT(panel);
 
 	/* connect to X server */
-	/* TODO: error handlers */
 	if (x_connect(&panel->connection, 0)) {
 		XWARNING("Failed to connect to X server");
 		goto create_panel_error_x;
@@ -354,12 +334,21 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 		goto create_panel_error_theme;
 	}
 
+	select_render_interface(panel);
 	struct x_connection *c = &panel->connection;
 
 	/* create window */
 	if (create_window(panel)) {
 		XWARNING("Can't create panel window");
 		goto create_panel_error_win;
+	}
+	
+	/* render private */
+	if (panel->render->create_private) {
+		if ((*panel->render->create_private)(panel)) {
+			XWARNING("Failed to create render private");
+			goto create_panel_error_render_private;
+		}
 	}
 
 	if (create_drawing_context(panel)) {
@@ -369,7 +358,7 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 
 	/* doesn't fail? */
 	panel->layout = pango_cairo_create_layout(panel->cr);
-	
+
 	/* parse panel widgets */
 	if (parse_panel_widgets(panel, tree)) {
 		XWARNING("Failed to load one of panel's widgets");
@@ -397,6 +386,9 @@ create_panel_error_widgets:
 	g_object_unref(panel->layout);
 	cairo_destroy(panel->cr);
 create_panel_error_drawing_context:
+	if (panel->render->free_private)
+		(*panel->render->free_private)(panel);
+create_panel_error_render_private:
 	XDestroyWindow(c->dpy, panel->win);
 	XFreePixmap(c->dpy, panel->bg);
 create_panel_error_win:
@@ -410,6 +402,10 @@ create_panel_error_x:
 void destroy_panel(struct panel *panel)
 {
 	size_t i;
+
+	if (panel->render->free_private)
+		(*panel->render->free_private)(panel);
+
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
 		(*w->interface->destroy_widget_private)(w);
@@ -457,7 +453,7 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 			break;
 
 		case Expose:
-			XClearWindow(dpy, p->win);
+			(*p->render->blit)(p, 0, 0, p->width, p->height);
 			XFlush(dpy);
 			break;
 		
