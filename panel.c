@@ -435,6 +435,15 @@ void destroy_panel(struct panel *panel)
 	x_disconnect(&panel->connection);
 }
 
+static void panel_property_notify(struct panel *p, XPropertyEvent *e)
+{
+	if (e->atom == p->connection.atoms[XATOM_XROOTPMAP_ID] &&
+	    p->render->update_bg) 
+	{
+		(*p->render->update_bg)(p);
+	}
+}
+
 static int process_events(struct panel *p)
 {
 	Display *dpy = p->connection.dpy;
@@ -456,11 +465,8 @@ static int process_events(struct panel *p)
 			break;
 
 		case Expose:
-			/* skip? */
-			if (p->win == e.xexpose.window) {
-				(*p->render->blit)(p, 0, 0, p->width, p->height);
-				XFlush(dpy);
-			}
+			if (p->win == e.xexpose.window && p->render->expose)
+				(*p->render->expose)(p);
 			break;
 		
 		case ButtonRelease:
@@ -478,6 +484,7 @@ static int process_events(struct panel *p)
 			break;
 		
 		case PropertyNotify:
+			panel_property_notify(p, &e.xproperty);
 			disp_property_notify(p, &e.xproperty);
 			break;
 

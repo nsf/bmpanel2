@@ -112,6 +112,7 @@ int x_is_window_iconified(struct x_connection *c, Window win);
 char *x_realloc_window_name(struct x_connection *c, Window win, char *old);
 void x_send_netwm_message(struct x_connection *c, Window win, 
 			  Atom a, long l0, long l1, long l2, long l3, long l4);
+void x_update_root_pmap(struct x_connection *c);
 
 void x_set_error_trap();
 int x_done_error_trap();

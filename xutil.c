@@ -203,6 +203,11 @@ void x_disconnect(struct x_connection *c)
 	XCloseDisplay(c->dpy);
 }
 
+void x_update_root_pmap(struct x_connection *c)
+{
+	c->root_pixmap = x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
+}
+
 Window x_create_default_window(struct x_connection *c, int x, int y, 
 		unsigned int w, unsigned int h, unsigned long valuemask,
 		XSetWindowAttributes *attrs)

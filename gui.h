@@ -155,14 +155,20 @@ struct render_interface {
 	/* creates p->win and p->bg */
 	void (*create_win)(struct panel *p, int x, int y, 
 			   unsigned int w, unsigned int h, long event_mask);
-	int (*create_dc)(struct panel *p);
-
-	void (*blit)(struct panel *p, int x, int y, unsigned int w, unsigned int h);
-	void (*update_bg)(struct panel *p);
-
-	/* creates p->cr */
+	/* creates private render data (called after create_win) */
 	int (*create_private)(struct panel *p);
 	void (*free_private)(struct panel *p);
+	/* creates p->cr (widgets are rendered to that context) */
+	int (*create_dc)(struct panel *p);
+
+	/* function for blitting everything to the panel (or it's bg) */
+	void (*blit)(struct panel *p, int x, int y, unsigned int w, unsigned int h);
+
+	/* background property change */
+	void (*update_bg)(struct panel *p);
+
+	/* expose event */
+	void (*expose)(struct panel *p);
 };
 
 extern struct render_interface render_normal;
