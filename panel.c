@@ -34,6 +34,7 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 		return -1;
 
 	theme->separator = parse_image_part_named("separator", e, tree, 0);
+	theme->transparent = parse_bool("transparent", e);
 
 	return 0;
 }
@@ -51,7 +52,11 @@ static void free_panel_theme(struct panel_theme *theme)
 
 static void select_render_interface(struct panel *p)
 {
-	p->render = &render_normal;
+	/* TODO: composite manager detection and composite render */
+	if (p->theme.transparent)
+		p->render = &render_pseudo;
+	else
+		p->render = &render_normal;
 }
 
 static void get_position_and_strut(const struct x_connection *c, 
@@ -276,7 +281,8 @@ static void expose_whole_panel(struct panel *panel)
 		pattern_image(panel->theme.background, panel->cr, x, 0, w);
 
 		/* widget contents */
-		(*wi->interface->draw)(wi);
+		if (wi->interface->draw)
+			(*wi->interface->draw)(wi);
 
 		/* separator */
 		x += w;
@@ -285,12 +291,21 @@ static void expose_whole_panel(struct panel *panel)
 
 		/* widget was drawn, clear "needs_expose" flag */
 		wi->needs_expose = 0;
-
 	}
 
 	(*panel->render->blit)(panel, 0, 0, panel->width, panel->height);
 	XFlush(dpy);
 	panel->needs_expose = 0;
+
+	/* after exposing panel actions, for those who need panel background
+	 * (e.g. systray icons)
+	 */
+	for (i = 0; i < panel->widgets_n; ++i) {
+		struct widget *wi = &panel->widgets[i];
+		if (wi->interface->panel_exposed)
+			(*wi->interface->panel_exposed)(wi);
+	}
+	XFlush(dpy);
 }
 
 static void expose_panel(struct panel *panel)
@@ -308,7 +323,8 @@ static void expose_panel(struct panel *panel)
 		if (w->needs_expose) {
 			pattern_image(panel->theme.background, panel->cr, 
 					w->x, 0, w->width);
-			(*w->interface->draw)(w);
+			if (w->interface->draw)
+				(*w->interface->draw)(w);
 			(*panel->render->blit)(panel, w->x, 0, 
 					       w->width, panel->height);
 			w->needs_expose = 0;
@@ -419,42 +435,32 @@ void destroy_panel(struct panel *panel)
 	x_disconnect(&panel->connection);
 }
 
-static gboolean panel_second_timeout(gpointer data)
+static int process_events(struct panel *p)
 {
-	struct panel *p = data;
-	size_t i;
-	struct widget *w;
-	for (i = 0; i < p->widgets_n; ++i) {
-		w = &p->widgets[i];
-		if (w->interface->clock_tick)
-			(*w->interface->clock_tick)(w);
-	}
-	expose_panel(p);
-	return TRUE;
-}
-
-static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
-{
-	//ENSURE(condition == G_IO_IN, "Input condition failed");
-	struct panel *p = data;
 	Display *dpy = p->connection.dpy;
-
+	int events_processed = 0;
+	
 	while (XPending(dpy)) {
 		XEvent e;
 		XNextEvent(dpy, &e);
+		events_processed++;
 
 		switch (e.type) {
 		
 		case NoExpose:
 		case MapNotify:
 		case UnmapNotify:
+		case VisibilityNotify:
 		case ReparentNotify:
 			/* skip? */
 			break;
 
 		case Expose:
-			(*p->render->blit)(p, 0, 0, p->width, p->height);
-			XFlush(dpy);
+			/* skip? */
+			if (p->win == e.xexpose.window) {
+				(*p->render->blit)(p, 0, 0, p->width, p->height);
+				XFlush(dpy);
+			}
 			break;
 		
 		case ButtonRelease:
@@ -493,7 +499,33 @@ static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer dat
 			break;
 		}
 	}
+	if (events_processed)
+		expose_panel(p);
+	return events_processed;
+}
+
+static gboolean panel_second_timeout(gpointer data)
+{
+	struct panel *p = data;
+	size_t i;
+	struct widget *w;
+	for (i = 0; i < p->widgets_n; ++i) {
+		w = &p->widgets[i];
+		if (w->interface->clock_tick)
+			(*w->interface->clock_tick)(w);
+	}
 	expose_panel(p);
+	process_events(p);
+	return TRUE;
+}
+
+static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
+{
+	//ENSURE(condition == G_IO_IN, "Input condition failed");
+	struct panel *p = data;
+	while (process_events(p))
+		;
+
 	return 1;
 }
 

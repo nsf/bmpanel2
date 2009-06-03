@@ -73,6 +73,9 @@ struct widget_interface {
 	void (*dnd_start)(struct widget *w, struct drag_info *di);
 	void (*dnd_drag)(struct widget *w, struct drag_info *di);
 	void (*dnd_drop)(struct widget *w, struct drag_info *di);
+
+	/* this is a hack, but it is required for pseudo-transparency */
+	void (*panel_exposed)(struct widget *w);
 };
 
 struct widget {
@@ -102,6 +105,7 @@ struct panel_theme {
 	int position;
 	cairo_surface_t *background;
 	cairo_surface_t *separator;
+	int transparent; /* bool */
 };
 
 #define PANEL_MAX_WIDGETS 20

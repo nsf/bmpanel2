@@ -113,6 +113,7 @@ extern struct widget_interface decor_interface;
 struct systray_icon {
 	Window icon;
 	Window embedder;
+	int mapped;
 };
 
 struct systray_widget {

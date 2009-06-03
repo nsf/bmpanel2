@@ -3,21 +3,20 @@
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
-
-static void draw(struct widget *w);
 static void client_msg(struct widget *w, XClientMessageEvent *e);
 static void win_destroy(struct widget *w, XDestroyWindowEvent *e);
 static void configure(struct widget *w, XConfigureEvent *e);
+static void panel_exposed(struct widget *w);
 
 struct widget_interface systray_interface = {
 	.theme_name 		= "systray",
 	.size_type 		= WIDGET_SIZE_CONSTANT,
 	.create_widget_private 	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
-	.draw 			= draw,
 	.client_msg 		= client_msg,
 	.win_destroy 		= win_destroy,
-	.configure		= configure
+	.configure		= configure,
+	.panel_exposed		= panel_exposed
 };
 
 /**************************************************************************
@@ -47,22 +46,23 @@ static void add_tray_icon(struct widget *w, Window win)
 	struct x_connection *c = &w->panel->connection;
 
 	struct systray_icon icon;
+	icon.mapped = 0;
 	icon.icon = win;
 
 	/* create embedder window */
 	XSetWindowAttributes attrs;
-	attrs.override_redirect = 1;
 	attrs.background_pixmap = ParentRelative;
 	icon.embedder = XCreateWindow(c->dpy, w->panel->win, 0, 0, 
 				      sw->icon_size[0], sw->icon_size[1], 
 				      0, c->default_depth, InputOutput, 
 				      c->default_visual, 
-				      CWOverrideRedirect | CWBackPixmap, &attrs);
+				      CWBackPixmap, &attrs);
 
 	/* Select structure notifications. Some tray icons require double 
 	 * size sets (I don't know why, but it works).
 	 */
-	XSelectInput(c->dpy, icon.icon, StructureNotifyMask);
+	XSelectInput(c->dpy, icon.embedder, StructureNotifyMask);
+	XSelectInput(c->dpy, icon.icon, StructureNotifyMask | ExposureMask);
 
 	XResizeWindow(c->dpy, icon.icon, sw->icon_size[0], sw->icon_size[1]);
 	XReparentWindow(c->dpy, icon.icon, icon.embedder, 0, 0);
@@ -182,7 +182,7 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 	}
 }
 
-static void draw(struct widget *w)
+static void panel_exposed(struct widget *w)
 {
 	struct systray_widget *sw = (struct systray_widget*)w->private;
 	struct x_connection *c = &w->panel->connection;
@@ -193,12 +193,12 @@ static void draw(struct widget *w)
 	for (i = 0; i < sw->icons_n; ++i) {
 		XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y, 
 				  sw->icon_size[0], sw->icon_size[1]);
-		XMoveWindow(c->dpy, sw->icons[i].icon, 0, 0);
-		XMapRaised(c->dpy, sw->icons[i].embedder);
-		/*
-		XClearWindow(c->dpy, sw->icons[i].embedder);
-		XClearWindow(c->dpy, sw->icons[i].icon);
-		*/
+		if (!sw->icons[i].mapped) {
+			XMapRaised(c->dpy, sw->icons[i].embedder);
+			sw->icons[i].mapped = 1;
+		}
+		XClearArea(c->dpy, sw->icons[i].icon, 0,0,0,0, True);
+
 		x += sw->icon_size[0];
 	}
 }
@@ -223,8 +223,8 @@ static void configure(struct widget *w, XConfigureEvent *e)
 	int i = find_tray_icon(sw, e->window);
 	if (i != -1) {
 		XWindowChanges wc;
-		wc.width = 24;
-		wc.height = 24;
+		wc.width = sw->icon_size[0];
+		wc.height = sw->icon_size[1];
 		XConfigureWindow(c->dpy, e->window, CWWidth | CWHeight, &wc);
 	}
 }
