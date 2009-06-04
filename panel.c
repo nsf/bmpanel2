@@ -339,8 +339,7 @@ void create_panel(struct panel *panel, struct config_format_tree *tree)
 		(*panel->render->create_private)(panel);
 
 	/* rendering context */
-	if (panel->render->create_dc)
-		(*panel->render->create_dc)(panel);
+	(*panel->render->create_dc)(panel);
 
 	/* create text layout */
 	panel->layout = pango_cairo_create_layout(panel->cr);
