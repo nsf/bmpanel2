@@ -131,7 +131,7 @@ static void update_desktops(struct desktops_widget *dw, struct x_connection *c)
 				       c->atoms[XATOM_UTF8_STRING], 0);
 
 	for (i = 0; i < desktops_n; ++i) {
-		struct desktops_desktop d;
+		struct desktops_desktop d = {0,0,0,0};
 		if (names) {
 			d.name = xstrdup(name);
 			name += strlen(name) + 1;

@@ -3,9 +3,9 @@
 
 static void create_win(struct panel *p, int x, int y, 
 		       unsigned int w, unsigned int h, long event_mask);
-static int create_dc(struct panel *p);
+static void create_dc(struct panel *p);
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h);
-static int create_private(struct panel *p);
+static void create_private(struct panel *p);
 static void free_private(struct panel *p);
 static void update_bg(struct panel *p);
 
@@ -30,7 +30,7 @@ struct pseudo_render {
 	cairo_surface_t *wallpaper;
 };
 
-static int create_private(struct panel *p)
+static void create_private(struct panel *p)
 {
 	struct x_connection *c = &p->connection;
 	struct pseudo_render *pr = xmallocz(sizeof(struct pseudo_render));
@@ -44,8 +44,6 @@ static int create_private(struct panel *p)
 								c->screen_width,
 								c->screen_height);
 	p->render_private = (void*)pr;
-
-	return 0;
 }
 
 static void free_private(struct panel *p)
@@ -76,7 +74,7 @@ static void create_win(struct panel *p, int x, int y,
 					 CWBackPixmap | CWEventMask, &attrs);
 }
 
-static int create_dc(struct panel *p)
+static void create_dc(struct panel *p)
 {
 	cairo_surface_t *backbuf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
 							      p->width, p->height);
@@ -84,8 +82,6 @@ static int create_dc(struct panel *p)
 	p->cr = cairo_create(backbuf);
 	cairo_surface_destroy(backbuf);
 	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
-
-	return 0;
 }
 	
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)

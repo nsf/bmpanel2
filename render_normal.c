@@ -3,7 +3,7 @@
 
 static void create_win(struct panel *p, int x, int y, 
 		       unsigned int w, unsigned int h, long event_mask);
-static int create_dc(struct panel *p);
+static void create_dc(struct panel *p);
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h);
 
 struct render_interface render_normal = {
@@ -28,12 +28,10 @@ static void create_win(struct panel *p, int x, int y,
 					 CWBackPixmap | CWEventMask, &attrs);
 }
 
-static int create_dc(struct panel *p)
+static void create_dc(struct panel *p)
 {
 	p->cr = create_cairo_for_pixmap(&p->connection, p->bg, 
 					p->width, p->height);
-
-	return 0;
 }
 	
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)

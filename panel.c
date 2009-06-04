@@ -91,7 +91,7 @@ static void get_position_and_strut(const struct x_connection *c,
 	strut[where[t->position].e] = x+w;
 }
 
-static int create_window(struct panel *panel)
+static void create_window(struct panel *panel)
 {
 	struct x_connection *c = &panel->connection;
 	struct panel_theme *t = &panel->theme;
@@ -153,11 +153,9 @@ static int create_window(struct panel *panel)
 	ch.res_name = "panel";
 	ch.res_class = "bmpanel";
 	XSetClassHint(c->dpy, panel->win, &ch);
-
-	return 0;
 }
 
-static int parse_panel_widgets(struct panel *panel, struct config_format_tree *tree)
+static void parse_panel_widgets(struct panel *panel, struct config_format_tree *tree)
 {
 	size_t i;
 	for (i = 0; i < tree->root.children_n; ++i) {
@@ -165,7 +163,7 @@ static int parse_panel_widgets(struct panel *panel, struct config_format_tree *t
 		struct widget_interface *we = lookup_widget_interface(e->name);
 		if (we) {
 			if (panel->widgets_n == PANEL_MAX_WIDGETS)
-				return XERROR("error: Widgets limit reached");
+				XDIE("error: Widgets limit reached");
 			
 			struct widget *w = &panel->widgets[panel->widgets_n];
 
@@ -181,10 +179,9 @@ static int parse_panel_widgets(struct panel *panel, struct config_format_tree *t
 			}
 		}
 	}
-	return 0;
 }
 
-static int calculate_widgets_sizes(struct panel *panel)
+void recalculate_widgets_sizes(struct panel *panel)
 {
 	const int min_fill_size = 200;
 	int num_constant = 0;
@@ -211,13 +208,13 @@ static int calculate_widgets_sizes(struct panel *panel)
 	total_separators_width = separators * separator_width;
 
 	if (num_fill != 1)
-		return XERROR("There always should be exactly one widget with a "
-			      "SIZE_FILL size type (taskbar)");
+		XDIE("There always should be exactly one widget with a "
+		     "SIZE_FILL size type (taskbar)");
 
 	if (total_constants_width + total_separators_width > 
 	    panel->width - min_fill_size)
 	{
-		return XERROR("Too many widgets here, try to remove one or more");
+		XDIE("Too many widgets here, try to remove one or more");
 	}
 
 	for (i = 0; i < panel->widgets_n; ++i) {
@@ -247,19 +244,6 @@ static int calculate_widgets_sizes(struct panel *panel)
 
 	/* request redraw */
 	panel->needs_expose = 1;
-
-	return 0;
-}
-
-void recalculate_widgets_sizes(struct panel *p)
-{
-	if (calculate_widgets_sizes(p) != 0)
-		XWARNING("That's really bad, it should't happen");
-}
-
-static int create_drawing_context(struct panel *panel)
-{
-	return (*panel->render->create_dc)(panel);
 }
 
 static void expose_whole_panel(struct panel *panel)
@@ -349,27 +333,22 @@ void create_panel(struct panel *panel, struct config_format_tree *tree)
 	struct x_connection *c = &panel->connection;
 
 	/* create window */
-	if (create_window(panel))
-		XDIE("Can't create panel window");
+	create_window(panel);
 	
 	/* render private */
 	if (panel->render->create_private)
-		if ((*panel->render->create_private)(panel))
-			XDIE("Failed to create render private");
+		(*panel->render->create_private)(panel);
 
 	/* rendering context */
-	if (create_drawing_context(panel))
-		XDIE("Failed to create drawing context");
+	if (panel->render->create_dc)
+		(*panel->render->create_dc)(panel);
 
 	/* doesn't fail? */
 	panel->layout = pango_cairo_create_layout(panel->cr);
 
 	/* parse panel widgets */
-	if (parse_panel_widgets(panel, tree))
-		XDIE("Failed to load one of panel's widgets");
-
-	if (calculate_widgets_sizes(panel))
-		XDIE("Failed to calculate widgets sizes");
+	parse_panel_widgets(panel, tree);
+	recalculate_widgets_sizes(panel);
 
 	/* all ok, map window */
 	expose_panel(panel);
