@@ -333,17 +333,16 @@ static void expose_panel(struct panel *panel)
 	XFlush(dpy);
 }
 
-int create_panel(struct panel *panel, struct config_format_tree *tree)
+void create_panel(struct panel *panel, struct config_format_tree *tree)
 {
-	size_t i;
 	CLEAR_STRUCT(panel);
 
 	/* connect to X server */
-	if (x_connect(&panel->connection, 0)) {
+	if (x_connect(&panel->connection, 0))
 		XDIE("Failed to connect to X server");
 
 	/* parse panel theme */
-	if (load_panel_theme(&panel->theme, tree)) {
+	if (load_panel_theme(&panel->theme, tree))
 		XDIE("Failed to load theme format file");
 
 	select_render_interface(panel);

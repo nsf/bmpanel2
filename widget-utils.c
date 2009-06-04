@@ -374,22 +374,15 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 	 */
 	ret = cairo_image_surface_create_for_data((unsigned char*)array, 
 			CAIRO_FORMAT_ARGB32, w, h, w*4);		
-	if (cairo_surface_status(ret) != CAIRO_STATUS_SUCCESS)
-		goto get_icon_from_netwm_error;
-	else {
-		cairo_status_t st;
-		st = cairo_surface_set_user_data(ret, &surface_data_key, 
-				array, free_custom_surface_data);
-		if (st != CAIRO_STATUS_SUCCESS)
-			goto get_icon_from_netwm_error;
-	}
+	ENSURE(cairo_surface_status(ret) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo image surface");
+	cairo_status_t st;
+	st = cairo_surface_set_user_data(ret, &surface_data_key, 
+					 array, free_custom_surface_data);
+	ENSURE(st == CAIRO_STATUS_SUCCESS,
+	       "Failed to set user data for surface");
 
 	return ret;
-
-get_icon_from_netwm_error:
-	cairo_surface_destroy(ret);
-	xfree(array);
-	return 0;
 }
 
 static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c, 
@@ -411,26 +404,25 @@ static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c,
 	else
 		sicon = cairo_xlib_surface_create(c->dpy, icon, 
 				c->default_visual, w, h);
-	if (cairo_surface_status(sicon) != CAIRO_STATUS_SUCCESS)
-		goto get_icon_from_pixmap_error_sicon;
+	ENSURE(cairo_surface_status(sicon) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo/xlib surface");
 
 	if (icon_mask != None) {
 		smask = cairo_xlib_surface_create_for_bitmap(c->dpy, icon_mask,
 				DefaultScreenOfDisplay(c->dpy), w, h);
-		if (cairo_surface_status(smask) != CAIRO_STATUS_SUCCESS)
-			goto get_icon_from_pixmap_error_smask;
+		ENSURE(cairo_surface_status(smask) == CAIRO_STATUS_SUCCESS,
+		       "Failed to create cairo/xlib surface");
 	}
 
 	ret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
-	if (cairo_surface_status(ret) != CAIRO_STATUS_SUCCESS)
-		goto get_icon_from_pixmap_error_ret;
+	ENSURE(cairo_surface_status(ret) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo image surface");
 
 	cairo_t *cr = cairo_create(ret);
-	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS)
-		goto get_icon_from_pixmap_error_cr;
+	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo context");
 
 	/* fill with transparent (alpha == 0) */
-
 	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 	cairo_set_source_rgba(cr, 0, 0, 0, 0);
 	cairo_paint(cr);
@@ -449,15 +441,6 @@ static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c,
 		cairo_surface_destroy(smask);
 
 	return ret;
-
-get_icon_from_pixmap_error_cr:
-	cairo_surface_destroy(ret);
-get_icon_from_pixmap_error_ret:
-	cairo_surface_destroy(smask);
-get_icon_from_pixmap_error_smask:
-	cairo_surface_destroy(sicon);
-get_icon_from_pixmap_error_sicon:
-	return 0;
 }
 
 cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
@@ -497,14 +480,14 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 	double ow = image_width(ret);
 	double oh = image_height(ret);
 
-	cairo_surface_t *sizedret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-			w, h);
-	if (cairo_surface_status(sizedret) != CAIRO_STATUS_SUCCESS)
-		goto get_window_icon_error_sizedret;
+	cairo_surface_t *sizedret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 
+							       w, h);
+	ENSURE(cairo_surface_status(sizedret) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo image surface");
 
 	cairo_t *cr = cairo_create(sizedret);
-	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS)
-		goto get_window_icon_error_cr;
+	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo context");
 
 	cairo_scale(cr, w / ow, h / oh);
 	cairo_set_source_surface(cr, ret, 0, 0);
@@ -514,12 +497,6 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 	cairo_surface_destroy(ret);
 
 	return sizedret;
-
-get_window_icon_error_cr:
-	cairo_surface_destroy(sizedret);
-get_window_icon_error_sizedret:
-	cairo_surface_destroy(ret);
-	return 0;
 }
 
 cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
