@@ -527,18 +527,14 @@ cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
 	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy, 
 							     p, c->default_visual,
 							     w, h);
-	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(surface);
-		return 0;
-	}
+	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, 
+	       "Error creating xlib/cairo surface");
 
 	cairo_t *cr = cairo_create(surface);
 	cairo_surface_destroy(surface);
 
-	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS) {
-		cairo_destroy(cr);
-		return 0;
-	}
+	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS, 
+	       "Error creating cairo context");
 
 	return cr;
 }
@@ -549,10 +545,8 @@ cairo_surface_t *create_cairo_surface_for_pixmap(struct x_connection *c, Pixmap 
 	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy, 
 							     p, c->default_visual,
 							     w, h);
-	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(surface);
-		return 0;
-	}
+	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, 
+	       "Error creating xlib/cairo surface");
 
 	return surface;
 }
@@ -562,18 +556,14 @@ cairo_t *create_cairo_for_bitmap(struct x_connection *c, Pixmap p, int w, int h)
 	cairo_surface_t *surface = cairo_xlib_surface_create_for_bitmap(
 			c->dpy, p, DefaultScreenOfDisplay(c->dpy), w, h);
 
-	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(surface);
-		return 0;
-	}
+	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, 
+	       "Error creating xlib/cairo surface");
 
 	cairo_t *cr = cairo_create(surface);
 	cairo_surface_destroy(surface);
 
-	if (cairo_status(cr) != CAIRO_STATUS_SUCCESS) {
-		cairo_destroy(cr);
-		return 0;
-	}
+	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS, 
+	       "Error creating cairo context");
 
 	return cr;
 }
