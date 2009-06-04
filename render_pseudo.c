@@ -35,7 +35,6 @@ static int create_private(struct panel *p)
 	struct x_connection *c = &p->connection;
 	struct pseudo_render *pr = xmallocz(sizeof(struct pseudo_render));
 
-	/* TODO: error check */
 	pr->blit_cr = create_cairo_for_pixmap(c, p->bg, p->width, p->height);
 	pr->buf = x_create_default_pixmap(c, p->width, p->height);
 	pr->buf_cr = create_cairo_for_pixmap(c, pr->buf, p->width, p->height);

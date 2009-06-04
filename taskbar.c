@@ -552,8 +552,7 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 						    di->cur_root_x, 
 						    di->cur_root_y,
 						    t->icon);
-		if (tw->dnd_win != None)
-			XMapWindow(c->dpy, tw->dnd_win);
+		XMapWindow(c->dpy, tw->dnd_win);
 	}
 
 	XDefineCursor(c->dpy, w->panel->win, tw->dnd_cur);

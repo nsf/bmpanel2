@@ -77,11 +77,8 @@ cairo_surface_t *get_image_part(const char *path, int x, int y, int w, int h)
 	cairo_surface_t *dest = cairo_image_surface_create(
 			cairo_image_surface_get_format(source),
 			w,h);
-	if (cairo_surface_status(dest) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(source);
-		XWARNING("Bad image status: %s", path);
-		return 0;
-	}
+	ENSURE(cairo_surface_status(dest) == CAIRO_STATUS_SUCCESS,
+	       "Failed to create cairo image surface");
 
 	cairo_t *cr = cairo_create(dest);
 	cairo_set_source_surface(cr, source, -x, -y);
