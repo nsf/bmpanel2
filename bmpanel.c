@@ -76,9 +76,7 @@ int main(int argc, char **argv)
 	register_widget_interface(&decor_interface);
 	register_widget_interface(&systray_interface);
 
-	if (0 != create_panel(&p, &tree))
-		XDIE("Failed to create a panel");
-
+	create_panel(&p, &tree);
 	panel_main_loop(&p);
 
 	destroy_panel(&p);

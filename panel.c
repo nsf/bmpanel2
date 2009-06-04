@@ -340,80 +340,42 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 
 	/* connect to X server */
 	if (x_connect(&panel->connection, 0)) {
-		XWARNING("Failed to connect to X server");
-		goto create_panel_error_x;
-	}
+		XDIE("Failed to connect to X server");
 
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree)) {
-		XWARNING("Failed to load theme format file");
-		goto create_panel_error_theme;
-	}
+		XDIE("Failed to load theme format file");
 
 	select_render_interface(panel);
 	struct x_connection *c = &panel->connection;
 
 	/* create window */
-	if (create_window(panel)) {
-		XWARNING("Can't create panel window");
-		goto create_panel_error_win;
-	}
+	if (create_window(panel))
+		XDIE("Can't create panel window");
 	
 	/* render private */
-	if (panel->render->create_private) {
-		if ((*panel->render->create_private)(panel)) {
-			XWARNING("Failed to create render private");
-			goto create_panel_error_render_private;
-		}
-	}
+	if (panel->render->create_private)
+		if ((*panel->render->create_private)(panel))
+			XDIE("Failed to create render private");
 
 	/* rendering context */
-	if (create_drawing_context(panel)) {
-		XWARNING("Failed to create drawing context");
-		goto create_panel_error_drawing_context;
-	}
+	if (create_drawing_context(panel))
+		XDIE("Failed to create drawing context");
 
 	/* doesn't fail? */
 	panel->layout = pango_cairo_create_layout(panel->cr);
 
 	/* parse panel widgets */
-	if (parse_panel_widgets(panel, tree)) {
-		XWARNING("Failed to load one of panel's widgets");
-		goto create_panel_error_widgets;
-	}
+	if (parse_panel_widgets(panel, tree))
+		XDIE("Failed to load one of panel's widgets");
 
-	if (calculate_widgets_sizes(panel)) {
-		XWARNING("Failed to calculate widgets sizes");
-		goto create_panel_error_widgets_sizes;
-	}
+	if (calculate_widgets_sizes(panel))
+		XDIE("Failed to calculate widgets sizes");
 
 	/* all ok, map window */
 	expose_panel(panel);
 	XMapWindow(c->dpy, panel->win);
 	XFlush(c->dpy);
-
-	return 0;
-
-create_panel_error_widgets_sizes:
-	for (i = 0; i < panel->widgets_n; ++i) {
-		struct widget *w = &panel->widgets[i];
-		(*w->interface->destroy_widget_private)(w);
-	}
-create_panel_error_widgets:
-	g_object_unref(panel->layout);
-	cairo_destroy(panel->cr);
-create_panel_error_drawing_context:
-	if (panel->render->free_private)
-		(*panel->render->free_private)(panel);
-create_panel_error_render_private:
-	XDestroyWindow(c->dpy, panel->win);
-	XFreePixmap(c->dpy, panel->bg);
-create_panel_error_win:
-	free_panel_theme(&panel->theme);
-create_panel_error_theme:
-	x_disconnect(&panel->connection);
-create_panel_error_x:
-	return -1;
 }
 
 void destroy_panel(struct panel *panel)
