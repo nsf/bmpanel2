@@ -543,6 +543,20 @@ cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
 	return cr;
 }
 
+cairo_surface_t *create_cairo_surface_for_pixmap(struct x_connection *c, Pixmap p,
+						 int w, int h)
+{
+	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy, 
+							     p, c->default_visual,
+							     w, h);
+	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+		cairo_surface_destroy(surface);
+		return 0;
+	}
+
+	return surface;
+}
+
 cairo_t *create_cairo_for_bitmap(struct x_connection *c, Pixmap p, int w, int h)
 {
 	cairo_surface_t *surface = cairo_xlib_surface_create_for_bitmap(

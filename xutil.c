@@ -307,6 +307,9 @@ int x_is_window_iconified(struct x_connection *c, Window win)
 
 char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 {
+	/* TODO: better scheme to avoid unnecessary allocations.
+	 * Investigate mem allocs.
+	 */
 	char *ret, *name = 0;
 	size_t oldlen = (old) ? strlen(old) : 0;
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME], 
@@ -334,8 +337,8 @@ char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 
 	if (oldlen < 9 || !old) {
 		if (old)
-			xfree(old);
-		return xstrdup("<unknown>");
+			xfree_from_source(old, &msrc_titles);
+		return xstrdup_from_source("<unknown>", &msrc_titles);
 	} else {
 		strcpy(old, "<unknown>");
 		return old;
@@ -343,8 +346,8 @@ char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 name_here:
 	if (oldlen < strlen(name) || !old) {
 		if (old)
-			xfree(old);
-		ret = xstrdup(name);
+			xfree_from_source(old, &msrc_titles);	
+		ret = xstrdup_from_source(name, &msrc_titles);
 	} else {
 		strcpy(old, name);
 		ret = old;

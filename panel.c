@@ -367,6 +367,7 @@ int create_panel(struct panel *panel, struct config_format_tree *tree)
 		}
 	}
 
+	/* rendering context */
 	if (create_drawing_context(panel)) {
 		XWARNING("Failed to create drawing context");
 		goto create_panel_error_drawing_context;
@@ -444,6 +445,12 @@ static void panel_property_notify(struct panel *p, XPropertyEvent *e)
 	}
 }
 
+static void panel_expose(struct panel *p, XExposeEvent *e)
+{
+	if (e->window == p->win && p->render->expose)
+		(*p->render->expose)(p);
+}
+
 static int process_events(struct panel *p)
 {
 	Display *dpy = p->connection.dpy;
@@ -451,8 +458,9 @@ static int process_events(struct panel *p)
 	
 	while (XPending(dpy)) {
 		XEvent e;
-		XNextEvent(dpy, &e);
+
 		events_processed++;
+		XNextEvent(dpy, &e);
 
 		switch (e.type) {
 		
@@ -465,8 +473,7 @@ static int process_events(struct panel *p)
 			break;
 
 		case Expose:
-			if (p->win == e.xexpose.window && p->render->expose)
-				(*p->render->expose)(p);
+			panel_expose(p, &e.xexpose);
 			break;
 		
 		case ButtonRelease:
@@ -522,14 +529,18 @@ static gboolean panel_second_timeout(gpointer data)
 			(*w->interface->clock_tick)(w);
 	}
 	expose_panel(p);
+	/* just in case, actually it helps a lot */
 	process_events(p);
 	return TRUE;
 }
 
 static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
 {
-	//ENSURE(condition == G_IO_IN, "Input condition failed");
+	/* TODO: be aware of connection drop */
+	/* ENSURE(condition == G_IO_IN, "Input condition failed"); */
 	struct panel *p = data;
+
+	/* we do here more greedy processing */
 	while (process_events(p))
 		;
 

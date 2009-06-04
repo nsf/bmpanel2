@@ -146,22 +146,24 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 		ARRAY_INSERT_AFTER(tw->tasks, (size_t)i, t);
 }
 
+static void free_task(struct taskbar_task *t)
+{
+	xfree_from_source(t->name, &msrc_titles);
+	if (t->icon)
+		cairo_surface_destroy(t->icon);
+}
+
 static void remove_task(struct taskbar_widget *tw, size_t i)
 {
-	xfree(tw->tasks[i].name);
-	if (tw->tasks[i].icon)
-		cairo_surface_destroy(tw->tasks[i].icon);
+	free_task(&tw->tasks[i]);
 	ARRAY_REMOVE(tw->tasks, i);
 }
 
 static void free_tasks(struct taskbar_widget *tw)
 {
 	size_t i;
-	for (i = 0; i < tw->tasks_n; ++i) {
-		xfree(tw->tasks[i].name);
-		if (tw->tasks[i].icon)
-			cairo_surface_destroy(tw->tasks[i].icon);
-	}
+	for (i = 0; i < tw->tasks_n; ++i)
+		free_task(&tw->tasks[i]);
 	FREE_ARRAY(tw->tasks);
 }
 

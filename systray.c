@@ -61,8 +61,7 @@ static void add_tray_icon(struct widget *w, Window win)
 	/* Select structure notifications. Some tray icons require double 
 	 * size sets (I don't know why, but it works).
 	 */
-	XSelectInput(c->dpy, icon.embedder, StructureNotifyMask);
-	XSelectInput(c->dpy, icon.icon, StructureNotifyMask | ExposureMask);
+	XSelectInput(c->dpy, icon.icon, StructureNotifyMask);
 
 	XResizeWindow(c->dpy, icon.icon, sw->icon_size[0], sw->icon_size[1]);
 	XReparentWindow(c->dpy, icon.icon, icon.embedder, 0, 0);

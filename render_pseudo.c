@@ -37,12 +37,25 @@ static int create_private(struct panel *p)
 
 	/* TODO: error check */
 	pr->blit_cr = create_cairo_for_pixmap(c, p->bg, p->width, p->height);
-	pr->wallpaper = cairo_xlib_surface_create(c->dpy, c->root_pixmap,
-						  c->default_visual,
-						  c->screen_width,
-						  c->screen_height);
+	if (!pr->blit_cr) {
+		xfree(pr);
+		return XERROR("Failed to create cairo context for background pixmap");
+	}
+
 	pr->buf = x_create_default_pixmap(c, p->width, p->height);
 	pr->buf_cr = create_cairo_for_pixmap(c, pr->buf, p->width, p->height);
+
+	if (!pr->buf_cr) {
+		XFreePixmap(c->dpy, pr->buf);
+		cairo_destroy(pr->blit_cr);
+		xfree(pr);
+		return XERROR("Failed to create cairo context for buffer pixmap");
+	}
+	
+	if (c->root_pixmap != None)
+		pr->wallpaper = create_cairo_surface_for_pixmap(c, c->root_pixmap,
+								c->screen_width,
+								c->screen_height);
 	p->render_private = (void*)pr;
 
 	return 0;
@@ -54,7 +67,8 @@ static void free_private(struct panel *p)
 	struct pseudo_render *pr = p->render_private;
 	cairo_destroy(pr->buf_cr);
 	cairo_destroy(pr->blit_cr);
-	cairo_surface_destroy(pr->wallpaper);
+	if (pr->wallpaper)
+		cairo_surface_destroy(pr->wallpaper);
 	XFreePixmap(dpy, pr->buf);
 	xfree(pr);
 }
@@ -97,11 +111,23 @@ static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 {
 	Display *dpy = p->connection.dpy;
 	struct pseudo_render *pr = p->render_private;
-	blit_image_ex(pr->wallpaper, pr->buf_cr, p->x + x, p->y + y, w, h, x, y);
+
+	/* draw wallpaper or clear buffer */
+	if (pr->wallpaper) {
+		blit_image_ex(pr->wallpaper, pr->buf_cr, p->x + x, p->y + y, 
+			      w, h, x, y);
+	} else {
+		cairo_save(pr->buf_cr);
+		cairo_set_source_rgb(pr->buf_cr, 0,0,0);
+		cairo_paint(pr->buf_cr);
+		cairo_restore(pr->buf_cr);
+	}
+	/* composite gui with background */
 	cairo_set_operator(p->cr, CAIRO_OPERATOR_OVER);
 	blit_image_ex(cairo_get_target(p->cr), pr->buf_cr, x, y, w, h, x, y);
 	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
 	
+	/* put everything to the background pixmap and clear area */
 	blit_image_ex(cairo_get_target(pr->buf_cr), pr->blit_cr, x, y, w, h, x, y);
 	XClearArea(dpy, p->win, x, y, w, h, False);
 }
@@ -113,9 +139,10 @@ static void update_bg(struct panel *p)
 
 	x_update_root_pmap(c);
 	cairo_surface_destroy(pr->wallpaper);
-	pr->wallpaper = cairo_xlib_surface_create(c->dpy, c->root_pixmap,
-						  c->default_visual,
-						  c->screen_width,
-						  c->screen_height);
+	
+	if (c->root_pixmap != None)
+		pr->wallpaper = create_cairo_surface_for_pixmap(c, c->root_pixmap,
+								c->screen_width,
+								c->screen_height);
 	p->needs_expose = 1;
 }

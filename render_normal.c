@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "widget-utils.h"
 
 static void create_win(struct panel *p, int x, int y, 
 		       unsigned int w, unsigned int h, long event_mask);
@@ -29,31 +30,15 @@ static void create_win(struct panel *p, int x, int y,
 
 static int create_dc(struct panel *p)
 {
-	struct x_connection *c = &p->connection;
-
-	cairo_surface_t *bgs = cairo_xlib_surface_create(c->dpy, 
-			p->bg, c->default_visual, 
-			p->width, p->height);
-
-	if (cairo_surface_status(bgs) != CAIRO_STATUS_SUCCESS) {
-		cairo_surface_destroy(bgs);
-		return XERROR("Failed to create cairo surface");
-	}
-
-	p->cr = cairo_create(bgs);
-	cairo_surface_destroy(bgs);
-
-	if (cairo_status(p->cr) != CAIRO_STATUS_SUCCESS) {
-		cairo_destroy(p->cr);
+	p->cr = create_cairo_for_pixmap(&p->connection, p->bg, 
+					p->width, p->height);
+	if (!p->cr)
 		return XERROR("Failed to create cairo drawing context");
-	}
 
 	return 0;
-
 }
 	
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 {
-	Display *dpy = p->connection.dpy;
-	XClearArea(dpy, p->win, x, y, w, h, False);
+	XClearArea(p->connection.dpy, p->win, x, y, w, h, False);
 }

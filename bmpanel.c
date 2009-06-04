@@ -5,6 +5,17 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
+struct memory_source msrc_titles = MEMSRC(
+	"Titles",
+	MEMSRC_DEFAULT_MALLOC,
+	MEMSRC_DEFAULT_FREE,
+	MEMSRC_NO_FLAGS
+);
+
+struct memory_source *msrcs[] = {
+	&msrc_titles
+};
+
 int try_load_theme(struct config_format_tree *tree, const char *name)
 {
 	char buf[4096];
@@ -76,6 +87,6 @@ int main(int argc, char **argv)
 
 	free_settings();
 
-	xmemstat(0, 0, 1);
+	xmemstat(msrcs, 1, 1);
 	return EXIT_SUCCESS;
 }
