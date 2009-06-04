@@ -148,12 +148,12 @@ static Visual *find_argb_visual(struct x_connection *c)
 	return visual;
 }
 
-int x_connect(struct x_connection *c, const char *display)
+void x_connect(struct x_connection *c, const char *display)
 {
 	CLEAR_STRUCT(c);
 	c->dpy = XOpenDisplay(display);
 	if (!c->dpy)
-		return 1;
+		XDIE("Failed to connect to X server");
 
 #ifndef NDEBUG
 	//XSynchronize(c->dpy, True);
@@ -192,8 +192,6 @@ int x_connect(struct x_connection *c, const char *display)
 		c->workarea_height = workarea[3];
 		XFree(workarea);	
 	}
-
-	return 0;
 }
 
 void x_disconnect(struct x_connection *c)

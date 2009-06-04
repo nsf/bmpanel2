@@ -68,7 +68,7 @@ struct x_connection {
 };
 
 
-int x_connect(struct x_connection *c, const char *display);
+void x_connect(struct x_connection *c, const char *display);
 void x_disconnect(struct x_connection *c);
 
 /*

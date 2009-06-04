@@ -322,8 +322,7 @@ void create_panel(struct panel *panel, struct config_format_tree *tree)
 	CLEAR_STRUCT(panel);
 
 	/* connect to X server */
-	if (x_connect(&panel->connection, 0))
-		XDIE("Failed to connect to X server");
+	x_connect(&panel->connection, 0);
 
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree))
@@ -343,7 +342,7 @@ void create_panel(struct panel *panel, struct config_format_tree *tree)
 	if (panel->render->create_dc)
 		(*panel->render->create_dc)(panel);
 
-	/* doesn't fail? */
+	/* create text layout */
 	panel->layout = pango_cairo_create_layout(panel->cr);
 
 	/* parse panel widgets */
