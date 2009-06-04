@@ -506,10 +506,6 @@ static Window create_window_for_dnd(struct x_connection *c, int x, int y,
 	/* background with an icon */
 	Pixmap bg = x_create_default_pixmap(c, iconw, iconh);
 	cairo_t *cr = create_cairo_for_pixmap(c, bg, iconw, iconh);
-	if (!cr) {
-		XFreePixmap(c->dpy, bg);
-		return None;
-	}
 
 	cairo_set_source_rgba(cr, 0,0,0,1);
 	cairo_paint(cr);
@@ -528,11 +524,6 @@ static Window create_window_for_dnd(struct x_connection *c, int x, int y,
 	/* create shape for a window */
 	Pixmap mask = XCreatePixmap(c->dpy, c->root, iconw, iconh, 1);
 	cr = create_cairo_for_bitmap(c, mask, iconw, iconh);
-
-	if (!cr) {
-		XFreePixmap(c->dpy, mask);
-		return win;
-	}
 
 	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 	cairo_set_source_rgba(cr, 0,0,0,0);

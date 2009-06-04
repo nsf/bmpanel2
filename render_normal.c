@@ -32,8 +32,6 @@ static int create_dc(struct panel *p)
 {
 	p->cr = create_cairo_for_pixmap(&p->connection, p->bg, 
 					p->width, p->height);
-	if (!p->cr)
-		return XERROR("Failed to create cairo drawing context");
 
 	return 0;
 }

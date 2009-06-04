@@ -37,20 +37,8 @@ static int create_private(struct panel *p)
 
 	/* TODO: error check */
 	pr->blit_cr = create_cairo_for_pixmap(c, p->bg, p->width, p->height);
-	if (!pr->blit_cr) {
-		xfree(pr);
-		return XERROR("Failed to create cairo context for background pixmap");
-	}
-
 	pr->buf = x_create_default_pixmap(c, p->width, p->height);
 	pr->buf_cr = create_cairo_for_pixmap(c, pr->buf, p->width, p->height);
-
-	if (!pr->buf_cr) {
-		XFreePixmap(c->dpy, pr->buf);
-		cairo_destroy(pr->blit_cr);
-		xfree(pr);
-		return XERROR("Failed to create cairo context for buffer pixmap");
-	}
 	
 	if (c->root_pixmap != None)
 		pr->wallpaper = create_cairo_surface_for_pixmap(c, c->root_pixmap,
@@ -96,12 +84,6 @@ static int create_dc(struct panel *p)
 
 	p->cr = cairo_create(backbuf);
 	cairo_surface_destroy(backbuf);
-
-	if (cairo_status(p->cr) != CAIRO_STATUS_SUCCESS) {
-		cairo_destroy(p->cr);
-		return XERROR("Failed to create cairo drawing context");
-	}
-
 	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
 
 	return 0;
