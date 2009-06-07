@@ -177,8 +177,8 @@ struct render_interface {
 extern struct render_interface render_normal;
 extern struct render_interface render_pseudo;
 
-void create_panel(struct panel *panel, struct config_format_tree *tree);
-void destroy_panel(struct panel *panel);
+void init_panel(struct panel *panel, struct config_format_tree *tree);
+void free_panel(struct panel *panel);
 void panel_main_loop(struct panel *panel);
 
 void recalculate_widgets_sizes(struct panel *panel);

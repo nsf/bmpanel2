@@ -3,18 +3,8 @@
 #include "config-parser.h"
 #include "xdg.h"
 #include "settings.h"
+#include "widget-utils.h"
 #include "builtin-widgets.h"
-
-struct memory_source msrc_titles = MEMSRC(
-	"Titles",
-	MEMSRC_DEFAULT_MALLOC,
-	MEMSRC_DEFAULT_FREE,
-	MEMSRC_NO_FLAGS
-);
-
-struct memory_source *msrcs[] = {
-	&msrc_titles
-};
 
 int try_load_theme(struct config_format_tree *tree, const char *name)
 {
@@ -76,15 +66,16 @@ int main(int argc, char **argv)
 	register_widget_interface(&decor_interface);
 	register_widget_interface(&systray_interface);
 
-	create_panel(&p, &tree);
+	init_panel(&p, &tree);
 	panel_main_loop(&p);
 
-	destroy_panel(&p);
+	free_panel(&p);
 	free_config_format_tree(&tree);
 	clean_image_cache();
+	clean_static_buf();
 
 	free_settings();
 
-	xmemstat(msrcs, 1, 1);
+	xmemstat(0, 0, 1);
 	return EXIT_SUCCESS;
 }

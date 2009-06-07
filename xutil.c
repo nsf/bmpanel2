@@ -335,17 +335,18 @@ char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
 
 	if (oldlen < 9 || !old) {
 		if (old)
-			xfree_from_source(old, &msrc_titles);
-		return xstrdup_from_source("<unknown>", &msrc_titles);
+			xfree(old);
+		return xstrdup("<unknown>");
 	} else {
 		strcpy(old, "<unknown>");
 		return old;
 	}
 name_here:
+	XWARNING("update: %s", name);
 	if (oldlen < strlen(name) || !old) {
 		if (old)
-			xfree_from_source(old, &msrc_titles);	
-		ret = xstrdup_from_source(name, &msrc_titles);
+			xfree(old);	
+		ret = xstrdup(name);
 	} else {
 		strcpy(old, name);
 		ret = old;

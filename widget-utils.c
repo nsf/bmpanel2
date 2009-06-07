@@ -335,11 +335,35 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
   X imaging utils
 **************************************************************************/
 
+static char *static_buf;
+
+void *get_static_buf_or_xalloc(size_t size)
+{
+	if (size <= STATIC_BUF_SIZE) {
+		if (!static_buf)
+			static_buf = xmalloc(STATIC_BUF_SIZE);
+		return static_buf;
+	}
+	return xmalloc(size);
+}
+
+void free_static_buf(void *ptr)
+{
+	if (ptr != static_buf)
+		xfree(ptr);
+}
+
+void clean_static_buf()
+{
+	if (static_buf)
+		xfree(static_buf);
+}
+
 static cairo_user_data_key_t surface_data_key;
 
 static void free_custom_surface_data(void *ptr)
 {
-	xfree(ptr);
+	free_static_buf(ptr);
 }
 
 static cairo_surface_t *get_icon_from_netwm(long *data)
@@ -354,7 +378,8 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 	size = w * h;
 
 	/* convert netwm icon format to cairo data */
-	array = xmalloc(sizeof(uint32_t) * size);
+	/* array = xmalloc(sizeof(uint32_t) * size); */
+	array = get_static_buf_or_xalloc(sizeof(uint32_t) * size);
 	for (i = 0; i < size; ++i) {
 		unsigned char *a, *d;
 		a = (unsigned char*)&array[i];

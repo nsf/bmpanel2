@@ -148,7 +148,7 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 
 static void free_task(struct taskbar_task *t)
 {
-	xfree_from_source(t->name, &msrc_titles);
+	xfree(t->name);
 	if (t->icon)
 		cairo_surface_destroy(t->icon);
 }

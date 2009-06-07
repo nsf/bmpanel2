@@ -105,7 +105,6 @@ struct memory_source {
 #endif
 
 extern struct memory_source msrc_default;
-extern struct memory_source msrc_titles;
 
 /* functions */
 #ifdef NDEBUG

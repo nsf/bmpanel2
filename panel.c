@@ -317,7 +317,7 @@ static void expose_panel(struct panel *panel)
 	XFlush(dpy);
 }
 
-void create_panel(struct panel *panel, struct config_format_tree *tree)
+void init_panel(struct panel *panel, struct config_format_tree *tree)
 {
 	CLEAR_STRUCT(panel);
 
@@ -354,7 +354,7 @@ void create_panel(struct panel *panel, struct config_format_tree *tree)
 	XFlush(c->dpy);
 }
 
-void destroy_panel(struct panel *panel)
+void free_panel(struct panel *panel)
 {
 	size_t i;
 
