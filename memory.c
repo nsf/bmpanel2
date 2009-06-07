@@ -77,7 +77,7 @@ void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, uns
 	if (!ret)
 		XDIE("Out of memory, xmalloc(z) failed.");
 
-	/* store_alloc(size, file, line); */
+	store_alloc(size, file, line);
 
 	struct memory_stat *stat = (struct memory_stat*)ret;
 	stat->file = file;
@@ -211,7 +211,7 @@ void xmemstat(struct memory_source **sources, size_t n, int details)
 #ifdef NDEBUG
 	printf("Memory debug is disabled\n");
 #else
-	/* drop_stats(); */
+	drop_stats();
 	size_t i;
 
 	printf("\033[32m");

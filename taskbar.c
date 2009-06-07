@@ -132,7 +132,11 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 	XSelectInput(c->dpy, win, PropertyChangeMask);
 
 	t.win = win;
-	t.name = x_realloc_window_name(c, win, 0); 
+	t.name_atom = None;
+	t.name_type_atom = None;
+	t.name.buf = 0;
+	t.name.alloc = 0;
+	x_realloc_window_name(&t.name, c, win, &t.name_atom, &t.name_type_atom); 
 	if (tw->theme.default_icon)
 		t.icon = get_window_icon(c, win, tw->theme.default_icon);
 	else
@@ -148,7 +152,7 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 
 static void free_task(struct taskbar_task *t)
 {
-	xfree(t->name);
+	strbuf_free(&t->name);
 	if (t->icon)
 		cairo_surface_destroy(t->icon);
 }
@@ -225,7 +229,7 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	xx += iconw; 
 	
 	/* text */
-	draw_text(cr, layout, font, task->name, xx, 0, textw, height);
+	draw_text(cr, layout, font, task->name.buf, xx, 0, textw, height);
 }
 
 static inline void activate_task(struct x_connection *c, struct taskbar_task *t)
@@ -444,15 +448,19 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	}
 
 	/* task name was changed */
+	/*
 	if (e->atom == c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME] ||
 	    e->atom == c->atoms[XATOM_NET_WM_ICON_NAME] || 
 	    e->atom == XA_WM_ICON_NAME || 
 	    e->atom == c->atoms[XATOM_NET_WM_VISIBLE_NAME] ||
 	    e->atom == c->atoms[XATOM_NET_WM_NAME] || 
 	    e->atom == XA_WM_NAME)
+	*/
+	if (e->atom == tw->tasks[ti].name_atom)
 	{
 		struct taskbar_task *t = &tw->tasks[ti];
-		t->name = x_realloc_window_name(c, t->win, t->name);
+		x_realloc_window_name(&t->name, c, t->win, 
+				    &t->name_atom, &t->name_type_atom);
 		w->needs_expose = 1;
 		return;
 	}

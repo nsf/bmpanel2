@@ -40,6 +40,18 @@ static inline int is_file_exists(const char *file)
 }
 
 /**************************************************************************
+  string buffer
+**************************************************************************/
+
+struct strbuf {
+	char *buf;
+	size_t alloc;
+};
+
+void strbuf_assign(struct strbuf *sb, const char *str);
+void strbuf_free(struct strbuf *sb);
+
+/**************************************************************************
   message utils
 **************************************************************************/
 

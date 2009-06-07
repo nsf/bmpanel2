@@ -10,12 +10,18 @@
 **************************************************************************/
 
 struct taskbar_task {
-	char *name;
+	struct strbuf name;
 	cairo_surface_t *icon;
 	Window win;
 	int desktop;
 	int x;
 	int w;
+
+	/* We're using only one name source Atom and we're watching it for
+	 * updates. 
+	 */
+	Atom name_atom;
+	Atom name_type_atom;
 };
 
 struct taskbar_state {

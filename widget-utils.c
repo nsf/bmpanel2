@@ -332,7 +332,7 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
 }
 
 /**************************************************************************
-  X imaging utils
+  Buffer utils
 **************************************************************************/
 
 static char *static_buf;
@@ -358,6 +358,10 @@ void clean_static_buf()
 	if (static_buf)
 		xfree(static_buf);
 }
+
+/**************************************************************************
+  X imaging utils
+**************************************************************************/
 
 static cairo_user_data_key_t surface_data_key;
 

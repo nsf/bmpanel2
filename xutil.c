@@ -303,56 +303,72 @@ int x_is_window_iconified(struct x_connection *c, Window win)
 	return ret;
 }
 
-char *x_realloc_window_name(struct x_connection *c, Window win, char *old)
+void x_realloc_window_name(struct strbuf *sb, struct x_connection *c, 
+			   Window win, Atom *atom, Atom *atype)
 {
-	/* TODO: better scheme to avoid unnecessary allocations.
-	 * Investigate mem allocs.
-	 */
-	char *ret, *name = 0;
-	size_t oldlen = (old) ? strlen(old) : 0;
+	char *name = 0;
+	if (*atom != None) {
+		/* fast path */
+		name = x_get_prop_data(c, win, *atom, *atype, 0);
+		if (name)
+			goto name_here;
+	}
+	/****************/
+	*atype = c->atoms[XATOM_UTF8_STRING];
+	*atom = c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME];
+
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME], 
 			c->atoms[XATOM_UTF8_STRING], 0);
-	if (name) 
+	if (name)
 		goto name_here;
+	/****************/
+	*atype = c->atoms[XATOM_UTF8_STRING];
+	*atom = c->atoms[XATOM_NET_WM_ICON_NAME];
+
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_ICON_NAME], 
 			c->atoms[XATOM_UTF8_STRING], 0);
-	if (name) 
+	if (name)
 		goto name_here;
+	/****************/
+	*atype = XA_STRING;
+	*atom = XA_WM_ICON_NAME;
+
 	name = x_get_prop_data(c, win, XA_WM_ICON_NAME, XA_STRING, 0);
 	if (name) 
 		goto name_here;
+	/****************/
+	*atype = c->atoms[XATOM_UTF8_STRING];
+	*atom = c->atoms[XATOM_NET_WM_VISIBLE_NAME];
+
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_NAME], 
 			c->atoms[XATOM_UTF8_STRING], 0);
 	if (name) 
 		goto name_here;
+	/****************/
+	*atype = c->atoms[XATOM_UTF8_STRING];
+	*atom = c->atoms[XATOM_NET_WM_NAME];
+
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_NAME],
 			c->atoms[XATOM_UTF8_STRING], 0);
 	if (name) 
 		goto name_here;
+	/****************/
+	*atype = XA_STRING;
+	*atom = XA_WM_NAME;
+
 	name = x_get_prop_data(c, win, XA_WM_NAME, XA_STRING, 0);
 	if (name) 
 		goto name_here;
-
-	if (oldlen < 9 || !old) {
-		if (old)
-			xfree(old);
-		return xstrdup("<unknown>");
-	} else {
-		strcpy(old, "<unknown>");
-		return old;
+	else {
+		*atom = None;
+		*atype = None;
+		strbuf_assign(sb, "<unknown>");
+		return;
 	}
+	/****************/
 name_here:
-	XWARNING("update: %s", name);
-	if (oldlen < strlen(name) || !old) {
-		if (old)
-			xfree(old);	
-		ret = xstrdup(name);
-	} else {
-		strcpy(old, name);
-		ret = old;
-	}
+	strbuf_assign(sb, name);
 	XFree(name);
-	return ret;
 }
 
 void x_send_netwm_message(struct x_connection *c, Window win,

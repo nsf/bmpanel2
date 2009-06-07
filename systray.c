@@ -131,6 +131,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		return -1;
 	}
 
+	INIT_ARRAY(sw->icons, 20);
 	sw->selection_owner = x_create_default_window(c, 0, 0, 1, 1, 0, 0);
 	XSetSelectionOwner(c->dpy, sw->tray_selection_atom, sw->selection_owner,
 			   CurrentTime);

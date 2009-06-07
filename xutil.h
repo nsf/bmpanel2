@@ -109,7 +109,8 @@ int x_is_window_hidden(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
 
 /* allocated by xstrdup, should be released with xfree */
-char *x_realloc_window_name(struct x_connection *c, Window win, char *old);
+void x_realloc_window_name(struct strbuf *sb, struct x_connection *c, 
+			   Window win, Atom *atom, Atom *atype);
 void x_send_netwm_message(struct x_connection *c, Window win, 
 			  Atom a, long l0, long l1, long l2, long l3, long l4);
 void x_update_root_pmap(struct x_connection *c);
