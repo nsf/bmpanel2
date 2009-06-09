@@ -132,11 +132,9 @@ static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window w
 
 	XSelectInput(c->dpy, win, PropertyChangeMask);
 
+	CLEAR_STRUCT(&t);
 	t.win = win;
-	t.name_atom = None;
-	t.name_type_atom = None;
-	t.name.buf = 0;
-	t.name.alloc = 0;
+
 	x_realloc_window_name(&t.name, c, win, &t.name_atom, &t.name_type_atom); 
 	if (tw->theme.default_icon)
 		t.icon = get_window_icon(c, win, tw->theme.default_icon);
@@ -371,7 +369,9 @@ static void draw(struct widget *w)
 	 * interacts with what he/she sees, right? 
 	 */
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-	cairo_t *cr = w->panel->cr;
+	struct panel *p = w->panel;
+	struct x_connection *c = &p->connection;
+	cairo_t *cr = p->cr;
 
 	int count = count_tasks_on_desktop(tw, tw->desktop);
 	if (!count)
@@ -397,6 +397,22 @@ static void draw(struct widget *w)
 		/* save position for other events */
 		t->x = x;
 		t->w = taskw;
+
+		/* set icon geometry */
+		if (t->geom_x != t->x || t->geom_w != t->w) {
+			t->geom_x = t->x;
+			t->geom_w = t->w;
+
+			long icon_geometry[4] = {
+				w->panel->x + t->x,
+				w->panel->y,
+				t->w,
+				w->panel->width
+			};
+			x_set_prop_array(c, t->win, c->atoms[XATOM_NET_WM_ICON_GEOMETRY],
+					 icon_geometry, 4);
+		}
+
 
 		draw_task(t, &tw->theme, cr, w->panel->layout,
 				x, taskw, t->win == tw->active);
@@ -449,14 +465,6 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	}
 
 	/* task name was changed */
-	/*
-	if (e->atom == c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME] ||
-	    e->atom == c->atoms[XATOM_NET_WM_ICON_NAME] || 
-	    e->atom == XA_WM_ICON_NAME || 
-	    e->atom == c->atoms[XATOM_NET_WM_VISIBLE_NAME] ||
-	    e->atom == c->atoms[XATOM_NET_WM_NAME] || 
-	    e->atom == XA_WM_NAME)
-	*/
 	if (e->atom == tw->tasks[ti].name_atom)
 	{
 		struct taskbar_task *t = &tw->tasks[ti];

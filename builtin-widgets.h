@@ -16,6 +16,8 @@ struct taskbar_task {
 	int desktop;
 	int x;
 	int w;
+	int geom_x; /* for _NET_WM_ICON_GEOMETRY */
+	int geom_w;
 
 	/* We're using only one name source Atom and we're watching it for
 	 * updates. 

@@ -121,6 +121,10 @@ static void create_window(struct panel *panel)
 	x_set_prop_int(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], -1);
 	x_set_prop_atom(c, panel->win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
 			c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK]);
+	
+	/* also send desktop message to wm */
+	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
+			     0xFFFFFFFF, 0, 0, 0, 0);
 
 	/* place window on it's position */
 	XSizeHints size_hints;
@@ -154,6 +158,7 @@ static void create_window(struct panel *panel)
 	ch.res_name = "panel";
 	ch.res_class = "bmpanel";
 	XSetClassHint(c->dpy, panel->win, &ch);
+
 }
 
 static void parse_panel_widgets(struct panel *panel, struct config_format_tree *tree)
@@ -328,7 +333,7 @@ void init_panel(struct panel *panel, struct config_format_tree *tree)
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree))
 		XDIE("Failed to load theme format file");
-
+	
 	panel->drag_threshold = parse_int("drag_threshold",
 					  &g_settings.root, 30);
 
