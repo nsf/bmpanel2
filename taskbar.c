@@ -2,6 +2,7 @@
 #include "builtin-widgets.h"
 
 /* TODO: _NET_WM_ICON_GEOMETRY */
+/* TODO: task activation via drag'n'drop protocol */
 
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree);
