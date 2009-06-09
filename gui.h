@@ -138,6 +138,8 @@ struct panel {
 	int needs_expose;
 
 	/* event dispatching state */
+	int drag_threshold;
+
 	struct widget *under_mouse;
 	struct drag_info dnd;
 

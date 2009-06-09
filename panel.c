@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "gui.h"
+#include "settings.h"
 #include "widget-utils.h"
 
 /**************************************************************************
@@ -327,6 +328,9 @@ void init_panel(struct panel *panel, struct config_format_tree *tree)
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree))
 		XDIE("Failed to load theme format file");
+
+	panel->drag_threshold = parse_int("drag_threshold",
+					  &g_settings.root, 30);
 
 	select_render_interface(panel);
 	struct x_connection *c = &panel->connection;

@@ -95,10 +95,9 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 			(*w->interface->dnd_drag)(w, &p->dnd);
 	}
 
-#define DRAG_THRESHOLD 5
 	/* drag'n'drop detection */
-	if (p->last_click_widget && (abs(p->last_click_x - e->x) > DRAG_THRESHOLD
-			|| abs(p->last_click_y - e->y) > DRAG_THRESHOLD))
+	if (p->last_click_widget && (abs(p->last_click_x - e->x) > p->drag_threshold
+			|| abs(p->last_click_y - e->y) > p->drag_threshold))
 	{
 		/* drag detected */
 		struct widget *w = p->last_click_widget;
