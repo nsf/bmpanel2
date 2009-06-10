@@ -112,6 +112,12 @@ static void create_window(struct panel *panel)
 	panel->width = w;
 	panel->height = h;
 
+	/* XWMHints */
+	XWMHints wmhints;
+	wmhints.flags = InputHint;
+	wmhints.input = 0;
+	XSetWMHints(c->dpy, panel->win, &wmhints);
+
 	/* NETWM struts */
 	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
 	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
