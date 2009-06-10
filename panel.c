@@ -112,6 +112,9 @@ static void create_window(struct panel *panel)
 	panel->width = w;
 	panel->height = h;
 
+	/* Xdnd awareness */
+	x_set_prop_atom(c, panel->win, c->atoms[XATOM_XDND_AWARE], 5);
+
 	/* XWMHints */
 	XWMHints wmhints;
 	wmhints.flags = InputHint;

@@ -39,6 +39,10 @@ enum x_atom {
 	XATOM_UTF8_STRING,
 	XATOM_MOTIF_WM_HINTS,
 	XATOM_XROOTPMAP_ID,
+
+	XATOM_XDND_AWARE,
+	XATOM_XDND_POSITION,
+	XATOM_XDND_STATUS,
 	XATOM_COUNT
 };
 
@@ -114,6 +118,8 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 			   Window win, Atom *atom, Atom *atype);
 void x_send_netwm_message(struct x_connection *c, Window win, 
 			  Atom a, long l0, long l1, long l2, long l3, long l4);
+void x_send_dnd_message(struct x_connection *c, Window win, 
+			Atom a, long l0, long l1, long l2, long l3, long l4);
 void x_update_root_pmap(struct x_connection *c);
 
 void x_set_error_trap();

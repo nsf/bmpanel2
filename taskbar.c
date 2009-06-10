@@ -1,15 +1,13 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
-/* TODO: _NET_WM_ICON_GEOMETRY */
-/* TODO: task activation via drag'n'drop protocol */
-
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
 static void prop_change(struct widget *w, XPropertyEvent *e);
+static void client_msg(struct widget *w, XClientMessageEvent *e);
 
 static void dnd_start(struct widget *w, struct drag_info *di);
 static void dnd_drag(struct widget *w, struct drag_info *di);
@@ -25,7 +23,8 @@ struct widget_interface taskbar_interface = {
 	.prop_change 		= prop_change,
 	.dnd_start 		= dnd_start,
 	.dnd_drag 		= dnd_drag,
-	.dnd_drop 		= dnd_drop
+	.dnd_drop 		= dnd_drop,
+	.client_msg		= client_msg
 };
 
 /**************************************************************************
@@ -235,6 +234,10 @@ static inline void activate_task(struct x_connection *c, struct taskbar_task *t)
 {
 	x_send_netwm_message(c, t->win, c->atoms[XATOM_NET_ACTIVE_WINDOW], 
 			2, CurrentTime, 0, 0, 0);
+
+	XWindowChanges wc;
+	wc.stack_mode = Above;
+	XConfigureWindow(c->dpy, t->win, CWStackMode, &wc);
 }
 
 static inline void close_task(struct x_connection *c, struct taskbar_task *t)
@@ -498,15 +501,10 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	struct x_connection *c = &w->panel->connection;
 
 	if (e->button == 1 && e->type == ButtonRelease) {
-		if (tw->active == t->win) {
+		if (tw->active == t->win)
 			XIconifyWindow(c->dpy, t->win, c->screen);
-		} else {
+		else
 			activate_task(c, t);
-			
-			XWindowChanges wc;
-			wc.stack_mode = Above;
-			XConfigureWindow(c->dpy, t->win, CWStackMode, &wc);
-		}
 	}
 	/* XXX: temporary */
 	if (e->button == 2) {
@@ -552,6 +550,37 @@ static Window create_window_for_dnd(struct x_connection *c, int x, int y,
 	XFreePixmap(c->dpy, mask);
 
 	return win;
+}
+
+static void client_msg(struct widget *w, XClientMessageEvent *e)
+{
+	struct panel *p = w->panel;
+	struct x_connection *c = &p->connection;
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+
+	if (e->message_type == c->atoms[XATOM_XDND_POSITION]) {
+		int x = (e->data.l[2] >> 16) & 0xFFFF;
+
+		/* if it's not ours, skip.. */
+		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
+			return;
+		
+		XWARNING("taskbar cli");
+
+		int ti = get_taskbar_task_at(w, x - p->x);
+		if (ti != -1) {
+			struct taskbar_task *t = &tw->tasks[ti];
+			if (t->win != tw->active)
+				activate_task(c, t);
+		}
+
+		x_send_dnd_message(c, e->data.l[0], 
+				   c->atoms[XATOM_XDND_STATUS],
+				   p->win,
+				   2, /* bits: 0 1 */
+				   0, 0, 
+				   None);
+	}
 }
 
 static void dnd_start(struct widget *w, struct drag_info *di)

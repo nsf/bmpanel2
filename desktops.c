@@ -6,6 +6,7 @@ static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
 static void prop_change(struct widget *w, XPropertyEvent *e);
+static void client_msg(struct widget *w, XClientMessageEvent *e);
 
 static void dnd_drop(struct widget *w, struct drag_info *di);
 
@@ -17,7 +18,8 @@ struct widget_interface desktops_interface = {
 	.draw 			= draw,
 	.button_click 		= button_click,
 	.prop_change 		= prop_change,
-	.dnd_drop 		= dnd_drop
+	.dnd_drop 		= dnd_drop,
+	.client_msg		= client_msg
 };
 
 /**************************************************************************
@@ -312,6 +314,34 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 			w->needs_expose = 1;
 			return;
 		}
+	}
+}
+
+static void client_msg(struct widget *w, XClientMessageEvent *e)
+{
+	struct panel *p = w->panel;
+	struct x_connection *c = &p->connection;
+	struct desktops_widget *dw = (struct desktops_widget*)w->private;
+
+	if (e->message_type == c->atoms[XATOM_XDND_POSITION]) {
+		int x = (e->data.l[2] >> 16) & 0xFFFF;
+
+		/* if it's not ours, skip.. */
+		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
+			return;
+
+		XWARNING("desktop cli");
+
+		int di = get_desktop_at(w, x - p->x);
+		if (di != -1 && di != dw->active)
+				switch_desktop(di, c);
+
+		x_send_dnd_message(c, e->data.l[0], 
+				   c->atoms[XATOM_XDND_STATUS],
+				   p->win,
+				   2, /* bits: 0 1 */
+				   0, 0, 
+				   None);
 	}
 }
 
