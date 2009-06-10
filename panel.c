@@ -131,7 +131,7 @@ static void create_window(struct panel *panel)
 	/* also send desktop message to wm */
 	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
 			     0xFFFFFFFF, 0, 0, 0, 0);
-
+	
 	/* place window on it's position */
 	XSizeHints size_hints;
 
@@ -164,7 +164,6 @@ static void create_window(struct panel *panel)
 	ch.res_name = "panel";
 	ch.res_class = "bmpanel";
 	XSetClassHint(c->dpy, panel->win, &ch);
-
 }
 
 static void parse_panel_widgets(struct panel *panel, struct config_format_tree *tree)
@@ -367,6 +366,10 @@ void init_panel(struct panel *panel, struct config_format_tree *tree)
 	expose_panel(panel);
 	XMapWindow(c->dpy, panel->win);
 	XFlush(c->dpy);
+	
+	/* send desktop property again after mapping (fluxbox bug?) */
+	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
+			     0xFFFFFFFF, 0, 0, 0, 0);
 }
 
 void free_panel(struct panel *panel)
