@@ -330,8 +330,6 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
 			return;
 
-		XWARNING("desktop cli");
-
 		int di = get_desktop_at(w, x - p->x);
 		if (di != -1 && di != dw->active)
 				switch_desktop(di, c);

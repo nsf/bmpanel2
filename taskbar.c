@@ -565,8 +565,6 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
 			return;
 		
-		XWARNING("taskbar cli");
-
 		int ti = get_taskbar_task_at(w, x - p->x);
 		if (ti != -1) {
 			struct taskbar_task *t = &tw->tasks[ti];
@@ -578,7 +576,7 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 				   c->atoms[XATOM_XDND_STATUS],
 				   p->win,
 				   2, /* bits: 0 1 */
-				   0, 0, 
+				   0, 0,
 				   None);
 	}
 }
