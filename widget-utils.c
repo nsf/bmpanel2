@@ -12,11 +12,11 @@ static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 	/* XXX */
 	struct config_format_entry *ee = find_config_format_entry(e, "xywh");
 	if (ee && ee->value) {
-		if (4 == sscanf(ee->value, "%d:%d:%d:%d", x, y, w, h))
+		if (4 == sscanf(ee->value, "%d %d %d %d", x, y, w, h))
 			return 0;
 		else
 			XWARNING("Failed to parse \"xywh\" value, "
-				 "the format is: \"%%d:%%d:%%d:%%d\" (line: %u)",
+				 "the format is: \"%%d %%d %%d %%d\" (line: %u)",
 				 ee->line);
 	}
 	return -1;
