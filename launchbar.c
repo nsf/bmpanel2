@@ -115,6 +115,8 @@ static void draw(struct widget *w)
 	for (i = 0; i < lw->items_n; ++i) {
 		lw->items[i].x = x;
 		lw->items[i].w = lw->icon_size[0];
+		cairo_save(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 		blit_image(lw->items[i].icon, cr, x, y);
 		if (i == lw->active) {
 			cairo_save(cr);
@@ -126,6 +128,7 @@ static void draw(struct widget *w)
 			cairo_mask_surface(cr, lw->items[i].icon, x, y);
 			cairo_restore(cr);
 		}
+		cairo_restore(cr);
 		x += lw->icon_size[0] + 5; 
 	}
 }
