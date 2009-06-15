@@ -92,6 +92,7 @@ cairo_surface_t *create_cairo_surface_for_pixmap(struct x_connection *c, Pixmap 
 						 int w, int h);
 cairo_surface_t *get_window_icon(struct x_connection *c, Window win, 
 				 cairo_surface_t *default_icon);
+cairo_surface_t *copy_resized(cairo_surface_t *source, int w, int h);
 
 /**************************************************************************
   Buffer utils

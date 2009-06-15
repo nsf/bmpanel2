@@ -503,14 +503,24 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 		return default_icon;
 	}
 
-	double w = image_width(default_icon);
-	double h = image_height(default_icon);
+	int w = image_width(default_icon);
+	int h = image_height(default_icon);
 
-	double ow = image_width(ret);
-	double oh = image_height(ret);
+	cairo_surface_t *sizedret = copy_resized(ret, w, h);
+	cairo_surface_destroy(ret);
 
-	cairo_surface_t *sizedret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 
-							       w, h);
+	return sizedret;
+}
+
+cairo_surface_t *copy_resized(cairo_surface_t *source, int w, int h)
+{
+	double dw = (double)w;
+	double dh = (double)h;
+	double ow = image_width(source);
+	double oh = image_height(source);
+
+	cairo_surface_t *sizedret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+							       dw, dh);
 	ENSURE(cairo_surface_status(sizedret) == CAIRO_STATUS_SUCCESS,
 	       "Failed to create cairo image surface");
 
@@ -518,12 +528,11 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS,
 	       "Failed to create cairo context");
 
-	cairo_scale(cr, w / ow, h / oh);
-	cairo_set_source_surface(cr, ret, 0, 0);
+	cairo_scale(cr, dw / ow, dh / oh);
+	cairo_set_source_surface(cr, source, 0, 0);
 	cairo_paint(cr);
 
 	cairo_destroy(cr);
-	cairo_surface_destroy(ret);
 
 	return sizedret;
 }

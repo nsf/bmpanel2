@@ -72,7 +72,7 @@ struct clock_widget {
 extern struct widget_interface clock_interface;
 
 /**************************************************************************
-  Desktop switcher
+  Desktop Switcher
 **************************************************************************/
 
 struct desktops_state {
@@ -132,5 +132,24 @@ struct systray_widget {
 };
 
 extern struct widget_interface systray_interface;
+
+/**************************************************************************
+  Launch Bar
+**************************************************************************/
+
+struct launchbar_item {
+	cairo_surface_t *icon;
+	char *execstr;
+	int x;
+	int w;
+};
+
+struct launchbar_widget {
+	DECLARE_ARRAY(struct launchbar_item, items);
+	int icon_size[2];
+	int active;
+};
+
+extern struct widget_interface launchbar_interface;
 
 #endif /* BMPANEL2_BUILTIN_WIDGETS_H */
