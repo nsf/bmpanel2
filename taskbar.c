@@ -121,14 +121,21 @@ static int find_last_task_by_desktop(struct taskbar_widget *tw, int desktop)
 	return t;
 }
 
-static void add_task(struct taskbar_widget *tw, struct x_connection *c, Window win)
+static void add_task(struct widget *w, struct x_connection *c, Window win)
 {
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	struct taskbar_task t;
 
 	x_set_error_trap();
-	if (x_is_window_hidden(c, win) || x_done_error_trap())
+	if (x_is_window_hidden(c, win)) {
+		if (x_done_error_trap())
+			return;
+		// we need this if window will apear later
+		if (w->panel->win != win)
+			XSelectInput(c->dpy, win, PropertyChangeMask);
 		return;
-
+	}
+	
 	XSelectInput(c->dpy, win, PropertyChangeMask);
 
 	CLEAR_STRUCT(&t);
@@ -276,8 +283,9 @@ static void update_desktop(struct taskbar_widget *tw, struct x_connection *c)
 			c->atoms[XATOM_NET_CURRENT_DESKTOP]);
 }
 
-static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
+static void update_tasks(struct widget *w, struct x_connection *c)
 {
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	Window *wins;
 	int num;
 
@@ -301,7 +309,7 @@ static void update_tasks(struct taskbar_widget *tw, struct x_connection *c)
 
 	for (j = 0; j < num; ++j) {
 		if (find_task_by_window(tw, wins[j]) == -1)
-			add_task(tw, c, wins[j]);
+			add_task(w, c, wins[j]);
 	}
 	
 	XFree(wins);
@@ -346,7 +354,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	struct x_connection *c = &w->panel->connection;
 	update_desktop(tw, c);
 	update_active(tw, c);
-	update_tasks(tw, c);
+	update_tasks(w, c);
 	tw->dnd_win = None;
 	tw->taken = None;
 	tw->task_death_threshold = parse_int("task_death_threshold", 
@@ -441,7 +449,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 			return;
 		}
 		if (e->atom == c->atoms[XATOM_NET_CLIENT_LIST]) {
-			update_tasks(tw, c);
+			update_tasks(w, c);
 			w->needs_expose = 1;
 			return;
 		}
@@ -449,8 +457,13 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 
 	/* check if it's our task */
 	int ti = find_task_by_window(tw, e->window);
-	if (ti == -1)
+	if (ti == -1) {
+		if (e->atom == c->atoms[XATOM_NET_WM_STATE] ||
+		    e->atom == c->atoms[XATOM_NET_WM_WINDOW_TYPE]) {
+			add_task(w, c, e->window);
+		}
 		return;
+	}
 
 	/* desktop changed (task was moved to other desktop) */
 	if (e->atom == c->atoms[XATOM_NET_WM_DESKTOP]) {
