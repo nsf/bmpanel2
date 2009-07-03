@@ -16,7 +16,7 @@ static int X_error_handler(Display *dpy, XErrorEvent *error)
 
 static int X_io_error_handler(Display *dpy)
 {
-	XWARNING("fatal error, connection to X server lost? exiting...");
+	XWARNING("fatal IO error, connection to X server lost? exiting...");
 	return 0;
 }
 
