@@ -74,11 +74,22 @@ cairo_surface_t *parse_image_part(struct config_format_entry *e,
 				  struct config_format_tree *tree,
 				  int required)
 {
-	cairo_surface_t *img;
+	cairo_surface_t *img = 0;
 	int x,y,w,h;
 	x = y = w = h = -1;
 	char *file;
-	size_t filestrlen = strlen(tree->dir) + 1 + strlen(e->value) + 1;
+	size_t filestrlen;
+	
+	if (!e->value) {
+		if (required)
+			XWARNING("Missing image file name which is required ",
+				 "(line: %u)", e->line);
+		else
+			XWARNING("Missing image file name (line: %u)", e->line); 
+		return img;
+	}
+
+	filestrlen = strlen(tree->dir) + 1 + strlen(e->value) + 1;
 
 	/* compute path */
 	if (filestrlen > MAX_ALLOCA)
