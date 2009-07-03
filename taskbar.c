@@ -527,10 +527,6 @@ static void button_click(struct widget *w, XButtonEvent *e)
 		else
 			activate_task(c, t);
 	}
-	/* XXX: temporary */
-	if (e->button == 2) {
-		g_main_loop_quit(w->panel->loop);
-	}
 }
 
 static Window create_window_for_dnd(struct x_connection *c, int x, int y,

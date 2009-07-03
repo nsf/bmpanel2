@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
 #include "gui.h"
 #include "config-parser.h"
 #include "xdg.h"
@@ -6,7 +8,7 @@
 #include "widget-utils.h"
 #include "builtin-widgets.h"
 
-int try_load_theme(struct config_format_tree *tree, const char *name)
+static int try_load_theme(struct config_format_tree *tree, const char *name)
 {
 	char buf[4096];
 	size_t data_dirs_len;
@@ -37,11 +39,32 @@ int try_load_theme(struct config_format_tree *tree, const char *name)
 
 	return 0;
 }
+	
+static struct config_format_tree tree;
+static struct panel p;
+
+static void sigint_handler(int xxx)
+{
+	XWARNING("sigint signal received, stopping main loop...");
+	g_main_loop_quit(p.loop);
+}
+
+static void sigterm_handler(int xxx)
+{
+	XWARNING("sigterm signal received, stopping main loop...");
+	g_main_loop_quit(p.loop);
+}
+
+static void mysignal(int sig, void (*handler)(int))
+{
+	struct sigaction sa;
+	sa.sa_handler = handler;
+	sa.sa_flags = 0;
+	sigaction(sig, &sa, 0);
+}
 
 int main(int argc, char **argv)
 {
-	struct config_format_tree tree;
-	struct panel p;
 	int theme_load_status = -1;
 
 	load_settings();
@@ -68,15 +91,17 @@ int main(int argc, char **argv)
 	register_widget_interface(&launchbar_interface);
 
 	init_panel(&p, &tree);
-	panel_main_loop(&p);
 
+	mysignal(SIGINT, sigint_handler);
+	mysignal(SIGTERM, sigterm_handler);
+
+	panel_main_loop(&p);
+	
 	free_panel(&p);
 	free_config_format_tree(&tree);
 	clean_image_cache();
 	clean_static_buf();
-
 	free_settings();
-
 	xmemstat(0, 0, 1);
 	return EXIT_SUCCESS;
 }
