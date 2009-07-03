@@ -402,7 +402,7 @@ static void draw(struct widget *w)
 		}
 
 		/* last task width correction */
-		if (i == tw->tasks_n - 1)
+		if (i == tw->tasks_n - 1 || tw->tasks[i+1].desktop != t->desktop)
 			taskw = (w->x + w->width) - x;
 		
 		/* save position for other events */
