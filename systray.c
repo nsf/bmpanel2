@@ -73,7 +73,8 @@ static void add_tray_icon(struct widget *w, Window win)
 static void update_systray_width(struct widget *w)
 {
 	struct systray_widget *sw = (struct systray_widget*)w->private;
-	w->width = sw->icons_n * sw->icon_size[0];
+	w->width = sw->icons_n * 
+		(sw->icon_size[0] + sw->icon_spacing) - sw->icon_spacing;
 }
 
 static int find_tray_icon(struct systray_widget *sw, Window win)
@@ -126,6 +127,8 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		required_entry_not_found(e, "icon_size");
 		return -1;
 	}
+	parse_2ints(sw->icon_offset, "icon_offset", e);
+	sw->icon_spacing = parse_int("icon_spacing", e, 0);
 
 	struct x_connection *c = &w->panel->connection;
 
@@ -193,8 +196,8 @@ static void panel_exposed(struct widget *w)
 	struct x_connection *c = &w->panel->connection;
 
 	size_t i;
-	int x = w->x;
-	int y = (w->panel->height - sw->icon_size[1]) / 2;
+	int x = w->x + sw->icon_offset[0];
+	int y = (w->panel->height - sw->icon_size[1]) / 2 + sw->icon_offset[1];
 	for (i = 0; i < sw->icons_n; ++i) {
 		XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y, 
 				  sw->icon_size[0], sw->icon_size[1]);
@@ -204,7 +207,7 @@ static void panel_exposed(struct widget *w)
 		}
 		XClearArea(c->dpy, sw->icons[i].icon, 0,0,0,0, True);
 
-		x += sw->icon_size[0];
+		x += sw->icon_size[0] + sw->icon_spacing;
 	}
 }
 
