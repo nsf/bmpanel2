@@ -120,7 +120,12 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		struct config_format_tree *tree)
 {
 	struct systray_widget *sw = xmallocz(sizeof(struct systray_widget));
-	parse_2ints(sw->icon_size, "icon_size", e);
+	if (parse_2ints(sw->icon_size, "icon_size", e) != 0) {
+		xfree(sw);
+		/* TODO: print this error more nicely */
+		required_entry_not_found(e, "icon_size");
+		return -1;
+	}
 
 	struct x_connection *c = &w->panel->connection;
 
