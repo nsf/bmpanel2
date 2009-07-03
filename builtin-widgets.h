@@ -36,6 +36,7 @@ struct taskbar_theme {
 	struct taskbar_state pressed;
 	cairo_surface_t *default_icon;
 	int icon_offset[2];
+	int task_max_width;
 
 	cairo_surface_t *separator;
 };

@@ -77,6 +77,7 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 	}
 
 	tt->separator = parse_image_part_named("separator", e, tree, 0);
+	tt->task_max_width = parse_int("task_max_width", e, 0);
 
 	return 0;
 
@@ -389,6 +390,9 @@ static void draw(struct widget *w)
 		return;
 
 	int taskw = w->width / count;
+	if (tw->theme.task_max_width && taskw > tw->theme.task_max_width)
+		taskw = tw->theme.task_max_width;
+
 	int x = w->x;
 	size_t i;
 
@@ -401,9 +405,13 @@ static void draw(struct widget *w)
 			continue;
 		}
 
+#define TASKS_NEED_CORRECTION (taskw != tw->theme.task_max_width)
 		/* last task width correction */
-		if (i == tw->tasks_n - 1 || tw->tasks[i+1].desktop != t->desktop)
+		if (TASKS_NEED_CORRECTION &&
+		    (i == tw->tasks_n - 1 || tw->tasks[i+1].desktop != t->desktop))
+		{
 			taskw = (w->x + w->width) - x;
+		}
 		
 		/* save position for other events */
 		t->x = x;
