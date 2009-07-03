@@ -36,7 +36,6 @@ taskbar
 		right tb_right_idle_img.png
 		font DejaVuSans 8
 			color 255 255 255
-			align left
 			offset 5 1
 
 	pressed
@@ -45,7 +44,6 @@ taskbar
 		right tb_right_pressed_img.png
 		font DejaVuSans 8
 			color 255 255 255
-			align left
 			offset 5 1
 
 	default_icon default_icon.png

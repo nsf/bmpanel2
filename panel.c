@@ -36,7 +36,9 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 
 	theme->separator = parse_image_part_named("separator", e, tree, 0);
 	theme->transparent = parse_bool("transparent", e);
-
+	theme->align = parse_align("align", e);
+	theme->width = parse_int_or_percents("width", e, -1, 
+					     &theme->width_in_percents);
 	return 0;
 }
 
@@ -77,6 +79,31 @@ static void get_position_and_strut(const struct x_connection *c,
 		strut[2] = 0;
 		strut[3] = h + c->screen_height - 
 			(c->workarea_height + c->workarea_y);
+	}
+
+	/* variable width */
+	if (t->width != -1) {
+		if (t->width_in_percents)
+			w = ((float)c->workarea_width / 100.0f) * t->width;
+		else
+			w = t->width;
+
+		/* limit */
+		if (w > c->workarea_width)
+			w = c->workarea_width;
+		
+		/* X */
+		switch (t->align) {
+		case ALIGN_CENTER:
+			x += (c->workarea_width - w) / 2;
+			break;
+		case ALIGN_RIGHT:
+			x += c->workarea_width - w;
+			break;
+		default:
+			/* skip */
+			break;
+		}
 	}
 
 	*ox = x; *oy = y; *oh = h; *ow = w;

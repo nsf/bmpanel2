@@ -13,9 +13,9 @@ struct triple_image {
 	cairo_surface_t *right;
 };
 
-#define TEXT_ALIGN_CENTER 0
-#define TEXT_ALIGN_LEFT 1
-#define TEXT_ALIGN_RIGHT 2
+#define ALIGN_CENTER 0
+#define ALIGN_LEFT 1
+#define ALIGN_RIGHT 2
 
 struct text_info {
 	PangoFontDescription *pfd;
@@ -54,7 +54,12 @@ void free_text_info(struct text_info *fi);
 /* complicated strings */
 int parse_2ints(int *out, const char *name, struct config_format_entry *e);
 
+/* align */
+int parse_align(const char *name, struct config_format_entry *e);
+
 /* simple things (int, string, etc.) */
+int parse_int_or_percents(const char *name, struct config_format_entry *e,
+			  int def, int *ispercents);
 int parse_int(const char *name, struct config_format_entry *e, int def);
 int parse_bool(const char *name, struct config_format_entry *e);
 char *parse_string(const char *name, struct config_format_entry *e, 

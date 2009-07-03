@@ -106,6 +106,9 @@ struct panel_theme {
 	cairo_surface_t *background;
 	cairo_surface_t *separator;
 	int transparent; /* bool */
+	int align;
+	int width;
+	int width_in_percents; /* bool */
 };
 
 #define PANEL_MAX_WIDGETS 20

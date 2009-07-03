@@ -53,21 +53,21 @@ int parse_2ints(int *out, const char *name, struct config_format_entry *e)
 	return -1;
 }
 
-static int parse_align(struct config_format_entry *e)
+int parse_align(const char *name, struct config_format_entry *e)
 {
-	struct config_format_entry *ee = find_config_format_entry(e, "align");
+	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (!ee || !ee->value)
-		return TEXT_ALIGN_CENTER;
+		return ALIGN_LEFT;
 
 	if (strcmp("left", ee->value) == 0)
-		return TEXT_ALIGN_LEFT;
+		return ALIGN_LEFT;
 	else if (strcmp("right", ee->value) == 0)
-		return TEXT_ALIGN_RIGHT;
+		return ALIGN_RIGHT;
 	else if (strcmp("center", ee->value) == 0)
-		return TEXT_ALIGN_CENTER;
-	XWARNING("Unknown align type: \"%s\", back to default \"center\""
+		return ALIGN_CENTER;
+	XWARNING("Unknown align type: \"%s\", back to default \"left\""
 		 " (line: %d)", ee->value, ee->line);
-	return TEXT_ALIGN_CENTER;
+	return ALIGN_LEFT;
 }
 
 cairo_surface_t *parse_image_part(struct config_format_entry *e,
@@ -167,7 +167,7 @@ int parse_text_info(struct text_info *out, struct config_format_entry *e)
 	out->pfd = pango_font_description_from_string(e->value);
 	parse_color(out->color, e);
 	parse_2ints(out->offset, "offset", e);
-	out->align = parse_align(e);
+	out->align = parse_align("align", e);
 
 	return 0;
 }
@@ -194,9 +194,22 @@ int parse_int(const char *name, struct config_format_entry *e, int def)
 {
 	const char *v = find_config_format_entry_value(e, name);
 	int i;
-	if (v) {
-		if (1 == sscanf(v, "%d", &i))
+	if (v && 1 == sscanf(v, "%d", &i))
 			return i;
+	return def;
+}
+
+int parse_int_or_percents(const char *name, struct config_format_entry *e,
+			  int def, int *ispercents)
+{
+	const char *v = find_config_format_entry_value(e, name);
+	int i;
+	if (v && 1 == sscanf(v, "%d", &i)) {
+		if (ispercents && strchr(v, '%') != 0)
+			*ispercents = 1;
+		else if (ispercents) 
+			*ispercents = 0;
+		return i;
 	}
 	return def;
 }
@@ -295,13 +308,13 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	offsety = (h - r.height) / 2;
 	switch (ti->align) {
 	default:
-	case TEXT_ALIGN_CENTER:
+	case ALIGN_CENTER:
 		offsetx = (w - r.width) / 2;
 		break;
-	case TEXT_ALIGN_LEFT:
+	case ALIGN_LEFT:
 		offsetx = 0;
 		break;
-	case TEXT_ALIGN_RIGHT:
+	case ALIGN_RIGHT:
 		offsetx = w - r.width;
 		break;
 	}
