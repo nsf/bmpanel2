@@ -48,3 +48,5 @@ OPTIONS
 	Lists all themes found on known paths for current user.
 	Additional info such as theme author name will be printed
 	also.
+
+// vim: set syntax=asciidoc:
