@@ -33,8 +33,10 @@ static char *atom_names[] = {
 	"_NET_WM_ICON",
 	"_NET_WM_ICON_GEOMETRY",
 	"_NET_WM_VISIBLE_NAME",
+	"_NET_WM_STATE_BELOW",
 	"_NET_WM_STATE_SKIP_TASKBAR",
 	"_NET_WM_STATE_SHADED",
+	"_NET_WM_STATE_STICKY",
 	"_NET_WM_STATE_HIDDEN",
 	"_NET_WM_DESKTOP",
 	"_NET_MOVERESIZE_WINDOW",
@@ -240,6 +242,13 @@ void x_set_prop_array(struct x_connection *c, Window win, Atom type,
 		const long *values, size_t len)
 {
 	XChangeProperty(c->dpy, win, type, XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char*)values, len);
+}
+
+void x_set_prop_atom_array(struct x_connection *c, Window win, Atom type,
+		Atom *values, size_t len)
+{
+	XChangeProperty(c->dpy, win, type, XA_ATOM, 32, 
 			PropModeReplace, (unsigned char*)values, len);
 }
 

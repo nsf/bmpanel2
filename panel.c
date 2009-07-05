@@ -13,8 +13,12 @@ static int parse_position(const char *pos)
 		return PANEL_POSITION_TOP;
 	else if (strcmp("bottom", pos) == 0)
 		return PANEL_POSITION_BOTTOM;
+	else if (strcmp("left", pos) == 0)
+		return PANEL_POSITION_LEFT;
+	else if (strcmp("right", pos) == 0)
+		return PANEL_POSITION_RIGHT;
 	XWARNING("Unknown position type: %s, back to default 'top'", pos);
-	return PANEL_POSITION_TOP;
+	return PANEL_POSITION_BOTTOM;
 }
 
 static int load_panel_theme(struct panel_theme *theme, struct config_format_tree *tree)
@@ -24,11 +28,14 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 	if (!e)
 		return XERROR("Failed to find 'panel' section in theme format file");
 
-
-	theme->position = PANEL_POSITION_TOP; /* default */
+	theme->position = PANEL_POSITION_BOTTOM; /* default */
 	const char *v = find_config_format_entry_value(e, "position");
 	if (v)
 		theme->position = parse_position(v);
+	
+	if ( theme->position == PANEL_POSITION_LEFT ||
+	     theme->position == PANEL_POSITION_RIGHT )
+		theme->vertical = 1;
 	
 	theme->background = parse_image_part_named("background", e, tree, 1);
 	if (!theme->background)
@@ -62,61 +69,112 @@ static void select_render_interface(struct panel *p)
 		p->render = &render_normal;
 }
 
-static void get_position_and_strut(const struct x_connection *c, 
-		const struct panel_theme *t, int *ox, int *oy, 
-		int *ow, int *oh, long *strut)
+static void get_position_and_strut(
+		const struct x_connection *c, 
+		const struct panel_theme *t,
+		int *ox, int *oy, int *ow, int *oh,
+		long *strut)
 {
 	int x,y,w,h;
-	x = c->workarea_x;
-	y = c->workarea_y;
-	h = image_height(t->background);
-	w = c->workarea_width;
-
-	strut[0] = strut[1] = strut[3] = 0;
-	strut[2] = h + c->workarea_y;
-	if (t->position == PANEL_POSITION_BOTTOM) {
-		y = (c->workarea_height + c->workarea_y) - h;
-		strut[2] = 0;
-		strut[3] = h + c->screen_height - 
-			(c->workarea_height + c->workarea_y);
-	}
-
-	/* variable width */
-	if (t->width != -1) {
-		if (t->width_in_percents)
-			w = ((float)c->workarea_width / 100.0f) * t->width;
-		else
-			w = t->width;
-
-		/* limit */
-		if (w > c->workarea_width)
-			w = c->workarea_width;
+	
+	/* strut:
+	 *   left, right, top, bottom,
+	 *   left_start_y, left_end_y,
+	 *   right_start_y, right_end_y,
+	 *   top_start_x, top_end_x,
+	 *   bottom_start_x, bottom_end_x
+	 */
+	memset(strut, 0, 12 * sizeof(strut[0])); /* set zeroes */
+	
+	if ( !t->vertical ) { /* horizontal */
+		h = image_height(t->background);
+		w = c->workarea_width;
+		if (t->width > 0) {
+			if (t->width_in_percents)
+				w = ((float)c->workarea_width / 100.0f) * t->width;
+			else
+				w = t->width;
+			/* limit */
+			if (w > c->workarea_width)
+				w = c->workarea_width;
+		}
 		
-		/* X */
+		/* alignment */
 		switch (t->align) {
 		case ALIGN_CENTER:
-			x += (c->workarea_width - w) / 2;
+			x = c->workarea_x + (c->workarea_width - w) / 2;
 			break;
 		case ALIGN_RIGHT:
-			x += c->workarea_width - w;
+			x = c->workarea_x + c->workarea_width - w;
 			break;
 		default:
-			/* skip */
+			x = c->workarea_x;
 			break;
 		}
 	}
+	else { /* vertical */
+		h = c->workarea_height;
+		if (t->width > 0) {
+			if (t->width_in_percents)
+				h = ((float)c->workarea_height / 100.0f) * t->width;
+			else
+				w = t->width;
+			/* limit */
+			if (w > c->workarea_height)
+				w = c->workarea_height;
+		}
+		w = image_width(t->background);
+		
+		/* alignment */
+		switch (t->align) {
+		case ALIGN_CENTER:
+			y = c->workarea_y + (c->workarea_height - h) / 2;
+			break;
+		case ALIGN_RIGHT:
+			y = c->workarea_y + c->workarea_height - h;
+			break;
+		default:
+			y = c->workarea_y;
+			break;
+		}
+	}
+	
+	if ( t->position == PANEL_POSITION_TOP ) {
+		y = c->workarea_y;
+		
+		strut[2] = c->workarea_y + h; // top
+		
+		strut[8] = x;     // top_start_x
+		strut[9] = x + w; // top_end_x
+	}
+	else if (t->position == PANEL_POSITION_BOTTOM) {
+		y = (c->workarea_height + c->workarea_y) - h;
+		
+		strut[3] = h + c->screen_height - 
+			(c->workarea_height + c->workarea_y); // bottom
+		
+		strut[10] = x;     // bottom_start_x
+		strut[11] = x + w; // bottom_end_x
+	}
+	else if ( t->position == PANEL_POSITION_LEFT ) {
+		x = c->workarea_x;
+		
+		strut[0] = image_width(t->background); // left
+		
+		strut[4] = y;     // left_start_x
+		strut[5] = y + h; // left_end_x
+	}
+	else if (t->position == PANEL_POSITION_RIGHT) {
+		x = (c->workarea_width + c->workarea_x) - w;
+		
+		strut[1] = w + c->screen_width - 
+			(c->workarea_width + c->workarea_x); // right
+		
+		strut[6] = y;     // right_start_x
+		strut[7] = y + h; // right_end_x
+	}
 
 	*ox = x; *oy = y; *oh = h; *ow = w;
-	
-	static const struct {
-		int s, e;
-	} where[] = {
-		[PANEL_POSITION_TOP] = {8, 9},
-		[PANEL_POSITION_BOTTOM] = {10, 11}
-	};
-
-	strut[where[t->position].s] = x;
-	strut[where[t->position].e] = x+w;
 }
 
 static void create_window(struct panel *panel)
@@ -158,10 +216,13 @@ static void create_window(struct panel *panel)
 	x_set_prop_atom(c, panel->win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
 			c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK]);
 	
-	/* also send desktop message to wm */
+	Atom state[2] = {c->atoms[XATOM_NET_WM_STATE_STICKY], c->atoms[XATOM_NET_WM_STATE_BELOW]};
+	x_set_prop_atom_array(c, panel->win, c->atoms[XATOM_NET_WM_STATE], state, 2);
+
+	/* also send desktop message to wm (on all desktops) */
 	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
 			     0xFFFFFFFF, 0, 0, 0, 0);
-	
+
 	/* place window on it's position */
 	XSizeHints size_hints;
 
@@ -225,64 +286,90 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 void recalculate_widgets_sizes(struct panel *panel)
 {
 	const int min_fill_size = 200;
+	short vertical = panel->theme.vertical;
 	int num_constant = 0;
 	int num_fill = 0;
-	int total_constants_width = 0;
-	int x = 0;
-	int x2 = panel->width;
+	int total_constants_size = 0;
+	int pos = 0;
+	int pos2 = vertical ? panel->height : panel->width;
 	int separators = 0;
-	int separator_width = image_width(panel->theme.separator);
-	int total_separators_width = 0;
+	int separator_size = vertical ? image_height(panel->theme.separator) : image_width(panel->theme.separator);
+	int total_separators_size = 0;
 	size_t i;
 
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
 		if (w->interface->size_type == WIDGET_SIZE_CONSTANT) {
+			int w_size = vertical ? w->height : w->width;
 			num_constant++;
-			total_constants_width += w->width;
-			if (w->width && !w->no_separator)
+			total_constants_size += w_size;
+			if (w_size && !w->no_separator)
 				separators++;
 		} else
 			num_fill++;
 	}
 
-	total_separators_width = separators * separator_width;
+	total_separators_size = separators * separator_size;
 
 	if (num_fill != 1)
 		XDIE("There always should be exactly one widget with a "
 		     "SIZE_FILL size type (taskbar)");
 
-	if (total_constants_width + total_separators_width > 
-	    panel->width - min_fill_size)
+	if (total_constants_size + total_separators_size > 
+	    (vertical ? panel->height : panel->width) - min_fill_size)
 	{
 		XDIE("Too many widgets here, try to remove one or more");
 	}
 
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
+		int w_size = vertical ? w->height : w->width;
 		if (w->interface->size_type == WIDGET_SIZE_FILL)
 			break;
-
-		w->x = x;
-		x += w->width;
-		if (w->width && !w->no_separator)
-			x += separator_width;
+		
+		if ( vertical ) {
+			w->x = 0;
+			w->y = pos;
+		} else {
+			w->x = pos;
+			w->y = 0;
+		}
+		pos += w_size;
+		if (w_size && !w->no_separator)
+			pos += separator_size;
 	}
 
 	for (i = panel->widgets_n - 1;; --i) {
 		struct widget *w = &panel->widgets[i];
+		int w_size = vertical ? w->height : w->width;
 		if (w->interface->size_type == WIDGET_SIZE_FILL)
 			break;
 
-		x2 -= w->width;
-		w->x = x2;
-		if (w->width && !w->no_separator)
-			x2 -= separator_width;
+		pos2 -= w_size;
+		if ( vertical ) {
+			w->x = 0;
+			w->y = pos2;
+		} else {
+			w->x = pos2;
+			w->y = 0;
+		}
+		if (w_size && !w->no_separator)
+			pos2 -= separator_size;
 	}
-
-	panel->widgets[i].x = x;
-	panel->widgets[i].width = x2 - x;
-
+	
+	/* Set SIZE_FILL widget size */
+	struct widget *w = &panel->widgets[i];
+	if ( vertical ) {
+		w->x = 0;
+		w->y = pos;
+		w->height = pos2 - pos;
+	}
+	else {
+		w->x = pos;
+		w->y = 0;
+		w->width = pos2 - pos;
+	}
+	
 	/* request redraw */
 	panel->needs_expose = 1;
 }
@@ -290,29 +377,36 @@ void recalculate_widgets_sizes(struct panel *panel)
 static void expose_whole_panel(struct panel *panel)
 {
 	Display *dpy = panel->connection.dpy;
-
+	short vertical = panel->theme.vertical;
+	
 	int sepw = 0;
-	sepw += image_width(panel->theme.separator);
+	sepw += vertical ? image_height(panel->theme.separator) : image_width(panel->theme.separator);
 
 	size_t i;
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *wi = &panel->widgets[i];
 		int x = wi->x;
+		int y = wi->y;
 		int w = wi->width;
-		if (!w) /* skip empty */
+		int h = wi->height;
+		if (!w || !h) /* skip empty */
 			continue;
 
 		/* background */
-		pattern_image(panel->theme.background, panel->cr, x, 0, w);
-
+		pattern_image(panel->theme.background, panel->cr, x, y, w, h);
+		
 		/* widget contents */
 		if (wi->interface->draw)
 			(*wi->interface->draw)(wi);
 
 		/* separator */
-		x += w;
-		if (panel->theme.separator && panel->widgets_n - 1 != i)
-			blit_image(panel->theme.separator, panel->cr, x, 0);
+		if ( vertical )
+			y += h;
+		else
+			x += w;
+		if (panel->theme.separator && panel->widgets_n - 1 != i) { /* separator & not last */
+			blit_image(panel->theme.separator, panel->cr, x, y);
+		}
 
 		/* widget was drawn, clear "needs_expose" flag */
 		wi->needs_expose = 0;
@@ -335,23 +429,21 @@ static void expose_whole_panel(struct panel *panel)
 
 static void expose_panel(struct panel *panel)
 {
-	Display *dpy = panel->connection.dpy;
-
 	if (panel->needs_expose) {
 		expose_whole_panel(panel);
 		return;
 	}
 
 	size_t i;
+	Display *dpy = panel->connection.dpy;
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
 		if (w->needs_expose) {
-			pattern_image(panel->theme.background, panel->cr, 
-					w->x, 0, w->width);
+			pattern_image(panel->theme.background, panel->cr, w->x, w->y, w->width, w->height);
 			if (w->interface->draw)
 				(*w->interface->draw)(w);
-			(*panel->render->blit)(panel, w->x, 0, 
-					       w->width, panel->height);
+			(*panel->render->blit)(panel, w->x, w->y,
+					w->width, w->height);
 			w->needs_expose = 0;
 		}
 	}
@@ -399,7 +491,7 @@ void init_panel(struct panel *panel, struct config_format_tree *tree)
 	
 	/* send desktop property again after mapping (fluxbox bug?) */
 	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
-			     0xFFFFFFFF, 0, 0, 0, 0);
+			0xFFFFFFFF, 0, 0, 0, 0);
 }
 
 void free_panel(struct panel *panel)

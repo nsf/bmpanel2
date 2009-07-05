@@ -15,9 +15,13 @@ struct taskbar_task {
 	Window win;
 	int desktop;
 	int x;
+	int y;
 	int w;
+	int h;
 	int geom_x; /* for _NET_WM_ICON_GEOMETRY */
+	int geom_y;
 	int geom_w;
+	int geom_h;
 
 	/* I'm using only one name source Atom and I'm watching it for
 	 * updates. 
@@ -31,11 +35,14 @@ struct taskbar_state {
 	struct text_info font;
 };
 
+
 struct taskbar_theme {
 	struct taskbar_state idle;
 	struct taskbar_state pressed;
 	cairo_surface_t *default_icon;
-	int icon_offset[2];
+	int icon_offset_x;
+	int icon_offset_y;
+	int icon_align;
 	int task_max_width;
 
 	cairo_surface_t *separator;
@@ -87,7 +94,9 @@ struct desktops_state {
 struct desktops_desktop {
 	char *name;
 	int x;
+	int y;
 	int w;
+	int h;
 	int textw;
 };
 
@@ -131,9 +140,12 @@ struct systray_widget {
 	Window selection_owner;
 
 	/* theme */
-	int icon_size[2];
-	int icon_offset[2];
-	int icon_spacing;
+	int icon_w;
+	int icon_h;
+	int icon_rows;
+	int icon_row_len;
+	int padding_x;
+	int padding_y;
 };
 
 extern struct widget_interface systray_interface;
@@ -146,13 +158,20 @@ struct launchbar_item {
 	cairo_surface_t *icon;
 	char *execstr;
 	int x;
+	int y;
 	int w;
+	int h;
 };
 
 struct launchbar_widget {
 	DECLARE_ARRAY(struct launchbar_item, items);
-	int icon_size[2];
 	int active;
+	int padding_x;
+	int padding_y;
+	int icon_w;
+	int icon_h;
+	int icon_rows;
+	int icon_row_len;
 };
 
 extern struct widget_interface launchbar_interface;

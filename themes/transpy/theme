@@ -30,7 +30,6 @@ taskbar
 		right lblack_r.png
 		font DejaVuSans 8
 			color 255 255 255
-			align left
 			offset 5 1
 
 	pressed
@@ -39,7 +38,6 @@ taskbar
 		right black_r.png
 		font DejaVuSans 8
 			color 255 255 255
-			align left
 			offset 5 1
 
 	default_icon default_icon.png

@@ -155,43 +155,52 @@ static void resize_desktops(struct widget *w)
 	struct desktops_state *ds = &dw->theme.idle;
 	size_t i;
 
-	int x = 0;
-	
 	int left_cornerw = image_width(ds->left_corner);
 	int leftw = image_width(ds->background.left);
 	int rightw = image_width(ds->background.right);
 	int right_cornerw = image_width(ds->right_corner);
 	int sepw = image_width(dw->theme.separator);
 
+	int width = 0;
 	for (i = 0; i < dw->desktops_n; ++i) {
-		int basex = x;
+		int text_w = 0;
+		int this_w = 0;
+		
+		dw->desktops[i].x = w->x + width;
+		
 		if (i == 0)
-			x += left_cornerw;
+			this_w += left_cornerw;
 		else 
-			x += leftw;
-		int width = 0;
+			this_w += leftw;
+		
 		text_extents(w->panel->layout, ds->font.pfd, 
-			     dw->desktops[i].name, &width, 0);
-		dw->desktops[i].textw = width;
-		x += width;
+			     dw->desktops[i].name, &text_w, 0);
+		dw->desktops[i].textw = text_w;
+		this_w += text_w;
+		
 		if (i == dw->desktops_n - 1)
-			x += right_cornerw;
+			this_w += right_cornerw;
 		else 
-			x += rightw + sepw;
-		dw->desktops[i].w = x - sepw - basex;
+			this_w += rightw;
+		
+		dw->desktops[i].w = this_w;
+		
+		width += this_w + sepw;
 	}
-	w->width = x;
+	w->width = width;
+	w->height = w->panel->height;
 }
 
-static int get_desktop_at(struct widget *w, int x)
+static int get_desktop_at(struct widget *w, int x, int y)
 {
 	struct desktops_widget *dw = (struct desktops_widget*)w->private;
 
 	size_t i;
 	for (i = 0; i < dw->desktops_n; ++i) {
 		struct desktops_desktop *d = &dw->desktops[i];
-		if (x < (d->x + d->w) && x > d->x)
-			return (int)i;
+		if (   x >= d->x && x < (d->x + d->w)
+		    && y >= d->y && y < (d->y + d->w) )
+				return (int)i;
 	}
 	return -1;
 }
@@ -238,43 +247,42 @@ static void draw(struct widget *w)
 	size_t i;
 
 	int x = w->x;
+	int y = w->y;
 	
 	int left_cornerw = image_width(idle->left_corner);
 	int leftw = image_width(idle->background.left);
 	int rightw = image_width(idle->background.right);
 	int right_cornerw = image_width(idle->right_corner);
 	int sepw = image_width(dw->theme.separator);
-	int h = w->panel->height;
+	int h = w->height;
 
 	for (i = 0; i < dw->desktops_n; ++i) {
 		struct desktops_state *cur = (i == dw->active) ? pressed : idle;
 		
-		dw->desktops[i].x = x;
-		
 		if (i == 0 && left_cornerw) {
-			blit_image(cur->left_corner, cr, x, 0); 
+			blit_image(cur->left_corner, cr, x, y); 
 			x += left_cornerw;
 		} else if (leftw) {
-			blit_image(cur->background.left, cr, x, 0);
+			blit_image(cur->background.left, cr, x, y);
 			x += leftw;
 		}
 		int width = dw->desktops[i].textw;
 
-		pattern_image(cur->background.center, cr, x, 0, width);
+		pattern_image(cur->background.center, cr, x, y, width, h);
 		draw_text(cr, w->panel->layout, &cur->font, dw->desktops[i].name,
 			  x, 0, width, h);
 
 		x += width;
 		if (i == dw->desktops_n - 1 && right_cornerw) {
-			blit_image(cur->right_corner, cr, x, 0);
+			blit_image(cur->right_corner, cr, x, y);
 			x += right_cornerw;
 		} else {
 			if (rightw) {
-				blit_image(cur->background.right, cr, x, 0);
+				blit_image(cur->background.right, cr, x, y);
 				x += rightw;
 			}
 			if (sepw) {
-				blit_image(dw->theme.separator, cr, x, 0);
+				blit_image(dw->theme.separator, cr, x, y);
 				x += sepw;
 			}
 		}
@@ -284,7 +292,7 @@ static void draw(struct widget *w)
 static void button_click(struct widget *w, XButtonEvent *e)
 {
 	struct desktops_widget *dw = (struct desktops_widget*)w->private;
-	int di = get_desktop_at(w, e->x);
+	int di = get_desktop_at(w, e->x, e->y);
 	if (di == -1)
 		return;
 	
@@ -325,21 +333,23 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 
 	if (e->message_type == c->atoms[XATOM_XDND_POSITION]) {
 		int x = (e->data.l[2] >> 16) & 0xFFFF;
+		int y = e->data.l[2] & 0xFFFF;
 
 		/* if it's not ours, skip.. */
-		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
-			return;
+		if (   x >= (p->x + w->x) && x < (p->x + w->x + w->width)
+		    && y >= (p->y + w->y) && y < (p->y + w->y + w->height) )
+		{
+			int di = get_desktop_at(w, x - p->x, y - p->y);
+			if (di != -1 && di != dw->active)
+					switch_desktop(di, c);
 
-		int di = get_desktop_at(w, x - p->x);
-		if (di != -1 && di != dw->active)
-				switch_desktop(di, c);
-
-		x_send_dnd_message(c, e->data.l[0], 
-				   c->atoms[XATOM_XDND_STATUS],
-				   p->win,
-				   2, /* bits: 0 1 */
-				   0, 0, 
-				   None);
+			x_send_dnd_message(c, e->data.l[0], 
+					c->atoms[XATOM_XDND_STATUS],
+					p->win,
+					2, /* bits: 0 1 */
+					0, 0, 
+					None);
+		}
 	}
 }
 
@@ -352,7 +362,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 	if (tw->taken == None)
 		return;
 
-	int desktop = get_desktop_at(w, di->dropped_x);
+	int desktop = get_desktop_at(w, di->dropped_x, di->dropped_y);
 	if (desktop == -1)
 		return;
 

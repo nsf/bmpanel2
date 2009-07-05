@@ -70,6 +70,10 @@ int main(int argc, char **argv)
 	load_settings();
 	const char *theme_name = find_config_format_entry_value(&g_settings.root,
 								"theme");
+	if ( argc > 1 ) {
+		theme_name = argv[1];
+	}
+	
 	if (theme_name)
 		theme_load_status = try_load_theme(&tree, theme_name);
 

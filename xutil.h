@@ -22,8 +22,10 @@ enum x_atom {
 	XATOM_NET_WM_ICON,
 	XATOM_NET_WM_ICON_GEOMETRY,
 	XATOM_NET_WM_VISIBLE_NAME,
+	XATOM_NET_WM_STATE_BELOW,
 	XATOM_NET_WM_STATE_SKIP_TASKBAR,
 	XATOM_NET_WM_STATE_SHADED,
+	XATOM_NET_WM_STATE_STICKY,
 	XATOM_NET_WM_STATE_HIDDEN,
 	XATOM_NET_WM_DESKTOP,
 	XATOM_NET_MOVERESIZE_WINDOW,
@@ -108,7 +110,9 @@ int x_get_window_desktop(struct x_connection *c, Window win);
 void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value);
 void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at);
 void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
-		      const long *values, size_t len);
+		const long *values, size_t len);
+void x_set_prop_atom_array(struct x_connection *c, Window win, Atom type,
+		Atom *values, size_t len);
 
 int x_is_window_hidden(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);

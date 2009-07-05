@@ -53,7 +53,7 @@ static void add_tray_icon(struct widget *w, Window win)
 	XSetWindowAttributes attrs;
 	attrs.background_pixmap = ParentRelative;
 	icon.embedder = XCreateWindow(c->dpy, w->panel->win, 0, 0, 
-				      sw->icon_size[0], sw->icon_size[1], 
+				      sw->icon_w, sw->icon_h, 
 				      0, c->default_depth, InputOutput, 
 				      c->default_visual, 
 				      CWBackPixmap, &attrs);
@@ -63,18 +63,33 @@ static void add_tray_icon(struct widget *w, Window win)
 	 */
 	XSelectInput(c->dpy, icon.icon, StructureNotifyMask);
 
-	XResizeWindow(c->dpy, icon.icon, sw->icon_size[0], sw->icon_size[1]);
+	XResizeWindow(c->dpy, icon.icon, sw->icon_w, sw->icon_h);
 	XReparentWindow(c->dpy, icon.icon, icon.embedder, 0, 0);
 	XMapRaised(c->dpy, icon.icon);
 
 	ARRAY_APPEND(sw->icons, icon);
 }
 
-static void update_systray_width(struct widget *w)
+static void update_systray_size(struct widget *w)
 {
 	struct systray_widget *sw = (struct systray_widget*)w->private;
-	w->width = sw->icons_n * 
-		(sw->icon_size[0] + sw->icon_spacing) - sw->icon_spacing;
+	
+	if (w->panel->theme.vertical) {
+		w->width = w->panel->width;
+		sw->icon_row_len = w->width / (sw->icon_w + sw->padding_x);
+		if ( sw->icon_row_len < 1 )
+			sw->icon_row_len = 1;
+		sw->icon_rows = (sw->icons_n + sw->icon_row_len - 1) / sw->icon_row_len; /* ceil rounding */
+		w->height = sw->icon_rows * (sw->icon_h + sw->padding_y);
+	}
+	else {
+		w->height = w->panel->height;
+		sw->icon_rows = w->height / (sw->icon_h + sw->padding_y);
+		if ( sw->icon_rows < 1 )
+			sw->icon_rows = 1;
+		sw->icon_row_len = (sw->icons_n + sw->icon_rows - 1) / sw->icon_rows; /* ceil rounding */
+		w->width = sw->icon_row_len * (sw->icon_w + sw->padding_x);
+	}
 }
 
 static int find_tray_icon(struct systray_widget *sw, Window win)
@@ -121,14 +136,14 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		struct config_format_tree *tree)
 {
 	struct systray_widget *sw = xmallocz(sizeof(struct systray_widget));
-	if (parse_2ints(sw->icon_size, "icon_size", e) != 0) {
+
+	if ( parse_2ints(&sw->icon_w, &sw->icon_h, "icon_size", e) != 0) {
 		xfree(sw);
 		/* TODO: print this error more nicely */
 		required_entry_not_found(e, "icon_size");
 		return -1;
 	}
-	parse_2ints(sw->icon_offset, "icon_offset", e);
-	sw->icon_spacing = parse_int("icon_spacing", e, 0);
+	parse_2ints(&sw->padding_x, &sw->padding_y, "padding", e);
 
 	struct x_connection *c = &w->panel->connection;
 
@@ -160,6 +175,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	XSendEvent(c->dpy, c->root, False, StructureNotifyMask, &ev);
 
 	w->width = 0;
+	w->height = 0;
 	w->private = sw;
 
 	return 0;
@@ -185,7 +201,7 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 	    e->data.l[1] == TRAY_REQUEST_DOCK) 
 	{
 		add_tray_icon(w, e->data.l[2]);
-		update_systray_width(w);
+		update_systray_size(w);
 		recalculate_widgets_sizes(w->panel);
 	}
 }
@@ -195,19 +211,26 @@ static void panel_exposed(struct widget *w)
 	struct systray_widget *sw = (struct systray_widget*)w->private;
 	struct x_connection *c = &w->panel->connection;
 
-	size_t i;
-	int x = w->x + sw->icon_offset[0];
-	int y = (w->panel->height - sw->icon_size[1]) / 2 + sw->icon_offset[1];
-	for (i = 0; i < sw->icons_n; ++i) {
-		XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y, 
-				  sw->icon_size[0], sw->icon_size[1]);
-		if (!sw->icons[i].mapped) {
-			XMapRaised(c->dpy, sw->icons[i].embedder);
-			sw->icons[i].mapped = 1;
-		}
-		XClearArea(c->dpy, sw->icons[i].icon, 0,0,0,0, True);
+	size_t row, j;
+	int y = w->y + (w->height - sw->icon_h * sw->icon_rows) / 2;
+	for (row = 0; row < sw->icon_rows; ++row) {
+		int x = w->x + (w->width - sw->icon_w * sw->icon_row_len) / 2;
+		for (j = 0; j < sw->icon_row_len; ++j) {
+			size_t i = row * sw->icon_row_len + j;
+			if ( i >= sw->icons_n )
+				break;
+			
+			XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y, 
+					  sw->icon_w, sw->icon_h);
+			if (!sw->icons[i].mapped) {
+				XMapRaised(c->dpy, sw->icons[i].embedder);
+				sw->icons[i].mapped = 1;
+			}
+			XClearArea(c->dpy, sw->icons[i].icon, 0,0,0,0, True);
 
-		x += sw->icon_size[0] + sw->icon_spacing;
+			x += sw->icon_w + sw->padding_x;
+		}
+		y += sw->icon_h + sw->padding_y;
 	}
 }
 
@@ -218,7 +241,7 @@ static void win_destroy(struct widget *w, XDestroyWindowEvent *e)
 
 	free_tray_icon(w, e->window);
 	if (icons_n != sw->icons_n) {
-		update_systray_width(w);
+		update_systray_size(w);
 		recalculate_widgets_sizes(w->panel);
 	}
 }
@@ -231,8 +254,8 @@ static void configure(struct widget *w, XConfigureEvent *e)
 	int i = find_tray_icon(sw, e->window);
 	if (i != -1) {
 		XWindowChanges wc;
-		wc.width = sw->icon_size[0];
-		wc.height = sw->icon_size[1];
+		wc.width = sw->icon_w;
+		wc.height = sw->icon_h;
 		XConfigureWindow(c->dpy, e->window, CWWidth | CWHeight, &wc);
 	}
 }

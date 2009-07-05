@@ -42,6 +42,7 @@
  * 
  * 	default_icon default_icon.png
  * 		offset 0 1
+ * 		align left
  * 
  * @endcode
  */

@@ -16,11 +16,14 @@ struct triple_image {
 #define ALIGN_CENTER 0
 #define ALIGN_LEFT 1
 #define ALIGN_RIGHT 2
+#define ALIGN_TOP 3
+#define ALIGN_BOTTOM 4
 
 struct text_info {
 	PangoFontDescription *pfd;
 	unsigned char color[3]; /* r, g, b */
-	int offset[2]; /* x, y */
+	int offset_x;
+	int offset_y;
 	int align;
 };
 
@@ -52,7 +55,7 @@ int parse_text_info_named(struct text_info *out, const char *name,
 void free_text_info(struct text_info *fi);
 
 /* complicated strings */
-int parse_2ints(int *out, const char *name, struct config_format_entry *e);
+int parse_2ints(int *out1, int *out2, const char *name, struct config_format_entry *e);
 
 /* align */
 int parse_align(const char *name, struct config_format_entry *e);
@@ -80,7 +83,7 @@ void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty);
 void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 		   int width, int height, int dstx, int dsty);
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
-		   int dstx, int dsty, int w);
+		int dstx, int dsty, int w, int h);
 
 void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti, 
 	       const char *text, int x, int y, int w, int h);

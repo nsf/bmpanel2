@@ -38,12 +38,12 @@ static int parse_color(unsigned char *out, struct config_format_entry *e)
 	return -1;
 }
 
-int parse_2ints(int *out, const char *name, struct config_format_entry *e)
+int parse_2ints(int *out1, int *out2, const char *name, struct config_format_entry *e)
 {
-	out[0] = out[1] = 0;
+	*out1 = *out2 = 0;
 	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (ee && ee->value) {
-		if (2 == sscanf(ee->value, "%d %d", &out[0], &out[1]))
+		if (2 == sscanf(ee->value, "%d %d", out1, out2))
 			return 0;
 		else
 			XWARNING("Failed to parse 2 ints \"%s\" value, "
@@ -177,7 +177,7 @@ int parse_text_info(struct text_info *out, struct config_format_entry *e)
 {
 	out->pfd = pango_font_description_from_string(e->value);
 	parse_color(out->color, e);
-	parse_2ints(out->offset, "offset", e);
+	parse_2ints(&out->offset_x, &out->offset_y, "offset", e);
 	out->align = parse_align("align", e);
 
 	return 0;
@@ -268,8 +268,8 @@ int image_height(cairo_surface_t *img)
 
 void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty)
 {
-	size_t sh = image_height(src);
-	size_t sw = image_width(src);
+	int sh = image_height(src);
+	int sw = image_width(src);
 
 	blit_image_ex(src, dest, 0, 0, sw, sh, dstx, dsty);
 }
@@ -287,14 +287,12 @@ void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 }
 
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
-		int dstx, int dsty, int w)
+		int dstx, int dsty, int w, int h)
 {
-	size_t sh = image_height(src);
-
 	cairo_save(dest);
 	cairo_set_source_surface(dest, src, 0, 0);
 	cairo_pattern_set_extend(cairo_get_source(dest), CAIRO_EXTEND_REPEAT);
-	cairo_rectangle(dest, dstx, dsty, w, sh);
+	cairo_rectangle(dest, dstx, dsty, w, h);
 	cairo_clip(dest);
 	cairo_paint(dest);
 	cairo_restore(dest);
@@ -330,8 +328,8 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 		break;
 	}
 	
-	offsetx += ti->offset[0];
-	offsety += ti->offset[1];
+	offsetx += ti->offset_x;
+	offsety += ti->offset_y;
 
 	cairo_translate(cr, x, y);
 	cairo_rectangle(cr, 0, 0, w, h);

@@ -19,7 +19,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 	size_t i;
 	for (i = 0; i < p->widgets_n; ++i) {
 		struct widget *w = &p->widgets[i];
-		if (point_in_rect(e->x, e->y, w->x, 0, w->width, p->height)) {
+		if (point_in_rect(e->x, e->y, w->x, w->y, w->width, w->height)) {
 			if (!p->dnd.taken_on) {
 				if (e->type == ButtonPress) {
 					p->last_click_widget = w;
@@ -60,7 +60,7 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 	/* motion events: enter, leave, motion */
 	for (i = 0; i < p->widgets_n; ++i) {
 		struct widget *w = &p->widgets[i];
-		if (point_in_rect(e->x, e->y, w->x, 0, w->width, p->height)) {
+		if (point_in_rect(e->x, e->y, w->x, w->y, w->width, w->height)) {
 			if (w == p->under_mouse) {
 				if (w->interface->mouse_motion)
 					(*w->interface->mouse_motion)(w, e);

@@ -52,9 +52,10 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		XWARNING("Failed to parse clock theme");
 		return -1;
 	}
-
-	/* get widget width */
+	
+	/* get widget size */
 	int text_width = 0;
+	int text_height = 0;
 	int pics_width = 0;
 
 	char buftime[128];
@@ -63,14 +64,20 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	strftime(buftime, sizeof(buftime), cw->theme.time_format, &tm);
 
 	text_extents(w->panel->layout, cw->theme.font.pfd, 
-			buftime, &text_width, 0);
+			buftime, &text_width, &text_height);
 
-	/* background is drawn only if the center is here */
+	/* borders are drawn only if the center is here */
 	if (cw->theme.background.center) {
 		pics_width += image_width(cw->theme.background.left);
 		pics_width += image_width(cw->theme.background.right);
 	}
-	w->width = text_width + pics_width;
+	if (w->panel->theme.vertical) {
+		w->width = w->panel->width;
+		w->height = text_height;
+	} else {
+		w->width = text_width + pics_width;
+		w->height = w->panel->height;
+	}
 	w->private = cw;
 	return 0;
 }
@@ -92,17 +99,18 @@ static void draw(struct widget *w)
 	current_time = time(0);
 	strftime(buftime, sizeof(buftime), cw->theme.time_format, 
 			localtime(&current_time));
-
+	
 	/* drawing */
 	cairo_t *cr = w->panel->cr;
 	int x = w->x;
+	int y = w->y;
 
 	/* calcs */
 	int leftw = 0;
 	int rightw = 0;
 	int centerw = w->width;
 
-	/* draw background only if the center image is here */
+	/* draw borders only if the center image is here */
 	if (cw->theme.background.center) {
 		leftw += image_width(cw->theme.background.left);
 		rightw += image_width(cw->theme.background.right);
@@ -110,23 +118,22 @@ static void draw(struct widget *w)
 
 		/* left part */
 		if (leftw)
-			blit_image(cw->theme.background.left, cr, x, 0);
+			blit_image(cw->theme.background.left, cr, x, y);
 		x += leftw;
 
 		/* center part */
-		pattern_image(cw->theme.background.center, cr, x, 0, 
-				centerw);
+		pattern_image(cw->theme.background.center, cr, x, y, centerw, w->height);
 		x += centerw;
 
 		/* right part */
 		if (rightw)
-			blit_image(cw->theme.background.right, cr, x, 0);
+			blit_image(cw->theme.background.right, cr, x, y);
 		x -= centerw;
 	}
 
 	/* text */
 	draw_text(cr, w->panel->layout, &cw->theme.font, buftime, 
-			x, 0, centerw, w->panel->height);
+			x, y, centerw, w->height);
 }
 
 static void clock_tick(struct widget *w)

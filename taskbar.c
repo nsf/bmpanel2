@@ -72,8 +72,13 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 	struct config_format_entry *ee = find_config_format_entry(e, "default_icon");
 	if (ee) {
 		tt->default_icon = parse_image_part(ee, tree, 0);
-		tt->icon_offset[0] = tt->icon_offset[1] = 0;
-		parse_2ints(tt->icon_offset, "offset", ee);
+		tt->icon_offset_x = tt->icon_offset_y = 0;
+		parse_2ints(&tt->icon_offset_x, &tt->icon_offset_y, "offset", ee);
+		tt->icon_align = parse_align("align", ee);
+		if ( tt->icon_align == ALIGN_CENTER ) {
+			/* Not a correct value, fallback to default */
+			tt->icon_align = ALIGN_LEFT;
+		}
 	}
 
 	tt->separator = parse_image_part_named("separator", e, tree, 0);
@@ -192,7 +197,7 @@ static int count_tasks_on_desktop(struct taskbar_widget *tw, int desktop)
 }
 
 static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
-		cairo_t *cr, PangoLayout *layout, int x, int w, int active)
+		cairo_t *cr, PangoLayout *layout, short active)
 {
 	/* calculations */
 	struct triple_image *tbt = (active) ? 
@@ -204,38 +209,51 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	
 	int leftw = image_width(tbt->left);
 	int rightw = image_width(tbt->right);
-	int height = image_height(tbt->center);
-	int centerw = w - leftw - rightw;
+	int centerw = task->w - leftw - rightw;
 	
-	int iconw = image_width(theme->default_icon);
-	int iconh = image_height(theme->default_icon);
-	int textw = centerw - (iconw + theme->icon_offset[0]) - rightw;
-
 	/* background */
-	int xx = x;
 	if (leftw)
-		blit_image(tbt->left, cr, xx, 0);
-	xx += leftw;
-	pattern_image(tbt->center, cr, xx, 0, centerw);
-	xx += centerw;
+		blit_image(tbt->left, cr, task->x, task->y);
+	pattern_image(tbt->center, cr, task->x + leftw, task->y, centerw, task->h);
 	if (rightw)
-		blit_image(tbt->right, cr, xx, 0);
-	xx -= centerw;
+		blit_image(tbt->right, cr, task->x + leftw + centerw, task->y);
+
+	int textx = task->x + leftw;
+	int texty = task->y;
+	int textw = centerw;
+	int texth = task->h;
 
 	/* icon */
+	int iconw = image_width(theme->default_icon) + theme->icon_offset_x;
+	int iconh = image_height(theme->default_icon) + theme->icon_offset_y;
 	if (iconw && iconh) {
-		int yy = (height - iconh) / 2;
-		xx += theme->icon_offset[0];
-		yy += theme->icon_offset[1];
+		int iconx = task->x + leftw + theme->icon_offset_x;
+		int icony = task->y + theme->icon_offset_y;
+
+		if ( theme->icon_align == ALIGN_LEFT || theme->icon_align == ALIGN_RIGHT ) {
+			icony += (task->h - iconh) / 2;
+			if ( theme->icon_align == ALIGN_RIGHT )
+				iconx = (task->x + leftw + centerw) - iconw;
+			textw -= iconw;
+			if ( theme->icon_align == ALIGN_LEFT )
+				textx += iconw;
+		}
+		if ( theme->icon_align == ALIGN_BOTTOM || theme->icon_align == ALIGN_TOP ) {
+			if ( theme->icon_align == ALIGN_BOTTOM )
+				icony = (task->y + task->h) - iconh;
+			if ( theme->icon_align == ALIGN_TOP )
+				texty += iconh;
+			texth -= iconh;
+		}
+
 		cairo_save(cr);
 		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-		blit_image(task->icon, cr, xx, yy);
+		blit_image(task->icon, cr, iconx, icony);
 		cairo_restore(cr);
 	}
-	xx += iconw; 
 	
 	/* text */
-	draw_text(cr, layout, font, task->name.buf, xx, 0, textw, height);
+	draw_text(cr, layout, font, task->name.buf, textx, texty, textw, texth);
 }
 
 static inline void activate_task(struct x_connection *c, struct taskbar_task *t)
@@ -320,7 +338,7 @@ static void update_tasks(struct widget *w, struct x_connection *c)
   Taskbar interface
 **************************************************************************/
 
-static int get_taskbar_task_at(struct widget *w, int x)
+static int get_taskbar_task_at(struct widget *w, int x, int y)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 
@@ -333,7 +351,7 @@ static int get_taskbar_task_at(struct widget *w, int x)
 			continue;
 		}
 
-		if (x < (t->x + t->w) && x > t->x)
+		if (x < (t->x + t->w) && x >= t->x && y < (t->y + t->h) && y >= t->y)
 			return (int)i;
 	}
 	return -1;
@@ -347,6 +365,12 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		xfree(tw);
 		XWARNING("Failed to parse taskbar theme");
 		return -1;
+	}
+
+	if (w->panel->theme.vertical) {
+		w->width = w->panel->width;
+	} else {
+		w->height = w->panel->height;
 	}
 
 	INIT_ARRAY(tw->tasks, 50);
@@ -384,58 +408,71 @@ static void draw(struct widget *w)
 	struct panel *p = w->panel;
 	struct x_connection *c = &p->connection;
 	cairo_t *cr = p->cr;
+	short vertical = p->theme.vertical;
 
 	int count = count_tasks_on_desktop(tw, tw->desktop);
 	if (!count)
 		return;
 
-	int taskw = w->width / count;
-	if (tw->theme.task_max_width && taskw > tw->theme.task_max_width)
-		taskw = tw->theme.task_max_width;
+	int taskw;
+	if ( vertical ) {
+		taskw = w->width;
+	} else {
+		taskw = w->width / count;
+		if (tw->theme.task_max_width && taskw > tw->theme.task_max_width)
+			taskw = tw->theme.task_max_width;
+	}
 
 	int x = w->x;
+	int y = w->y;
+	
+	size_t n = 0; /* number of task visible */
 	size_t i;
-
 	for (i = 0; i < tw->tasks_n; ++i) {
 		struct taskbar_task *t = &tw->tasks[i];
+		short active = (t->win == tw->active);
 		
 		if (t->desktop != tw->desktop &&
 		    t->desktop != -1)
 		{
 			continue;
 		}
+		n++; 
 
-#define TASKS_NEED_CORRECTION (taskw != tw->theme.task_max_width)
 		/* last task width correction */
-		if (TASKS_NEED_CORRECTION &&
-		    (i == tw->tasks_n - 1 || tw->tasks[i+1].desktop != t->desktop))
-		{
-			taskw = (w->x + w->width) - x;
+		if ( !vertical ) {
+			if (n == count)
+				taskw = (w->x + w->width) - x;
 		}
 		
 		/* save position for other events */
 		t->x = x;
+		t->y = y;
 		t->w = taskw;
+		t->h = image_height (active ? tw->theme.pressed.background.center : tw->theme.idle.background.center);
 
 		/* set icon geometry */
-		if (t->geom_x != t->x || t->geom_w != t->w) {
+		if (t->geom_x != t->x || t->geom_y != t->y || t->geom_w != t->w) {
 			t->geom_x = t->x;
+			t->geom_y = t->y;
 			t->geom_w = t->w;
+			t->geom_h = t->h;
 
 			long icon_geometry[4] = {
-				w->panel->x + t->x,
-				w->panel->y,
-				t->w,
-				w->panel->width
+				w->panel->x + t->geom_x,
+				w->panel->y + t->geom_y,
+				t->geom_w,
+				t->geom_h
 			};
 			x_set_prop_array(c, t->win, c->atoms[XATOM_NET_WM_ICON_GEOMETRY],
 					 icon_geometry, 4);
 		}
 
-
-		draw_task(t, &tw->theme, cr, w->panel->layout,
-				x, taskw, t->win == tw->active);
-		x += taskw;
+		draw_task(t, &tw->theme, cr, w->panel->layout, active);
+		if ( vertical )
+			y += t->h;
+		else
+			x += t->w;
 	}
 }
 
@@ -515,7 +552,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 static void button_click(struct widget *w, XButtonEvent *e)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-	int ti = get_taskbar_task_at(w, e->x);
+	int ti = get_taskbar_task_at(w, e->x, e->y);
 	if (ti == -1)
 		return;
 	struct taskbar_task *t = &tw->tasks[ti];
@@ -577,24 +614,26 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 
 	if (e->message_type == c->atoms[XATOM_XDND_POSITION]) {
 		int x = (e->data.l[2] >> 16) & 0xFFFF;
+		int y = e->data.l[2] & 0xFFFF;
 
 		/* if it's not ours, skip.. */
-		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
-			return;
-		
-		int ti = get_taskbar_task_at(w, x - p->x);
-		if (ti != -1) {
-			struct taskbar_task *t = &tw->tasks[ti];
-			if (t->win != tw->active)
-				activate_task(c, t);
-		}
+		if (   x >= (p->x + w->x) && x < (p->x + w->x + w->width)
+			&& y >= (p->y + w->y) && y < (p->y + w->y + w->height) )
+		{
+			int ti = get_taskbar_task_at(w, x - p->x, y - p->y);
+			if (ti != -1) {
+				struct taskbar_task *t = &tw->tasks[ti];
+				if (t->win != tw->active)
+					activate_task(c, t);
+			}
 
-		x_send_dnd_message(c, e->data.l[0], 
-				   c->atoms[XATOM_XDND_STATUS],
-				   p->win,
-				   2, /* bits: 0 1 */
-				   0, 0,
-				   None);
+			x_send_dnd_message(c, e->data.l[0], 
+					   c->atoms[XATOM_XDND_STATUS],
+					   p->win,
+					   2, /* bits: 0 1 */
+					   0, 0,
+					   None);
+		}
 	}
 }
 
@@ -603,7 +642,7 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	struct x_connection *c = &w->panel->connection;
 
-	int ti = get_taskbar_task_at(di->taken_on, di->taken_x);
+	int ti = get_taskbar_task_at(di->taken_on, di->taken_x, di->taken_y);
 	if (ti == -1)
 		return;
 
@@ -640,7 +679,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 	/* check if we have something draggable */
 	if (tw->taken != None) {
 		int taken = find_task_by_window(tw, tw->taken);
-		int dropped = get_taskbar_task_at(w, di->dropped_x);
+		int dropped = get_taskbar_task_at(w, di->dropped_x, di->dropped_y);
 		if (di->taken_on == di->dropped_on && 
 		    taken != -1 && dropped != -1 &&
 		    tw->tasks[taken].desktop == tw->tasks[dropped].desktop)
@@ -651,7 +690,9 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 		} else if (!di->dropped_on && taken != -1) {
 			/* out of the panel */
 			if (di->cur_y < -tw->task_death_threshold || 
-			    di->cur_y > w->panel->height + tw->task_death_threshold)
+			    di->cur_y > w->height + tw->task_death_threshold ||
+			    di->cur_x < -tw->task_death_threshold || 
+			    di->cur_x > w->width + tw->task_death_threshold)
 			{
 				close_task(c, &tw->tasks[taken]);
 			}

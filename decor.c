@@ -29,6 +29,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	}
 
 	w->width = image_width(dw->image);
+	w->height = image_height(dw->image);
 	w->private = dw;
 	return 0;
 }
@@ -45,5 +46,5 @@ static void draw(struct widget *w)
 	struct decor_widget *dw = (struct decor_widget*)w->private;
 	cairo_t *cr = w->panel->cr;
 
-	blit_image(dw->image, cr, w->x, 0);
+	blit_image(dw->image, cr, w->x, w->y);
 }

@@ -83,7 +83,9 @@ struct widget {
 	struct panel *panel;
 
 	int x;
+	int y;
 	int width;
+	int height;
 
 	int needs_expose;
 	int no_separator;
@@ -100,9 +102,12 @@ struct widget_interface *lookup_widget_interface(const char *themename);
 
 #define PANEL_POSITION_TOP 0
 #define PANEL_POSITION_BOTTOM 1
+#define PANEL_POSITION_LEFT 2
+#define PANEL_POSITION_RIGHT 3
 
 struct panel_theme {
 	int position;
+	short vertical; /* is vertical */
 	cairo_surface_t *background;
 	cairo_surface_t *separator;
 	int transparent; /* bool */
