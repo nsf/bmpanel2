@@ -292,7 +292,7 @@ void pattern_image(cairo_surface_t *src, cairo_t *dest,
 	size_t sh = image_height(src);
 
 	cairo_save(dest);
-	cairo_set_source_surface(dest, src, 0, 0);
+	cairo_set_source_surface(dest, src, dstx, dsty);
 	cairo_pattern_set_extend(cairo_get_source(dest), CAIRO_EXTEND_REPEAT);
 	cairo_rectangle(dest, dstx, dsty, w, sh);
 	cairo_clip(dest);
