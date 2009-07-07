@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "widget-utils.h"
 #include "builtin-widgets.h"
+#include "args.h"
 
 static int try_load_theme(struct config_format_tree *tree, const char *name)
 {
@@ -63,13 +64,52 @@ static void mysignal(int sig, void (*handler)(int))
 	sigaction(sig, &sa, 0);
 }
 
+/* options */
+static int show_usage;
+static int show_version;
+static int show_list;
+static const char *theme_override;
+
+#define BMPANEL2_VERSION_STR "bmpanel2 version 1.0 rc1\n"
+#define BMPANEL2_USAGE \
+"usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
+
+static const char bmpanel2_version_str[] = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
+
+static void parse_bmpanel2_args(int argc, char **argv)
+{
+	struct argument args[] = {
+		ARG_BOOLEAN("usage", &show_usage, "show usage reminder", 0),
+		ARG_BOOLEAN("version", &show_version, "print bmpanel2 version", 0),
+		ARG_BOOLEAN("list", &show_list, "list available themes", 0),
+		ARG_STRING("theme", &theme_override, "override config theme parameter", 0),
+		ARG_END
+	};
+	parse_args(args, argc, argv, bmpanel2_version_str);
+
+	if (show_usage) {
+		printf(BMPANEL2_USAGE);
+		exit(0);
+	}
+	if (show_version) {
+		printf(BMPANEL2_VERSION_STR);
+		exit(0);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int theme_load_status = -1;
-
+	const char *theme_name;
+	
+	parse_bmpanel2_args(argc, argv);
 	load_settings();
-	const char *theme_name = find_config_format_entry_value(&g_settings.root,
-								"theme");
+
+	if (theme_override)
+		theme_name = theme_override;
+	else
+		theme_name = find_config_format_entry_value(&g_settings.root,
+							    "theme");
 	if (theme_name)
 		theme_load_status = try_load_theme(&tree, theme_name);
 

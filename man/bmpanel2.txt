@@ -9,7 +9,7 @@ systray, clock, launcher, etc.) with themeing capabilities.
 SYNOPSIS
 --------
 [verse]
-'bmpanel2' [-v|--version] [-h|--help] [-u|--usage] [-l|--list]
+'bmpanel2' [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]
 
 DESCRIPTION
 -----------
@@ -30,23 +30,23 @@ piece of a really good software - the Openbox 3.
 
 OPTIONS
 -------
--v::
---version::
-	Prints currently installed version of the bmpanel2.
-
 -h::
 --help::
 	Prints short list with following tiny descriptions of all of
 	the options.
 
--u::
+--version::
+	Prints currently installed version of the bmpanel2.
+
 --usage::
 	Prints the most shortest possible bmpanel2 usage reminder.
 
--l::
 --list::
 	Lists all themes found on known paths for current user.
 	Additional info such as theme author name will be printed
 	also.
+
+--theme=<theme>::
+	Override theme parameter in the config file.
 
 // vim: set syntax=asciidoc:

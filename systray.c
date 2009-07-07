@@ -26,7 +26,8 @@ struct widget_interface systray_interface = {
 static Atom acquire_tray_selection_atom(struct x_connection *c)
 {
 	char systray_atom[32];
-	snprintf(systray_atom, sizeof(systray_atom), "_NET_SYSTEM_TRAY_S%u", c->screen);
+	snprintf(systray_atom, sizeof(systray_atom), "_NET_SYSTEM_TRAY_S%u", 
+		 c->screen);
 
 	return XInternAtom(c->dpy, systray_atom, False);
 }
