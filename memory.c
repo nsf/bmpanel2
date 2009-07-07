@@ -150,7 +150,7 @@ static void print_source_stat(struct memory_source *src, int details)
 	printf("┃ Frees:       %-58u ┃\n", src->frees);
 	printf("┃ Diff:        %-58d ┃\n", diff);
 	printf("┃ Bytes taken: %-58u ┃\n", src->bytes);
-	printf("┃  + overhead: %-58d ┃\n", diff * MEMDEBUG_OVERHEAD);
+	printf("┃  + overhead: %-58d ┃\n", diff * (int)MEMDEBUG_OVERHEAD);
 	if (!diff || !src->stat_list || !details) {
 		printf("┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n");
 	} else {
@@ -162,7 +162,7 @@ static void print_source_stat(struct memory_source *src, int details)
 			char location[50];
 			snprintf(location, sizeof(location), "%s:%u", stat->file, stat->line);
 			location[sizeof(location)-1] = '\0';
-			printf("┃ %10p │ %10u │ %-45s ┃\n", stat+1, stat->size, 
+			printf("┃ %10p │ %10zu │ %-45s ┃\n", stat+1, stat->size, 
 				location);
 			stat = stat->next;
 		}

@@ -139,7 +139,7 @@ static void update_desktops(struct desktops_widget *dw, struct x_connection *c)
 			name += strlen(name) + 1;
 		} else {
 			char buf[16];
-			snprintf(buf, sizeof(buf), "%u", i+1);
+			snprintf(buf, sizeof(buf), "%zu", i+1);
 			d.name = xstrdup(buf);
 		}
 		ARRAY_APPEND(dw->desktops, d);
