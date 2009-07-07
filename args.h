@@ -1,5 +1,5 @@
-#ifndef AURA_ARGS_H
-#define AURA_ARGS_H
+#ifndef BMPANEL2_ARGS_H
+#define BMPANEL2_ARGS_H
 
 enum argument_type {
 	ARGT_END,
@@ -60,4 +60,4 @@ struct argument {
 
 void parse_args(struct argument *args, int argc, char **argv, const char *help);
 
-#endif
+#endif /* BMPANEL2_ARGS_H */
