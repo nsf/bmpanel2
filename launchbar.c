@@ -42,7 +42,7 @@ static int parse_items(struct launchbar_widget *lw)
 
 	ENSURE_ARRAY_CAPACITY(lw->items, e->children_n);
 	for (i = 0; i < e->children_n; ++i) {
-		struct launchbar_item lbitem;
+		struct launchbar_item lbitem = {0,0,0,0};
 		struct config_format_entry *ee = &e->children[i];
 
 		/* if no exec path, skip */

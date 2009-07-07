@@ -74,7 +74,7 @@ static const char *theme_override;
 #define BMPANEL2_USAGE \
 "usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
 
-static const char bmpanel2_version_str[] = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
+static const char *bmpanel2_version_str = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
 
 static void parse_bmpanel2_args(int argc, char **argv)
 {

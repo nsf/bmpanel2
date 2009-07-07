@@ -205,9 +205,7 @@ static void print_source_stat(struct memory_source *src, int details)
 
 void xmemstat(struct memory_source **sources, size_t n, int details)
 {
-#ifdef NDEBUG
-	printf("Memory debug is disabled\n");
-#else
+#ifndef NDEBUG
 	size_t i;
 
 	printf("\033[32m");
