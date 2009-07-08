@@ -6,7 +6,6 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/extensions/shape.h>
-#include <X11/extensions/Xrender.h>
 #include "util.h"
 
 enum x_atom {
@@ -95,6 +94,9 @@ Window x_create_default_window(struct x_connection *c,
  */
 Pixmap x_create_default_pixmap(struct x_connection *c, 
 			       unsigned int w, unsigned int h);
+
+Window x_create_default_embedder(struct x_connection *c, Window parent, 
+				 Window icon, unsigned int w, unsigned int h);
 
 /* allocated by Xlib, should be released with XFree */
 void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 

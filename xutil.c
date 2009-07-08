@@ -119,39 +119,6 @@ int x_get_window_desktop(struct x_connection *c, Window win)
 	return x_get_prop_int(c, win, c->atoms[XATOM_NET_WM_DESKTOP]);
 }
 
-static Visual *find_argb_visual(struct x_connection *c)
-{
-	XVisualInfo *xvi;
-	XVisualInfo template;
-	int nvi, i;
-	XRenderPictFormat *format;
-	Visual *visual;
-	
-	template.screen = c->screen;
-	template.depth = 32;
-	template.class = TrueColor;
-	xvi = XGetVisualInfo(c->dpy,
-			     VisualScreenMask |
-			     VisualDepthMask |
-			     VisualClassMask,
-			     &template,
-			     &nvi);
-	if (xvi == 0)
-		return 0;
-	
-	visual = 0;
-	for (i = 0; i < nvi; i++) {
-		format = XRenderFindVisualFormat(c->dpy, xvi[i].visual);
-		if (format->type == PictTypeDirect && format->direct.alphaMask) {
-			visual = xvi[i].visual;
-			break;
-		}
-	}
-
-	XFree(xvi);
-	return visual;
-}
-
 void x_connect(struct x_connection *c, const char *display)
 {
 	CLEAR_STRUCT(c);
@@ -180,10 +147,6 @@ void x_connect(struct x_connection *c, const char *display)
 	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
 	c->root 		= RootWindow(c->dpy, c->screen);
 	c->root_pixmap 		= x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
-	c->argb_visual 		= find_argb_visual(c);
-
-	if (c->argb_visual)
-		c->argb_colormap = XCreateColormap(c->dpy, c->root, c->argb_visual, AllocNone);
 
 	XSelectInput(c->dpy, c->root, PropertyChangeMask);
 
@@ -214,14 +177,25 @@ Window x_create_default_window(struct x_connection *c, int x, int y,
 		unsigned int w, unsigned int h, unsigned long valuemask,
 		XSetWindowAttributes *attrs)
 {
-	return XCreateWindow(c->dpy, c->root, x, y, w, h, 0, c->default_depth,
-			InputOutput, c->default_visual, valuemask, attrs);
+	return XCreateWindow(c->dpy, c->root, x, y, w, h, 0, 
+			     c->default_depth, InputOutput, 
+			     c->default_visual, valuemask, attrs);
 }
 
 Pixmap x_create_default_pixmap(struct x_connection *c, unsigned int w,
 		unsigned int h)
 {
 	return XCreatePixmap(c->dpy, c->root, w, h, c->default_depth);
+}
+
+Window x_create_default_embedder(struct x_connection *c, Window parent, 
+				 Window icon, unsigned int w, unsigned int h)
+{
+	XSetWindowAttributes attrs;
+	attrs.background_pixmap = ParentRelative;
+	return XCreateWindow(c->dpy, parent, 0, 0, w, h, 0, 
+			     c->default_depth, InputOutput, 
+			     c->default_visual, CWBackPixmap, &attrs);
 }
 
 void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value)

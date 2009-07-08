@@ -51,13 +51,9 @@ static void add_tray_icon(struct widget *w, Window win)
 	icon.icon = win;
 
 	/* create embedder window */
-	XSetWindowAttributes attrs;
-	attrs.background_pixmap = ParentRelative;
-	icon.embedder = XCreateWindow(c->dpy, w->panel->win, 0, 0, 
-				      sw->icon_size[0], sw->icon_size[1], 
-				      0, c->default_depth, InputOutput, 
-				      c->default_visual, 
-				      CWBackPixmap, &attrs);
+	icon.embedder = x_create_default_embedder(c, w->panel->win, win,
+						  sw->icon_size[0], 
+						  sw->icon_size[1]);
 
 	/* Select structure notifications. Some tray icons require double 
 	 * size sets (I don't know why, but it works).
