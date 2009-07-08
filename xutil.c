@@ -230,6 +230,13 @@ void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value)
 			PropModeReplace, (unsigned char*)&value, 1);
 }
 
+void x_set_prop_visualid(struct x_connection *c, Window win, 
+			 Atom type, VisualID value)
+{
+	XChangeProperty(c->dpy, win, type, XA_VISUALID, 32, 
+			PropModeReplace, (unsigned char*)&value, 1);
+}
+
 void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at)
 {
 	XChangeProperty(c->dpy, win, type, XA_ATOM, 32, 

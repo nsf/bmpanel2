@@ -106,6 +106,8 @@ Pixmap x_get_prop_pixmap(struct x_connection *c, Window win, Atom at);
 int x_get_window_desktop(struct x_connection *c, Window win);
 
 void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value);
+void x_set_prop_visualid(struct x_connection *c, Window win, 
+			 Atom type, VisualID value);
 void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at);
 void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
 		      const long *values, size_t len);

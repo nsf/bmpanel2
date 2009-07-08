@@ -118,6 +118,9 @@ static void free_tray_icons(struct widget *w)
   Systray interface
 **************************************************************************/
 
+#define NET_SYSTEM_TRAY_ORIENTATION_HORZ 0
+#define NET_SYSTEM_TRAY_ORIENTATION_VERT 1
+
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree)
 {
@@ -144,6 +147,15 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	sw->selection_owner = x_create_default_window(c, 0, 0, 1, 1, 0, 0);
 	XSetSelectionOwner(c->dpy, sw->tray_selection_atom, sw->selection_owner,
 			   CurrentTime);
+
+	/* set hints */
+	Atom orientatom = XInternAtom(c->dpy, "_NET_SYSTEM_TRAY_ORIENTATION", False);
+	Atom visualatom = XInternAtom(c->dpy, "_NET_SYSTEM_TRAY_VISUAL", False);
+	
+	x_set_prop_int(c, sw->selection_owner, orientatom, 
+		       NET_SYSTEM_TRAY_ORIENTATION_HORZ);
+	x_set_prop_visualid(c, sw->selection_owner, visualatom,
+			    XVisualIDFromVisual(c->default_visual));
 	
 	/* inform other clients that we're here */
 	XEvent ev;
