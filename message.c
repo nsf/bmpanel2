@@ -6,7 +6,9 @@ int xerror(const char *file, unsigned int line, const char *fmt, ...)
 {
 	va_list args;
 
+#ifndef NDEBUG
 	fprintf(stderr, "(%s:%u) ", file, line);
+#endif
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	fputs("\n", stderr);
@@ -19,7 +21,9 @@ void xwarning(const char *file, unsigned int line, const char *fmt, ...)
 {
 	va_list args;
 
+#ifndef NDEBUG
 	fprintf(stderr, "(%s:%u) ", file, line);
+#endif
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	fputs("\n", stderr);
@@ -30,7 +34,9 @@ void xdie(const char *file, unsigned int line, const char *fmt, ...)
 {
 	va_list args;
 
+#ifndef NDEBUG
 	fprintf(stderr, "FATAL (%s:%u) ", file, line);
+#endif
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	fputs("\n", stderr);
