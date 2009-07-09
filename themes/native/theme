@@ -1,3 +1,7 @@
+theme
+	name Native
+	author nsf <no.smile.face@gmail.com>
+
 panel
 	position bottom
 	separator separator_img.png

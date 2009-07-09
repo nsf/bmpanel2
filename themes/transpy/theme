@@ -1,3 +1,7 @@
+theme
+	name Transpy
+	author nsf <no.smile.face@gmail.com>
+
 panel
 	position top
 	background bg.png

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <dirent.h>
 #include "gui.h"
 #include "config-parser.h"
 #include "xdg.h"
@@ -8,6 +9,88 @@
 #include "widget-utils.h"
 #include "builtin-widgets.h"
 #include "args.h"
+
+static void list_theme(const char *themefile, const char *shortname)
+{
+	if (!is_file_exists(themefile))
+		return;
+
+	struct config_format_tree tree;
+	if (0 != load_config_format_tree(&tree, themefile))
+		return;
+
+	const char *longname = 0;
+	const char *author = 0;
+	struct config_format_entry *e = find_config_format_entry(&tree.root, 
+								 "theme");
+	if (e) {
+		longname = find_config_format_entry_value(e, "name");
+		author = find_config_format_entry_value(e, "author");
+	}
+
+	printf(" * %s", shortname);
+	if (longname || author) {
+		printf(" (");
+		if (longname) {
+			printf("name: %s", longname);
+			if (author)
+				printf(", ");
+		}
+		if (author)
+			printf("author: %s", author);
+		printf(")");
+	}
+	printf("\n");
+	free_config_format_tree(&tree);
+}
+
+static void list_themes_in_dir(DIR *d, const char *dirpath)
+{
+	char buf[4096];
+	struct dirent *de;
+	int len;
+
+	while ((de = readdir(d)) != 0) {
+		len = strlen(de->d_name);
+		switch (len) {
+			/* skip current dir and parent dir */
+		case 1:
+			if (de->d_name[0] == '.')
+				continue;
+		case 2:
+			if (de->d_name[0] == '.' && de->d_name[1] == '.')
+				continue;
+		default:
+			break;
+		}
+
+		snprintf(buf, sizeof(buf), "%s/%s/theme", dirpath, de->d_name);
+		list_theme(buf, de->d_name);
+	}
+}
+
+static void list_themes()
+{
+	char buf[4096];
+	size_t data_dirs_len;
+	char **data_dirs = get_XDG_DATA_DIRS(&data_dirs_len);
+	DIR *d;
+
+	size_t i;
+	for (i = 0; i < data_dirs_len; ++i) {
+		snprintf(buf, sizeof(buf), "%s/bmpanel2/themes", data_dirs[i]);
+		buf[sizeof(buf)-1] = '\0';
+
+		printf("listing themes in \"%s\":\n", buf);
+		d = opendir(buf);
+		if (d) {
+			list_themes_in_dir(d, buf);
+			closedir(d);
+		} else {
+			printf(" - none\n");
+		}
+	}
+}
 
 static int try_load_theme(struct config_format_tree *tree, const char *name)
 {
@@ -93,6 +176,10 @@ static void parse_bmpanel2_args(int argc, char **argv)
 	}
 	if (show_version) {
 		printf(BMPANEL2_VERSION_STR);
+		exit(0);
+	}
+	if (show_list) {
+		list_themes();
 		exit(0);
 	}
 }
