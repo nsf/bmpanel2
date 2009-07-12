@@ -24,7 +24,10 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	}
 
 	w->width = 0;
-	sscanf(e->value, "%d", &w->width);
+	if (sscanf(e->value, "%d", &w->width) != 1) {
+		XWARNING("Failed to parse empty widget width, format is: empty %%d");
+		return -1;
+	}
 	w->private = 0;
 	return 0;
 }

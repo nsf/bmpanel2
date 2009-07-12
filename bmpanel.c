@@ -96,8 +96,16 @@ static int try_load_theme(struct config_format_tree *tree, const char *name)
 {
 	char buf[4096];
 	size_t data_dirs_len;
-	char **data_dirs = get_XDG_DATA_DIRS(&data_dirs_len);
+	char **data_dirs;	
 	int found = 0;
+
+	/* try to load it in-place */
+	snprintf(buf, sizeof(buf), "%s/theme", name);
+	if (is_file_exists(buf) && 0 == load_config_format_tree(tree, buf))
+		return 0;
+
+	/* scan XDG dirs */
+	data_dirs = get_XDG_DATA_DIRS(&data_dirs_len);
 
 	size_t i;
 	for (i = 0; i < data_dirs_len; ++i) {
@@ -111,15 +119,8 @@ static int try_load_theme(struct config_format_tree *tree, const char *name)
 	}
 	free_XDG(data_dirs);
 
-	if (found) {
-		if (0 != load_config_format_tree(tree, buf))
+	if (found && 0 != load_config_format_tree(tree, buf))
 			return -1;
-	} else {
-		/* try to load it in-place */
-		snprintf(buf, sizeof(buf), "%s/theme", name);
-		if (0 != load_config_format_tree(tree, buf))
-			return -1;
-	}
 
 	return 0;
 }

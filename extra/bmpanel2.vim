@@ -13,7 +13,7 @@ endif
 
 syn region bmpanel2_root_key		matchgroup=Normal start="^" end="\s\|\n"
 syn region bmpanel2_nonroot_key		matchgroup=Normal start="^\s\+" end="\s\|\n"
-syn match bmpanel2_comment		"#.*$"
+syn match bmpanel2_comment		"^\s*#.*$"
 
 hi def link bmpanel2_comment		Comment
 hi def link bmpanel2_root_key		Special
