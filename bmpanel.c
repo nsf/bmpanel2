@@ -216,6 +216,7 @@ int main(int argc, char **argv)
 	register_widget_interface(&decor_interface);
 	register_widget_interface(&systray_interface);
 	register_widget_interface(&launchbar_interface);
+	register_widget_interface(&empty_interface);
 
 	init_panel(&p, &tree);
 
