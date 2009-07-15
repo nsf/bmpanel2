@@ -23,10 +23,11 @@ static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 }
 
 
-static int parse_color(unsigned char *out, struct config_format_entry *e)
+static int parse_color(unsigned char *out, const char *name, 
+		       struct config_format_entry *e)
 {
 	out[0] = out[1] = out[2] = 0;
-	struct config_format_entry *ee = find_config_format_entry(e, "color");
+	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (ee && ee->value) {
 		if (3 == sscanf(ee->value, "%hhu %hhu %hhu", &out[0], &out[1], &out[2]))
 			return 0;
@@ -176,9 +177,11 @@ void free_triple_image(struct triple_image *tbt)
 int parse_text_info(struct text_info *out, struct config_format_entry *e)
 {
 	out->pfd = pango_font_description_from_string(e->value);
-	parse_color(out->color, e);
+	parse_color(out->color, "color", e);
 	parse_2ints(out->offset, "offset", e);
 	out->align = parse_align("align", e);
+	parse_color(out->shadow_color, "shadow_color", e);
+	parse_2ints(out->shadow_offset, "shadow_offset", e);
 
 	return 0;
 }
@@ -338,6 +341,18 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	cairo_translate(cr, offsetx, offsety);
 	cairo_clip(cr);
 	pango_cairo_update_layout(cr, dest);
+
+	if (ti->shadow_offset[0] != 0 || ti->shadow_offset[1] != 0) {
+		cairo_save(cr);
+		cairo_translate(cr, ti->shadow_offset[0], ti->shadow_offset[1]);
+		cairo_set_source_rgb(cr,
+				(double)ti->shadow_color[0] / 255.0,
+				(double)ti->shadow_color[1] / 255.0,
+				(double)ti->shadow_color[2] / 255.0);
+		pango_cairo_show_layout(cr, dest);
+		cairo_restore(cr);
+	}
+
 	pango_cairo_show_layout(cr, dest);
 	cairo_restore(cr);
 }

@@ -22,6 +22,8 @@ struct text_info {
 	unsigned char color[3]; /* r, g, b */
 	int offset[2]; /* x, y */
 	int align;
+	int shadow_offset[2]; /* x, y */
+	unsigned char shadow_color[3]; /* r, g, b */
 };
 
 /* image part */

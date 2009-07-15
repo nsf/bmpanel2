@@ -37,6 +37,7 @@ SET(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/render_normal.c
 	${CMAKE_CURRENT_SOURCE_DIR}/render_pseudo.c
 	${CMAKE_CURRENT_SOURCE_DIR}/args.c
+	${CMAKE_CURRENT_SOURCE_DIR}/strbuf.c
 )
 
 # xlib

@@ -46,6 +46,8 @@ static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
 	if (parse_text_info_named(&ts->font, "font", ee, 1))
 		goto parse_taskbar_state_error_font;
 
+	parse_2ints(ts->icon_offset, "icon_offset", ee);
+
 	return 0;
 
 parse_taskbar_state_error_font:
@@ -70,11 +72,8 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 		goto parse_taskbar_button_theme_error_pressed;
 
 	struct config_format_entry *ee = find_config_format_entry(e, "default_icon");
-	if (ee) {
+	if (ee)
 		tt->default_icon = parse_image_part(ee, tree, 0);
-		tt->icon_offset[0] = tt->icon_offset[1] = 0;
-		parse_2ints(tt->icon_offset, "offset", ee);
-	}
 
 	tt->separator = parse_image_part_named("separator", e, tree, 0);
 	tt->task_max_width = parse_int("task_max_width", e, 0);
@@ -201,6 +200,9 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	struct text_info *font = (active) ?
 			&theme->pressed.font :
 			&theme->idle.font;
+	int *icon_offset = (active) ?
+			theme->pressed.icon_offset :
+			theme->idle.icon_offset;
 	
 	int leftw = image_width(tbt->left);
 	int rightw = image_width(tbt->right);
@@ -209,7 +211,7 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	
 	int iconw = image_width(theme->default_icon);
 	int iconh = image_height(theme->default_icon);
-	int textw = centerw - (iconw + theme->icon_offset[0]) - rightw;
+	int textw = centerw - (iconw + icon_offset[0]) - rightw;
 
 	/* background */
 	int xx = x;
@@ -225,8 +227,8 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	/* icon */
 	if (iconw && iconh) {
 		int yy = (height - iconh) / 2;
-		xx += theme->icon_offset[0];
-		yy += theme->icon_offset[1];
+		xx += icon_offset[0];
+		yy += icon_offset[1];
 		cairo_save(cr);
 		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 		blit_image(task->icon, cr, xx, yy);

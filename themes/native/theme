@@ -41,6 +41,7 @@ taskbar
 		font DejaVuSans 8
 			color 255 255 255
 			offset 5 1
+		icon_offset 0 1
 
 	pressed
 		left tb_left_pressed_img.png
@@ -49,9 +50,9 @@ taskbar
 		font DejaVuSans 8
 			color 255 255 255
 			offset 5 1
+		icon_offset 0 1
 
 	default_icon default_icon.png
-		offset 0 1
 
 systray
 	icon_size 24 24
