@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_XUTIL_H 
-#define BMPANEL2_XUTIL_H
+#pragma once
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -128,5 +127,3 @@ void x_update_root_pmap(struct x_connection *c);
 
 void x_set_error_trap();
 int x_done_error_trap();
-
-#endif /* BMPANEL2_XUTIL_H */

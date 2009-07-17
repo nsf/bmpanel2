@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_ARRAY_H 
-#define BMPANEL2_ARRAY_H
+#pragma once
 
 #include "util.h"
 
@@ -135,4 +134,3 @@ do {										\
 		array##_alloc = array##_n;					\
 	}									\
 } while (0)
-#endif /* BMPANEL2_ARRAY_H */

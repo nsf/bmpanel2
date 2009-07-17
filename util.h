@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_UTIL_H 
-#define BMPANEL2_UTIL_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,5 +156,3 @@ extern struct memory_source msrc_default;
  * "details" boolean for detailed statistics (memleaks).
  */
 void xmemstat(struct memory_source **sources, size_t n, int details);
-
-#endif /* BMPANEL2_UTIL_H */

@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_GUI_H 
-#define BMPANEL2_GUI_H
+#pragma once
 
 #include <cairo-xlib.h>
 #include <pango/pangocairo.h>
@@ -196,5 +195,3 @@ void disp_enter_leave_notify(struct panel *p, XCrossingEvent *e);
 void disp_client_msg(struct panel *p, XClientMessageEvent *e);
 void disp_win_destroy(struct panel *p, XDestroyWindowEvent *e);
 void disp_configure(struct panel *p, XConfigureEvent *e);
-
-#endif /* BMPANEL2_GUI_H */

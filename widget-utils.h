@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_WIDGET_UTILS_H 
-#define BMPANEL2_WIDGET_UTILS_H
+#pragma once
 
 #include "gui.h"
 
@@ -110,5 +109,3 @@ cairo_surface_t *copy_resized(cairo_surface_t *source, int w, int h);
 void *get_static_buf_or_xalloc(size_t size);
 void free_static_buf(void *ptr);
 void clean_static_buf();
-
-#endif /* BMPANEL2_WIDGET_UTILS_H */

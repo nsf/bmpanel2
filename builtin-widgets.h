@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_BUILTIN_WIDGETS_H 
-#define BMPANEL2_BUILTIN_WIDGETS_H
+#pragma once
 
 #include "gui.h"
 #include "widget-utils.h"
@@ -162,5 +161,3 @@ struct launchbar_widget {
 };
 
 extern struct widget_interface launchbar_interface;
-
-#endif /* BMPANEL2_BUILTIN_WIDGETS_H */

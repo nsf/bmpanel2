@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_CONFIG_PARSER_H 
-#define BMPANEL2_CONFIG_PARSER_H
+#pragma once
 
 #include "util.h"
 
@@ -146,5 +145,3 @@ const char *find_config_format_entry_value(struct config_format_entry *e,
 void config_format_entry_path(char *buf, size_t size, struct config_format_entry *e);
 
 /*@}*/
-
-#endif /* BMPANEL2_CONFIG_PARSER_H */

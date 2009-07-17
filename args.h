@@ -1,5 +1,4 @@
-#ifndef BMPANEL2_ARGS_H
-#define BMPANEL2_ARGS_H
+#pragma once
 
 enum argument_type {
 	ARGT_END,
@@ -29,7 +28,7 @@ struct argument {
 		const char *s;
 		float f;
 		void *p;
-		uint b;
+		unsigned int b;
 	} def;
 	argument_callback_t callback;
 };
@@ -59,5 +58,3 @@ struct argument {
 	{ .type = ARGT_END }
 
 void parse_args(struct argument *args, int argc, char **argv, const char *help);
-
-#endif /* BMPANEL2_ARGS_H */
