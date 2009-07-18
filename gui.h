@@ -176,6 +176,9 @@ struct render_interface {
 
 	/* expose event */
 	void (*expose)(struct panel *p);
+
+	/* panel resize */
+	void (*panel_resize)(struct panel *p);
 };
 
 extern struct render_interface render_normal;

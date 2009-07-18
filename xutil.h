@@ -70,7 +70,6 @@ struct x_connection {
 	Atom atoms[XATOM_COUNT];
 };
 
-
 void x_connect(struct x_connection *c, const char *display);
 void x_disconnect(struct x_connection *c);
 

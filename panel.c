@@ -431,6 +431,56 @@ static void panel_property_notify(struct panel *p, XPropertyEvent *e)
 	}
 }
 
+static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
+{
+	struct x_connection *c = &p->connection;
+	struct panel_theme *t = &p->theme;
+
+	int x,y,w,h;
+	long strut[12] = {0};
+
+	if (e->window == c->root &&
+	    (e->width != c->screen_width ||
+	    e->height != c->screen_height)) 
+	{
+		/* resolution changed */
+		c->screen_width = e->width;
+		c->screen_height = e->height;
+
+		c->workarea_x = 0;
+		c->workarea_y = 0;
+		c->workarea_width = e->width;
+		c->workarea_height = e->height;
+		
+		get_position_and_strut(c, t, &x, &y, &w, &h, strut);
+		XMoveResizeWindow(c->dpy, p->win, x, y, w, h);
+		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
+		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
+				 strut, 12);
+
+		p->x = x;
+		p->y = y;
+		p->width = w;
+		p->height = h;
+	
+		XSizeHints size_hints;
+		size_hints.x = x;
+		size_hints.y = y;
+		size_hints.width = w;
+		size_hints.height = h;
+
+		size_hints.flags = PPosition | PMaxSize | PMinSize;
+		size_hints.min_width = size_hints.max_width = w;
+		size_hints.min_height = size_hints.max_height = h;
+		XSetWMNormalHints(c->dpy, p->win, &size_hints);
+
+		if (p->render->panel_resize)
+			(*p->render->panel_resize)(p);
+
+		recalculate_widgets_sizes(p);
+	}
+}
+
 static void panel_expose(struct panel *p, XExposeEvent *e)
 {
 	if (e->window == p->win && p->render->expose)
@@ -486,6 +536,7 @@ static int process_events(struct panel *p)
 			break;
 		
 		case ConfigureNotify:
+			panel_configure_notify(p, &e.xconfigure);
 			disp_configure(p, &e.xconfigure);
 			break;
 

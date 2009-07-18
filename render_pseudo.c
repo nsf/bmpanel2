@@ -8,6 +8,7 @@ static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h);
 static void create_private(struct panel *p);
 static void free_private(struct panel *p);
 static void update_bg(struct panel *p);
+static void panel_resize(struct panel *p);
 
 struct render_interface render_pseudo = {
 	.name = "pseudo",
@@ -16,7 +17,8 @@ struct render_interface render_pseudo = {
 	.blit = blit,
 	.create_private = create_private,
 	.free_private = free_private,
-	.update_bg = update_bg
+	.update_bg = update_bg,
+	.panel_resize = panel_resize
 };
 
 /*
@@ -122,4 +124,39 @@ static void update_bg(struct panel *p)
 								c->screen_width,
 								c->screen_height);
 	p->needs_expose = 1;
+}
+
+static void panel_resize(struct panel *p)
+{
+	struct x_connection *c = &p->connection;
+	struct pseudo_render *pr = (struct pseudo_render*)p->render_private;
+
+	/* pr->wallpaper */
+	update_bg(p);
+
+	/* p->cr */
+	cairo_destroy(p->cr);
+	cairo_surface_t *backbuf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+							      p->width, p->height);
+
+	p->cr = cairo_create(backbuf);
+	cairo_surface_destroy(backbuf);
+	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
+
+	/* p->bg */
+	XFreePixmap(c->dpy, p->bg);
+	p->bg = x_create_default_pixmap(c, p->width, p->height);
+	XSetWindowBackgroundPixmap(c->dpy, p->win, p->bg);
+
+	/* pr->blit_cr */
+	cairo_destroy(pr->blit_cr);
+	pr->blit_cr = create_cairo_for_pixmap(c, p->bg, p->width, p->height);
+
+	/* pr->buf */
+	XFreePixmap(c->dpy, pr->buf);
+	pr->buf = x_create_default_pixmap(c, p->width, p->height);
+
+	/* pr->buf_cr */
+	cairo_destroy(pr->buf_cr);
+	pr->buf_cr = create_cairo_for_pixmap(c, pr->buf, p->width, p->height);
 }
