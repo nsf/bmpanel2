@@ -112,14 +112,12 @@ static int find_task_by_window(struct taskbar_widget *tw, Window win)
 
 static int find_last_task_by_desktop(struct taskbar_widget *tw, int desktop)
 {
-	int t = -2;
+	int t = -1;
 	size_t i;
 	for (i = 0; i < tw->tasks_n; ++i) {
 		if (tw->tasks[i].desktop <= desktop)
 			t = (int)i;
 	}
-	if (t == -2 && tw->tasks[0].desktop > desktop)
-		return -1;
 	return t;
 }
 
@@ -151,9 +149,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 	t.desktop = x_get_window_desktop(c, win);
 
 	int i = find_last_task_by_desktop(tw, t.desktop);
-	if (i == -2)
-		ARRAY_APPEND(tw->tasks, t);
-	else if (i == -1)
+	if (i == -1)
 		ARRAY_PREPEND(tw->tasks, t);
 	else
 		ARRAY_INSERT_AFTER(tw->tasks, (size_t)i, t);
@@ -486,9 +482,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 
 		ARRAY_REMOVE(tw->tasks, (size_t)ti);
 		int insert_after = find_last_task_by_desktop(tw, t.desktop);
-		if (insert_after == -2)
-			ARRAY_APPEND(tw->tasks, t);
-		else if (insert_after == -1)
+		if (insert_after == -1)
 			ARRAY_PREPEND(tw->tasks, t);
 		else
 			ARRAY_INSERT_AFTER(tw->tasks, (size_t)insert_after, t);
