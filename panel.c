@@ -591,6 +591,8 @@ void panel_main_loop(struct panel *panel)
 	
 	GIOChannel *x = g_io_channel_unix_new(fd);
 	g_io_add_watch(x, G_IO_IN | G_IO_HUP, panel_x_in, panel);
+	g_io_channel_unref(x);
+
 	g_timeout_add(1000, panel_second_timeout, panel);
 
 	g_main_loop_run(panel->loop);

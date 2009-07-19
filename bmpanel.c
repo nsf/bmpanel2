@@ -119,8 +119,11 @@ static int try_load_theme(struct config_format_tree *tree, const char *name)
 	}
 	free_XDG(data_dirs);
 
-	if (found && 0 != load_config_format_tree(tree, buf))
-			return -1;
+	if (!found)
+		return -1;
+
+	if (0 != load_config_format_tree(tree, buf))
+		return -1;
 
 	return 0;
 }
