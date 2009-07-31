@@ -49,4 +49,15 @@ OPTIONS
 --theme=<theme>::
 	Override theme parameter in the config file.
 
+AUTHORS
+-------
+
+Code and art:
+
+* nsf <no.smile.face@gmail.com>
+
+Noir theme:
+
+* Andrew Nayenko <resver@gmail.com>
+
 // vim: set syntax=asciidoc:
