@@ -130,15 +130,18 @@ struct systray_icon {
 	int mapped;
 };
 
+struct systray_theme {
+	struct triple_image background;
+	int icon_size[2];
+	int icon_offset[2];
+	int icon_spacing;
+};
+
 struct systray_widget {
 	DECLARE_ARRAY(struct systray_icon, icons);
 	Atom tray_selection_atom;
 	Window selection_owner;
-
-	/* theme */
-	int icon_size[2];
-	int icon_offset[2];
-	int icon_spacing;
+	struct systray_theme theme;
 };
 
 extern struct widget_interface systray_interface;
