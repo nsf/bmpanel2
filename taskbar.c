@@ -238,17 +238,22 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	int textw = centerw - (iconw + icon_offset[0]) - rightw;
 
 	/* background */
-	int xx = x;
-	if (leftw)
-		blit_image(tbt->left, cr, xx, 0);
-	xx += leftw;
-	pattern_image(tbt->center, cr, xx, 0, centerw);
-	xx += centerw;
-	if (rightw)
-		blit_image(tbt->right, cr, xx, 0);
-	xx -= centerw;
+	int leftx = x;
+	int centerx = x + leftw;
+	int rightx = centerx + centerw;
+
+	if (tbt->stretched_overlap)
+		stretch_image(tbt->center, cr, leftx, 0, w);
+	else if (tbt->stretched)
+		stretch_image(tbt->center, cr, centerx, 0, centerw);
+	else
+		pattern_image(tbt->center, cr, centerx, 0, centerw);
+
+	if (leftw) blit_image(tbt->left, cr, leftx, 0);
+	if (rightw) blit_image(tbt->right, cr, rightx, 0);
 
 	/* icon */
+	int xx = centerx;
 	if (iconw && iconh) {
 		int yy = (height - iconh) / 2;
 		xx += icon_offset[0];

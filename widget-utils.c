@@ -148,6 +148,7 @@ int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e,
 	tbt->left = parse_image_part_named("left", e, tree, 0);
 	tbt->right = parse_image_part_named("right", e, tree, 0);
 	tbt->stretched = parse_bool("stretched", e);
+	tbt->stretched_overlap = parse_bool("stretched_overlap", e);
 	return 0;
 }
 
@@ -291,13 +292,40 @@ void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 }
 
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
-		int dstx, int dsty, int w)
+		   int dstx, int dsty, int w)
 {
 	size_t sh = image_height(src);
 
 	cairo_save(dest);
 	cairo_set_source_surface(dest, src, dstx, dsty);
 	cairo_pattern_set_extend(cairo_get_source(dest), CAIRO_EXTEND_REPEAT);
+	cairo_rectangle(dest, dstx, dsty, w, sh);
+	cairo_clip(dest);
+	cairo_paint(dest);
+	cairo_restore(dest);
+}
+
+void stretch_image(cairo_surface_t *src, cairo_t *dest,
+		   int dstx, int dsty, int w)
+{
+	cairo_matrix_t scale;
+	cairo_matrix_t m;
+	cairo_pattern_t *srcp;
+
+	size_t sh = image_height(src);
+	size_t sw = image_width(src);
+	cairo_matrix_init_scale(&scale, (double)sw / w, 1.0);
+
+	cairo_save(dest);
+
+	cairo_set_source_surface(dest, src, dstx, dsty);
+	srcp = cairo_get_source(dest);
+
+	cairo_pattern_set_extend(srcp, CAIRO_EXTEND_REPEAT);
+	cairo_pattern_get_matrix(srcp, &m);
+	cairo_matrix_multiply(&m, &m, &scale);
+	cairo_pattern_set_matrix(srcp, &m);
+
 	cairo_rectangle(dest, dstx, dsty, w, sh);
 	cairo_clip(dest);
 	cairo_paint(dest);

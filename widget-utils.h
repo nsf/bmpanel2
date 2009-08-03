@@ -11,6 +11,7 @@ struct triple_image {
 	cairo_surface_t *center;
 	cairo_surface_t *right;
 	int stretched;
+	int stretched_overlap;
 };
 
 #define ALIGN_CENTER 0
@@ -81,6 +82,8 @@ int image_height(cairo_surface_t *img);
 void blit_image(cairo_surface_t *src, cairo_t *dest, int dstx, int dsty);
 void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 		   int width, int height, int dstx, int dsty);
+void stretch_image(cairo_surface_t *src, cairo_t *dest,
+		   int dstx, int dsty, int w);
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
 		   int dstx, int dsty, int w);
 
