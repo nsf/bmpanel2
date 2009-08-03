@@ -10,6 +10,9 @@ static void client_msg(struct widget *w, XClientMessageEvent *e);
 
 static void dnd_drop(struct widget *w, struct drag_info *di);
 
+static void mouse_motion(struct widget *w, XMotionEvent *e);
+static void mouse_leave(struct widget *w);
+
 struct widget_interface desktops_interface = {
 	.theme_name 		= "desktop_switcher",
 	.size_type 		= WIDGET_SIZE_CONSTANT,
@@ -19,7 +22,9 @@ struct widget_interface desktops_interface = {
 	.button_click 		= button_click,
 	.prop_change 		= prop_change,
 	.dnd_drop 		= dnd_drop,
-	.client_msg		= client_msg
+	.client_msg		= client_msg,
+	.mouse_motion		= mouse_motion,
+	.mouse_leave		= mouse_leave
 };
 
 /**************************************************************************
@@ -28,11 +33,14 @@ struct widget_interface desktops_interface = {
 
 static int parse_desktops_state(struct desktops_state *ds, const char *name,
 				struct config_format_entry *e,
-				struct config_format_tree *tree)
+				struct config_format_tree *tree,
+				int required)
 {
 	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (!ee) {
-		required_entry_not_found(e, name);
+		if (required)
+			required_entry_not_found(e, name);
+		ds->exists = 0;
 		return -1;
 	}
 
@@ -45,6 +53,7 @@ static int parse_desktops_state(struct desktops_state *ds, const char *name,
 	ds->left_corner = parse_image_part_named("left_corner", ee, tree, 0);
 	ds->right_corner = parse_image_part_named("right_corner", ee, tree, 0);
 
+	ds->exists = 1;
 	return 0;
 
 parse_desktops_state_error_font:
@@ -55,38 +64,45 @@ parse_desktops_state_error_background:
 
 static void free_desktops_state(struct desktops_state *ds)
 {
-	free_triple_image(&ds->background);
-	free_text_info(&ds->font);
-	if (ds->left_corner)
-		cairo_surface_destroy(ds->left_corner);
-	if (ds->right_corner)
-		cairo_surface_destroy(ds->right_corner);
+	if (ds->exists) {
+		free_triple_image(&ds->background);
+		free_text_info(&ds->font);
+		if (ds->left_corner)
+			cairo_surface_destroy(ds->left_corner);
+		if (ds->right_corner)
+			cairo_surface_destroy(ds->right_corner);
+	}
 }
 
 static int parse_desktops_theme(struct desktops_theme *dt,
 				struct config_format_entry *e,
 				struct config_format_tree *tree)
 {
-	if (parse_desktops_state(&dt->idle, "idle", e, tree))
+	if (parse_desktops_state(&dt->states[BUTTON_STATE_IDLE], "idle", e, tree, 1))
 		goto parse_desktops_state_error_idle;
 
-	if (parse_desktops_state(&dt->pressed, "pressed", e, tree))
+	if (parse_desktops_state(&dt->states[BUTTON_STATE_PRESSED], "pressed", e, tree, 1))
 		goto parse_desktops_state_error_pressed;
 	
 	dt->separator = parse_image_part_named("separator", e, tree, 0);
+	parse_desktops_state(&dt->states[BUTTON_STATE_IDLE_HIGHLIGHT], 
+			     "idle_highlight", e, tree, 0);
+	parse_desktops_state(&dt->states[BUTTON_STATE_PRESSED_HIGHLIGHT], 
+			     "pressed_highlight", e, tree, 0);
 
 	return 0;
 
 parse_desktops_state_error_pressed:
-	free_desktops_state(&dt->idle);
+	free_desktops_state(&dt->states[BUTTON_STATE_IDLE]);
 parse_desktops_state_error_idle:
 	return -1;
 }
 
 static void free_desktops_theme(struct desktops_theme *dt)
 {
-	free_desktops_state(&dt->idle);
-	free_desktops_state(&dt->pressed);
+	unsigned int i;
+	for (i = 0; i < 4; ++i)
+		free_desktops_state(&dt->states[i]);
 	if (dt->separator)
 		cairo_surface_destroy(dt->separator);
 }
@@ -152,7 +168,7 @@ static void update_desktops(struct desktops_widget *dw, struct x_connection *c)
 static void resize_desktops(struct widget *w)
 {
 	struct desktops_widget *dw = (struct desktops_widget*)w->private;
-	struct desktops_state *ds = &dw->theme.idle;
+	struct desktops_state *ds = &dw->theme.states[BUTTON_STATE_IDLE];
 	size_t i;
 
 	int x = 0;
@@ -216,6 +232,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	struct x_connection *c = &w->panel->connection;
 	update_desktops(dw, c);
 	resize_desktops(w);
+	dw->highlighted = -1;
 
 	return 0;
 }
@@ -232,8 +249,7 @@ static void destroy_widget_private(struct widget *w)
 static void draw(struct widget *w)
 {
 	struct desktops_widget *dw = (struct desktops_widget*)w->private;
-	struct desktops_state *idle = &dw->theme.idle;
-	struct desktops_state *pressed = &dw->theme.pressed;
+	struct desktops_state *idle = &dw->theme.states[BUTTON_STATE_IDLE];
 	cairo_t *cr = w->panel->cr;
 	size_t i;
 
@@ -247,7 +263,14 @@ static void draw(struct widget *w)
 	int h = w->panel->height;
 
 	for (i = 0; i < dw->desktops_n; ++i) {
-		struct desktops_state *cur = (i == dw->active) ? pressed : idle;
+		int state = (i == dw->active) << 1;
+		int state_hl = ((i == dw->active) << 1) | (i == dw->highlighted);
+		struct desktops_state *cur;
+
+		if (dw->theme.states[state_hl].exists)
+			cur = &dw->theme.states[state_hl];
+		else
+			cur = &dw->theme.states[state];
 		
 		dw->desktops[i].x = x;
 		
@@ -360,4 +383,23 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 	x_send_netwm_message(c, tw->taken, 
 			     c->atoms[XATOM_NET_WM_DESKTOP],
 			     (long)desktop, 2, 0, 0, 0);
+}
+
+static void mouse_motion(struct widget *w, XMotionEvent *e)
+{
+	struct desktops_widget *dw = (struct desktops_widget*)w->private;
+	int i = get_desktop_at(w, e->x);
+	if (i != dw->highlighted) {
+		dw->highlighted = i;
+		w->needs_expose = 1;
+	}
+}
+
+static void mouse_leave(struct widget *w)
+{
+	struct desktops_widget *dw = (struct desktops_widget*)w->private;
+	if (dw->highlighted != -1) {
+		dw->highlighted = -1;
+		w->needs_expose = 1;
+	}
 }

@@ -86,8 +86,8 @@ struct desktops_state {
 	cairo_surface_t *left_corner;
 	struct triple_image background;
 	cairo_surface_t *right_corner;
-
 	struct text_info font;
+	int exists;
 };
 
 struct desktops_desktop {
@@ -98,8 +98,7 @@ struct desktops_desktop {
 };
 
 struct desktops_theme {
-	struct desktops_state idle;
-	struct desktops_state pressed;
+	struct desktops_state states[4];
 	cairo_surface_t *separator;
 };
 
@@ -107,6 +106,7 @@ struct desktops_widget {
 	struct desktops_theme theme;
 	DECLARE_ARRAY(struct desktops_desktop, desktops);
 	int active;
+	int highlighted;
 };
 
 extern struct widget_interface desktops_interface;

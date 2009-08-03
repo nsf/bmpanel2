@@ -387,6 +387,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	tw->task_death_threshold = parse_int("task_death_threshold", 
 					     &g_settings.root, 50);
 	tw->dnd_cur = XCreateFontCursor(c->dpy, XC_fleur);
+	tw->highlighted = -1;
 
 	return 0;
 }
