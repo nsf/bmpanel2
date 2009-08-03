@@ -41,7 +41,7 @@ taskbar
 			shadow_offset 0 1
 			shadow_color 220 220 220
 		icon_offset 0 0
-
+	
 	pressed
 		left tb_left_pressed_img.png
 		center tb_tile_pressed_img.png

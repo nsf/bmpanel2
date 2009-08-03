@@ -13,6 +13,9 @@ static void dnd_start(struct widget *w, struct drag_info *di);
 static void dnd_drag(struct widget *w, struct drag_info *di);
 static void dnd_drop(struct widget *w, struct drag_info *di);
 
+static void mouse_motion(struct widget *w, XMotionEvent *e);
+static void mouse_leave(struct widget *w);
+
 struct widget_interface taskbar_interface = {
 	.theme_name 		= "taskbar",
 	.size_type 		= WIDGET_SIZE_FILL,
@@ -24,7 +27,9 @@ struct widget_interface taskbar_interface = {
 	.dnd_start 		= dnd_start,
 	.dnd_drag 		= dnd_drag,
 	.dnd_drop 		= dnd_drop,
-	.client_msg		= client_msg
+	.client_msg		= client_msg,
+	.mouse_motion		= mouse_motion,
+	.mouse_leave		= mouse_leave
 };
 
 /**************************************************************************
@@ -32,11 +37,14 @@ struct widget_interface taskbar_interface = {
 **************************************************************************/
 
 static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
-		struct config_format_entry *e, struct config_format_tree *tree)
+		struct config_format_entry *e, struct config_format_tree *tree,
+		int required)
 {
 	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (!ee) {
-		required_entry_not_found(e, name);
+		if (required)
+			required_entry_not_found(e, name);
+		ts->exists = 0;
 		return -1;
 	}
 
@@ -47,7 +55,8 @@ static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
 		goto parse_taskbar_state_error_font;
 
 	parse_2ints(ts->icon_offset, "icon_offset", ee);
-
+	
+	ts->exists = 1;
 	return 0;
 
 parse_taskbar_state_error_font:
@@ -58,22 +67,29 @@ parse_taskbar_state_error_background:
 
 static void free_taskbar_state(struct taskbar_state *ts)
 {
-	free_triple_image(&ts->background);
-	free_text_info(&ts->font);
+	if (ts->exists) {
+		free_triple_image(&ts->background);
+		free_text_info(&ts->font);
+	}
 }
 
 static int parse_taskbar_theme(struct taskbar_theme *tt, 
 		struct config_format_entry *e, struct config_format_tree *tree)
 {
-	if (parse_taskbar_state(&tt->idle, "idle", e, tree))
+	if (parse_taskbar_state(&tt->states[BUTTON_STATE_IDLE], "idle", e, tree, 1))
 		goto parse_taskbar_button_theme_error_idle;
 
-	if (parse_taskbar_state(&tt->pressed, "pressed", e, tree))
+	if (parse_taskbar_state(&tt->states[BUTTON_STATE_PRESSED], "pressed", e, tree, 1))
 		goto parse_taskbar_button_theme_error_pressed;
 
 	struct config_format_entry *ee = find_config_format_entry(e, "default_icon");
 	if (ee)
 		tt->default_icon = parse_image_part(ee, tree, 0);
+
+	parse_taskbar_state(&tt->states[BUTTON_STATE_IDLE_HIGHLIGHT], 
+			    "idle_highlight", e, tree, 0);
+	parse_taskbar_state(&tt->states[BUTTON_STATE_PRESSED_HIGHLIGHT], 
+			    "pressed_highlight", e, tree, 0);
 
 	tt->separator = parse_image_part_named("separator", e, tree, 0);
 	tt->task_max_width = parse_int("task_max_width", e, 0);
@@ -81,15 +97,16 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 	return 0;
 
 parse_taskbar_button_theme_error_pressed:
-	free_taskbar_state(&tt->idle);
+	free_taskbar_state(&tt->states[BUTTON_STATE_IDLE]);
 parse_taskbar_button_theme_error_idle:
 	return -1;
 }
 
 static void free_taskbar_theme(struct taskbar_theme *tt)
 {
-	free_taskbar_state(&tt->idle);
-	free_taskbar_state(&tt->pressed);
+	unsigned int i;
+	for (i = 0; i < 4; ++i)
+		free_taskbar_state(&tt->states[i]);
 	if (tt->default_icon)
 		cairo_surface_destroy(tt->default_icon);
 	if (tt->separator)
@@ -191,19 +208,26 @@ static int count_tasks_on_desktop(struct taskbar_widget *tw, int desktop)
 }
 
 static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
-		cairo_t *cr, PangoLayout *layout, int x, int w, int active)
+		cairo_t *cr, PangoLayout *layout, int x, int w, int active,
+		int highlighted)
 {
 	/* calculations */
-	struct triple_image *tbt = (active) ? 
-			&theme->pressed.background :
-			&theme->idle.background;
-	struct text_info *font = (active) ?
-			&theme->pressed.font :
-			&theme->idle.font;
-	int *icon_offset = (active) ?
-			theme->pressed.icon_offset :
-			theme->idle.icon_offset;
-	
+	int state = active << 1;
+	int state_hl = (active << 1) | highlighted;
+
+	struct triple_image *tbt;
+	struct text_info *font;
+	int *icon_offset;
+	if (theme->states[state_hl].exists) {
+		tbt = &theme->states[state_hl].background;
+		font = &theme->states[state_hl].font;
+		icon_offset = theme->states[state_hl].icon_offset;
+	} else {
+		tbt = &theme->states[state].background;
+		font = &theme->states[state].font;
+		icon_offset = theme->states[state].icon_offset;
+	}
+
 	int leftw = image_width(tbt->left);
 	int rightw = image_width(tbt->right);
 	int height = image_height(tbt->center);
@@ -318,10 +342,6 @@ static void update_tasks(struct widget *w, struct x_connection *c)
 	XFree(wins);
 }
 
-/**************************************************************************
-  Taskbar interface
-**************************************************************************/
-
 static int get_taskbar_task_at(struct widget *w, int x)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
@@ -340,6 +360,10 @@ static int get_taskbar_task_at(struct widget *w, int x)
 	}
 	return -1;
 }
+
+/**************************************************************************
+  Taskbar interface
+**************************************************************************/
 
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree)
@@ -436,7 +460,7 @@ static void draw(struct widget *w)
 
 
 		draw_task(t, &tw->theme, cr, w->panel->layout,
-				x, taskw, t->win == tw->active);
+			  x, taskw, t->win == tw->active, i == tw->highlighted);
 		x += taskw;
 	}
 }
@@ -667,4 +691,23 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 		tw->dnd_win = None;
 	}
 	tw->taken = None;
+}
+
+static void mouse_motion(struct widget *w, XMotionEvent *e)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	int i = get_taskbar_task_at(w, e->x);
+	if (i != tw->highlighted) {
+		tw->highlighted = i;
+		w->needs_expose = 1;
+	}
+}
+
+static void mouse_leave(struct widget *w)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	if (tw->highlighted != -1) {
+		tw->highlighted = -1;
+		w->needs_expose = 1;
+	}
 }

@@ -4,6 +4,12 @@
 #include "widget-utils.h"
 #include "array.h"
 
+/* button states */
+#define BUTTON_STATE_IDLE		0
+#define BUTTON_STATE_IDLE_HIGHLIGHT	1
+#define BUTTON_STATE_PRESSED		2
+#define BUTTON_STATE_PRESSED_HIGHLIGHT	3
+
 /**************************************************************************
   Taskbar
 **************************************************************************/
@@ -29,11 +35,11 @@ struct taskbar_state {
 	struct triple_image background;
 	struct text_info font;
 	int icon_offset[2];
+	int exists;
 };
 
 struct taskbar_theme {
-	struct taskbar_state idle;
-	struct taskbar_state pressed;
+	struct taskbar_state states[4];
 	cairo_surface_t *default_icon;
 	int task_max_width;
 
@@ -44,6 +50,7 @@ struct taskbar_widget {
 	struct taskbar_theme theme;
 	DECLARE_ARRAY(struct taskbar_task, tasks);
 	Window active;
+	int highlighted;
 	int desktop;
 
 	Window dnd_win;
