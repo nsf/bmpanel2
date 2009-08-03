@@ -45,21 +45,14 @@ static int parse_desktops_state(struct desktops_state *ds, const char *name,
 	}
 
 	if (parse_triple_image(&ds->background, ee, tree, 1))
-		goto parse_desktops_state_error_background;
+		return -1;
 
-	if (parse_text_info_named(&ds->font, "font", ee, 1))
-		goto parse_desktops_state_error_font;
-
+	parse_text_info_named(&ds->font, "font", ee, 0);
 	ds->left_corner = parse_image_part_named("left_corner", ee, tree, 0);
 	ds->right_corner = parse_image_part_named("right_corner", ee, tree, 0);
 
 	ds->exists = 1;
 	return 0;
-
-parse_desktops_state_error_font:
-	free_triple_image(&ds->background);
-parse_desktops_state_error_background:
-	return -1;
 }
 
 static void free_desktops_state(struct desktops_state *ds)
@@ -186,8 +179,9 @@ static void resize_desktops(struct widget *w)
 		else 
 			x += leftw;
 		int width = 0;
-		text_extents(w->panel->layout, ds->font.pfd, 
-			     dw->desktops[i].name, &width, 0);
+		if (ds->font.pfd)
+			text_extents(w->panel->layout, ds->font.pfd, 
+				     dw->desktops[i].name, &width, 0);
 		dw->desktops[i].textw = width;
 		x += width;
 		if (i == dw->desktops_n - 1)
@@ -284,8 +278,9 @@ static void draw(struct widget *w)
 		int width = dw->desktops[i].textw;
 
 		pattern_image(cur->background.center, cr, x, 0, width);
-		draw_text(cr, w->panel->layout, &cur->font, dw->desktops[i].name,
-			  x, 0, width, h);
+		if (cur->font.pfd)
+			draw_text(cr, w->panel->layout, &cur->font, 
+				  dw->desktops[i].name, x, 0, width, h);
 
 		x += width;
 		if (i == dw->desktops_n - 1 && right_cornerw) {
