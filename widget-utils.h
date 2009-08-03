@@ -10,6 +10,7 @@ struct triple_image {
 	cairo_surface_t *left;
 	cairo_surface_t *center;
 	cairo_surface_t *right;
+	int stretched;
 };
 
 #define ALIGN_CENTER 0

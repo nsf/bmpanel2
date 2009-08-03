@@ -147,6 +147,7 @@ int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e,
 
 	tbt->left = parse_image_part_named("left", e, tree, 0);
 	tbt->right = parse_image_part_named("right", e, tree, 0);
+	tbt->stretched = parse_bool("stretched", e);
 	return 0;
 }
 
