@@ -369,6 +369,7 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	cairo_rectangle(cr, 0, 0, w, h);
 	cairo_translate(cr, offsetx, offsety);
 	cairo_clip(cr);
+	pango_layout_set_width(dest, (w - offsetx) * PANGO_SCALE);
 	pango_cairo_update_layout(cr, dest);
 
 	if (ti->shadow_offset[0] != 0 || ti->shadow_offset[1] != 0) {

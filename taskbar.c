@@ -235,7 +235,7 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	
 	int iconw = image_width(theme->default_icon);
 	int iconh = image_height(theme->default_icon);
-	int textw = centerw - (iconw + icon_offset[0]) - rightw;
+	int textw = centerw - (iconw + icon_offset[0]);
 
 	/* background */
 	int leftx = x;
