@@ -280,7 +280,7 @@ static void draw(struct widget *w)
 		pattern_image(cur->background.center, cr, x, 0, width);
 		if (cur->font.pfd)
 			draw_text(cr, w->panel->layout, &cur->font, 
-				  dw->desktops[i].name, x, 0, width, h);
+				  dw->desktops[i].name, x, 0, width, h, 0);
 
 		x += width;
 		if (i == dw->desktops_n - 1 && right_cornerw) {

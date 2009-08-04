@@ -88,7 +88,7 @@ void pattern_image(cairo_surface_t *src, cairo_t *dest,
 		   int dstx, int dsty, int w);
 
 void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti, 
-	       const char *text, int x, int y, int w, int h);
+	       const char *text, int x, int y, int w, int h, int ellipsized);
 void text_extents(PangoLayout *layout, PangoFontDescription *font, 
 		  const char *text, int *w, int *h);
 

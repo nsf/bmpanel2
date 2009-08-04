@@ -126,7 +126,7 @@ static void draw(struct widget *w)
 
 	/* text */
 	draw_text(cr, w->panel->layout, &cw->theme.font, buftime, 
-			x, 0, centerw, w->panel->height);
+			x, 0, centerw, w->panel->height, 0);
 }
 
 static void clock_tick(struct widget *w)

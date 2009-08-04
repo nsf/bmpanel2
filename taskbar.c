@@ -266,7 +266,7 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	xx += iconw; 
 	
 	/* text */
-	draw_text(cr, layout, font, task->name.buf, xx, 0, textw, height);
+	draw_text(cr, layout, font, task->name.buf, xx, 0, textw, height, 1);
 }
 
 static inline void activate_task(struct x_connection *c, struct taskbar_task *t)

@@ -387,7 +387,6 @@ void init_panel(struct panel *panel, struct config_format_tree *tree)
 
 	/* create text layout */
 	panel->layout = pango_cairo_create_layout(panel->cr);
-	pango_layout_set_ellipsize(panel->layout, PANGO_ELLIPSIZE_END);
 
 	/* parse panel widgets */
 	parse_panel_widgets(panel, tree);
