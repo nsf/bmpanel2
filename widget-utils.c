@@ -292,12 +292,15 @@ void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 }
 
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
-		   int dstx, int dsty, int w)
+		   int dstx, int dsty, int w, int align)
 {
 	size_t sh = image_height(src);
 
 	cairo_save(dest);
-	cairo_set_source_surface(dest, src, dstx, dsty);
+	if (align)
+		cairo_set_source_surface(dest, src, dstx, dsty);
+	else
+		cairo_set_source_surface(dest, src, 0, 0);
 	cairo_pattern_set_extend(cairo_get_source(dest), CAIRO_EXTEND_REPEAT);
 	cairo_rectangle(dest, dstx, dsty, w, sh);
 	cairo_clip(dest);

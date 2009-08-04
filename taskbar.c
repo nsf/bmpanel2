@@ -247,7 +247,7 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	else if (tbt->stretched)
 		stretch_image(tbt->center, cr, centerx, 0, centerw);
 	else
-		pattern_image(tbt->center, cr, centerx, 0, centerw);
+		pattern_image(tbt->center, cr, centerx, 0, centerw, 1);
 
 	if (leftw) blit_image(tbt->left, cr, leftx, 0);
 	if (rightw) blit_image(tbt->right, cr, rightx, 0);

@@ -115,7 +115,7 @@ static void draw(struct widget *w)
 
 		/* center part */
 		pattern_image(cw->theme.background.center, cr, x, 0, 
-				centerw);
+				centerw, 1);
 		x += centerw;
 
 		/* right part */

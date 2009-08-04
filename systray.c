@@ -299,7 +299,7 @@ static void draw(struct widget *w)
 		x += leftw;
 
 		/* center part */
-		pattern_image(st->background.center, cr, x, 0, centerw);
+		pattern_image(st->background.center, cr, x, 0, centerw, 1);
 		x += centerw;
 
 		/* right part */

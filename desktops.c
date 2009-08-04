@@ -277,7 +277,7 @@ static void draw(struct widget *w)
 		}
 		int width = dw->desktops[i].textw;
 
-		pattern_image(cur->background.center, cr, x, 0, width);
+		pattern_image(cur->background.center, cr, x, 0, width, 1);
 		if (cur->font.pfd)
 			draw_text(cr, w->panel->layout, &cur->font, 
 				  dw->desktops[i].name, x, 0, width, h, 0);

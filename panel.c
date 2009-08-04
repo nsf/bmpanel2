@@ -303,7 +303,7 @@ static void expose_whole_panel(struct panel *panel)
 			continue;
 
 		/* background */
-		pattern_image(panel->theme.background, panel->cr, x, 0, w);
+		pattern_image(panel->theme.background, panel->cr, x, 0, w, 0);
 
 		/* widget contents */
 		if (wi->interface->draw)
@@ -347,7 +347,7 @@ static void expose_panel(struct panel *panel)
 		struct widget *w = &panel->widgets[i];
 		if (w->needs_expose) {
 			pattern_image(panel->theme.background, panel->cr, 
-					w->x, 0, w->width);
+					w->x, 0, w->width, 0);
 			if (w->interface->draw)
 				(*w->interface->draw)(w);
 			(*panel->render->blit)(panel, w->x, 0, 

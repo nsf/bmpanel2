@@ -85,7 +85,7 @@ void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 void stretch_image(cairo_surface_t *src, cairo_t *dest,
 		   int dstx, int dsty, int w);
 void pattern_image(cairo_surface_t *src, cairo_t *dest, 
-		   int dstx, int dsty, int w);
+		   int dstx, int dsty, int w, int align);
 
 void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti, 
 	       const char *text, int x, int y, int w, int h, int ellipsized);
