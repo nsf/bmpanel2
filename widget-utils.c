@@ -335,6 +335,12 @@ void stretch_image(cairo_surface_t *src, cairo_t *dest,
 void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti, 
 		const char *text, int x, int y, int w, int h)
 {
+	const static PangoEllipsizeMode ellipsize_table[] = {
+		PANGO_ELLIPSIZE_MIDDLE,
+		PANGO_ELLIPSIZE_END,
+		PANGO_ELLIPSIZE_START
+	};
+
 	PangoRectangle r;
 	int offsetx = 0, offsety = 0;
 
@@ -369,6 +375,7 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	cairo_rectangle(cr, 0, 0, w, h);
 	cairo_translate(cr, offsetx, offsety);
 	cairo_clip(cr);
+	pango_layout_set_ellipsize(dest, ellipsize_table[ti->align]);
 	pango_layout_set_width(dest, (w - offsetx) * PANGO_SCALE);
 	pango_cairo_update_layout(cr, dest);
 
