@@ -354,6 +354,7 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 			(double)ti->color[2] / 255.0);
 	pango_layout_set_font_description(dest, ti->pfd);
 	pango_layout_set_text(dest, text, -1);
+	pango_layout_set_width(dest, -1);
 	
 	pango_layout_get_pixel_extents(dest, 0, &r);
 
@@ -381,8 +382,6 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	if (ellipsized) {
 		pango_layout_set_ellipsize(dest, ellipsize_table[ti->align]);
 		pango_layout_set_width(dest, (w - offsetx) * PANGO_SCALE);
-	} else {
-		pango_layout_set_width(dest, -1);
 	}
 	pango_cairo_update_layout(cr, dest);
 
