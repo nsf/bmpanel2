@@ -251,6 +251,16 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 		XFree(data);
 	}
 
+	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE],
+			       c->atoms[XATOM_WM_STATE], 0);
+	if (data) {
+		if (data[0] == WithdrawnState) {
+			XFree(data);
+			return 1;
+		}
+		XFree(data);
+	}
+
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
 	if (!data)
 		return 0;
