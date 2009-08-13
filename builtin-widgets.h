@@ -48,7 +48,12 @@ struct taskbar_theme {
 
 struct taskbar_widget {
 	struct taskbar_theme theme;
-	DECLARE_ARRAY(struct taskbar_task, tasks);
+
+	/* array */
+	struct taskbar_task *tasks;
+	size_t tasks_n;
+	size_t tasks_alloc;
+
 	Window active;
 	int highlighted;
 	int desktop;
@@ -104,7 +109,12 @@ struct desktops_theme {
 
 struct desktops_widget {
 	struct desktops_theme theme;
-	DECLARE_ARRAY(struct desktops_desktop, desktops);
+
+	/* array */
+	struct desktops_desktop *desktops;
+	size_t desktops_n;
+	size_t desktops_alloc;
+
 	int active;
 	int highlighted;
 };
@@ -145,7 +155,11 @@ struct systray_theme {
 };
 
 struct systray_widget {
-	DECLARE_ARRAY(struct systray_icon, icons);
+	/* array */
+	struct systray_icon *icons;
+	size_t icons_n;
+	size_t icons_alloc;
+
 	Atom tray_selection_atom;
 	Window selection_owner;
 	struct systray_theme theme;
@@ -165,7 +179,11 @@ struct launchbar_item {
 };
 
 struct launchbar_widget {
-	DECLARE_ARRAY(struct launchbar_item, items);
+	/* array */
+	struct launchbar_item *items;
+	size_t items_n;
+	size_t items_alloc;
+
 	int icon_size[2];
 	int active;
 };

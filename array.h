@@ -2,10 +2,13 @@
 
 #include "util.h"
 
+/*
+XXX: evil macros, but it shows the arrays concept, so.. leaving it here
 #define DECLARE_ARRAY(type, name)						\
 	type *name;								\
 	size_t name##_n;							\
 	size_t name##_alloc
+*/
 
 /* Init functions, at least one of them should be called on uninitialized
  * array. */
