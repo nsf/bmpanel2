@@ -313,6 +313,12 @@ taskbar
 The *idle*, *idle_highlight*, *pressed* and *pressed_highlight*
 subsections are descriptions of how button states are drawn.
 
+idle/stretched::
+	TODO
+
+idle/stretched_overlap::
+	TODO
+
 idle/left::
 	Defines an appearance of the left part of a button on a
 	taskbar.
