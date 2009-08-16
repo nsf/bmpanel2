@@ -161,6 +161,7 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 
 	sw->tray_selection_atom = acquire_tray_selection_atom(c);
 	if (tray_selection_owner_exists(c, sw->tray_selection_atom)) {
+		free_systray_theme(&sw->theme);
 		xfree(sw);
 		XWARNING("There is another tray selection owner, disabling tray");
 		return -1;

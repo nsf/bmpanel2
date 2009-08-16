@@ -243,9 +243,13 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 	int rightx = centerx + centerw;
 
 	if (tbt->stretched_overlap)
-		stretch_image(tbt->center, cr, leftx, 0, w);
+		stretch_image(tbt->center, cr, 
+			      leftx + tbt->center_offsets[0], 0, 
+			      w - tbt->center_offsets[0] - tbt->center_offsets[1]);
 	else if (tbt->stretched)
-		stretch_image(tbt->center, cr, centerx, 0, centerw);
+		stretch_image(tbt->center, cr, 
+			      centerx + tbt->center_offsets[0], 0, 
+			      centerw - tbt->center_offsets[0] - tbt->center_offsets[1]);
 	else
 		pattern_image(tbt->center, cr, centerx, 0, centerw, 1);
 

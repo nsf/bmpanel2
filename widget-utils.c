@@ -149,6 +149,7 @@ int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e,
 	tbt->right = parse_image_part_named("right", e, tree, 0);
 	tbt->stretched = parse_bool("stretched", e);
 	tbt->stretched_overlap = parse_bool("stretched_overlap", e);
+	parse_2ints(tbt->center_offsets, "center_offsets", e);
 	return 0;
 }
 
@@ -324,7 +325,7 @@ void stretch_image(cairo_surface_t *src, cairo_t *dest,
 	cairo_set_source_surface(dest, src, dstx, dsty);
 	srcp = cairo_get_source(dest);
 
-	cairo_pattern_set_extend(srcp, CAIRO_EXTEND_REPEAT);
+	cairo_pattern_set_extend(srcp, CAIRO_EXTEND_PAD);
 	cairo_pattern_get_matrix(srcp, &m);
 	cairo_matrix_multiply(&m, &m, &scale);
 	cairo_pattern_set_matrix(srcp, &m);

@@ -12,6 +12,7 @@ struct triple_image {
 	cairo_surface_t *right;
 	int stretched;
 	int stretched_overlap;
+	int center_offsets[2];
 };
 
 #define ALIGN_CENTER 0
