@@ -119,15 +119,47 @@ static void get_position_and_strut(const struct x_connection *c,
 	strut[where[t->position].e] = x+w;
 }
 
-static void create_window(struct panel *panel)
+static void get_strut_for_position(const struct x_connection *c,
+				   const struct panel_theme *t,
+				   int x, int y, int w, int h,
+				   long *strut)
+{
+	strut[0] = strut[1] = strut[3] = 0;
+	strut[2] = h;
+	
+	if (t->position == PANEL_POSITION_BOTTOM) {
+		strut[2] = 0;
+		strut[3] = c->screen_height - h;
+	}
+	
+	static const struct {
+		int s, e;
+	} where[] = {
+		[PANEL_POSITION_TOP] = {8, 9},
+		[PANEL_POSITION_BOTTOM] = {10, 11}
+	};
+
+	strut[where[t->position].s] = x;
+	strut[where[t->position].e] = x+w;
+}
+
+static void create_window(struct panel *panel, int ax, int ay, int aw)
 {
 	struct x_connection *c = &panel->connection;
 	struct panel_theme *t = &panel->theme;
 
 	int x,y,w,h;
 	long strut[12] = {0};
-	
-	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
+
+	if (ax == -1)
+		get_position_and_strut(c, t, &x, &y, &w, &h, strut);
+	else {
+		x = ax;
+		y = ay;
+		w = aw;
+		h = image_height(t->background);
+		get_strut_for_position(c, t, x, y, w, h, strut);
+	}
 
 	(*panel->render->create_win)(panel, x, y, w, h, 
 			ExposureMask | StructureNotifyMask | ButtonPressMask |
@@ -358,7 +390,8 @@ static void expose_panel(struct panel *panel)
 	XFlush(dpy);
 }
 
-void init_panel(struct panel *panel, struct config_format_tree *tree)
+void init_panel(struct panel *panel, struct config_format_tree *tree,
+		int x, int y, int w)
 {
 	CLEAR_STRUCT(panel);
 
@@ -376,7 +409,7 @@ void init_panel(struct panel *panel, struct config_format_tree *tree)
 	struct x_connection *c = &panel->connection;
 
 	/* create window */
-	create_window(panel);
+	create_window(panel, x, y, w);
 	
 	/* render private */
 	if (panel->render->create_private)

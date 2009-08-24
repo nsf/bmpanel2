@@ -184,7 +184,8 @@ struct render_interface {
 extern struct render_interface render_normal;
 extern struct render_interface render_pseudo;
 
-void init_panel(struct panel *panel, struct config_format_tree *tree);
+void init_panel(struct panel *panel, struct config_format_tree *tree,
+		int x, int y, int w);
 void free_panel(struct panel *panel);
 void panel_main_loop(struct panel *panel);
 

@@ -222,7 +222,7 @@ int main(int argc, char **argv)
 	register_widget_interface(&launchbar_interface);
 	register_widget_interface(&empty_interface);
 
-	init_panel(&p, &tree);
+	init_panel(&p, &tree, -1, -1, -1);
 
 	mysignal(SIGINT, sigint_handler);
 	mysignal(SIGTERM, sigterm_handler);

@@ -49,7 +49,7 @@
 /**
  * Named config format entry with optional associated value and children. 
  * 
- * It is capable of building trees of entries.
+ * * It is capable of building trees of entries.
  */
 struct config_format_entry {
 	char *name; /**< The name. */
