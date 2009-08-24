@@ -178,12 +178,22 @@ static void resize_desktops(struct widget *w)
 			x += left_cornerw;
 		else 
 			x += leftw;
-		int width = 0;
-		if (ds->font.pfd)
-			text_extents(w->panel->layout, ds->font.pfd, 
-				     dw->desktops[i].name, &width, 0);
-		dw->desktops[i].textw = width;
-		x += width;
+		int maxwidth = 0;
+		if (ds->font.pfd) {
+			int j, width = 0;
+			for (j = 0; j < 4; ++j) {
+				struct desktops_state *lds = 
+					&dw->theme.states[j];
+				if (!lds->exists)
+					continue;
+				text_extents(w->panel->layout, lds->font.pfd, 
+					     dw->desktops[i].name, &width, 0);
+				if (width > maxwidth)
+					maxwidth = width;
+			}
+		}
+		dw->desktops[i].textw = maxwidth;
+		x += maxwidth;
 		if (i == dw->desktops_n - 1)
 			x += right_cornerw;
 		else 
