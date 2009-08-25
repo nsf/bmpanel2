@@ -283,11 +283,13 @@ int x_is_window_demands_attention(struct x_connection *c, Window win)
 	int num;
 
 	XWMHints *wmh = XGetWMHints(c->dpy, win);
-	if (wmh->flags & XUrgencyHint) {
+	if (wmh) {
+		if (wmh->flags & XUrgencyHint) {
+			XFree(wmh);
+			return 1;
+		}
 		XFree(wmh);
-		return 1;
 	}
-	XFree(wmh);
 	
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
 	if (!data)
