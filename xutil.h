@@ -23,6 +23,7 @@ enum x_atom {
 	XATOM_NET_WM_STATE_SKIP_TASKBAR,
 	XATOM_NET_WM_STATE_SHADED,
 	XATOM_NET_WM_STATE_HIDDEN,
+	XATOM_NET_WM_STATE_DEMANDS_ATTENTION,
 	XATOM_NET_WM_DESKTOP,
 	XATOM_NET_MOVERESIZE_WINDOW,
 	XATOM_NET_WM_WINDOW_TYPE,
@@ -114,6 +115,7 @@ void x_set_prop_array(struct x_connection *c, Window win, Atom type,
 
 int x_is_window_hidden(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
+int x_is_window_demands_attention(struct x_connection *c, Window win);
 
 /* allocated by xstrdup, should be released with xfree */
 void x_realloc_window_name(struct strbuf *sb, struct x_connection *c, 

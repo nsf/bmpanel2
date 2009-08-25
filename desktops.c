@@ -182,8 +182,7 @@ static void resize_desktops(struct widget *w)
 		if (ds->font.pfd) {
 			int j, width = 0;
 			for (j = 0; j < 4; ++j) {
-				struct desktops_state *lds = 
-					&dw->theme.states[j];
+				struct desktops_state *lds = &dw->theme.states[j];
 				if (!lds->exists)
 					continue;
 				text_extents(w->panel->layout, lds->font.pfd, 

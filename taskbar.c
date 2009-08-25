@@ -16,6 +16,8 @@ static void dnd_drop(struct widget *w, struct drag_info *di);
 static void mouse_motion(struct widget *w, XMotionEvent *e);
 static void mouse_leave(struct widget *w);
 
+static void clock_tick(struct widget *w);
+
 struct widget_interface taskbar_interface = {
 	.theme_name 		= "taskbar",
 	.size_type 		= WIDGET_SIZE_FILL,
@@ -29,7 +31,8 @@ struct widget_interface taskbar_interface = {
 	.dnd_drop 		= dnd_drop,
 	.client_msg		= client_msg,
 	.mouse_motion		= mouse_motion,
-	.mouse_leave		= mouse_leave
+	.mouse_leave		= mouse_leave,
+	.clock_tick		= clock_tick
 };
 
 /**************************************************************************
@@ -157,6 +160,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 
 	CLEAR_STRUCT(&t);
 	t.win = win;
+	t.demands_attention = x_is_window_demands_attention(c, win);
 
 	x_realloc_window_name(&t.name, c, win, &t.name_atom, &t.name_type_atom); 
 	if (tw->theme.default_icon)
@@ -211,6 +215,9 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 		cairo_t *cr, PangoLayout *layout, int x, int w, int active,
 		int highlighted)
 {
+	if (task->demands_attention > 0) 
+		active = task->demands_attention - 1;
+
 	/* calculations */
 	int state = active << 1;
 	int state_hl = (active << 1) | highlighted;
@@ -546,6 +553,12 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 			return;
 		}
 	}
+
+	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
+		struct taskbar_task *t = &tw->tasks[ti];
+		t->demands_attention = x_is_window_demands_attention(c, t->win);
+		return;
+	}
 }
 
 static void button_click(struct widget *w, XButtonEvent *e)
@@ -719,5 +732,19 @@ static void mouse_leave(struct widget *w)
 	if (tw->highlighted != -1) {
 		tw->highlighted = -1;
 		w->needs_expose = 1;
+	}
+}
+
+static void clock_tick(struct widget *w)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	size_t i;
+	time_t seconds = time(0);
+	for (i = 0; i < tw->tasks_n; ++i) {
+		struct taskbar_task *t = &tw->tasks[i];
+		if (t->demands_attention > 0) {
+			w->needs_expose = 1;
+			t->demands_attention = 1 + (seconds % 2);
+		}
 	}
 }

@@ -36,6 +36,7 @@ static char *atom_names[] = {
 	"_NET_WM_STATE_SKIP_TASKBAR",
 	"_NET_WM_STATE_SHADED",
 	"_NET_WM_STATE_HIDDEN",
+	"_NET_WM_STATE_DEMANDS_ATTENTION",
 	"_NET_WM_DESKTOP",
 	"_NET_MOVERESIZE_WINDOW",
 	"_NET_WM_WINDOW_TYPE",
@@ -235,6 +236,13 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 	int ret = 0;
 	int num;
 
+	XWMHints *wmh = XGetWMHints(c->dpy, win);
+	if (wmh->initial_state == WithdrawnState) {
+		XFree(wmh);
+		return 1;
+	}
+	XFree(wmh);
+
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
 			XA_ATOM, &num);
 	if (data) {
@@ -251,16 +259,6 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 		XFree(data);
 	}
 
-	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE],
-			       c->atoms[XATOM_WM_STATE], 0);
-	if (data) {
-		if (data[0] == WithdrawnState) {
-			XFree(data);
-			return 1;
-		}
-		XFree(data);
-	}
-
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
 	if (!data)
 		return 0;
@@ -268,6 +266,33 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 	while (num) {
 		num--;
 		if (data[num] == c->atoms[XATOM_NET_WM_STATE_SKIP_TASKBAR])
+			ret = 1;
+	}
+	XFree(data);
+
+	return ret;
+}
+
+int x_is_window_demands_attention(struct x_connection *c, Window win)
+{
+	Atom *data;
+	int ret = 0;
+	int num;
+
+	XWMHints *wmh = XGetWMHints(c->dpy, win);
+	if (wmh->flags & XUrgencyHint) {
+		XFree(wmh);
+		return 1;
+	}
+	XFree(wmh);
+	
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
+	if (!data)
+		return 0;
+
+	while (num) {
+		num--;
+		if (data[num] == c->atoms[XATOM_NET_WM_STATE_DEMANDS_ATTENTION])
 			ret = 1;
 	}
 	XFree(data);
