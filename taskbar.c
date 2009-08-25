@@ -211,12 +211,25 @@ static int count_tasks_on_desktop(struct taskbar_widget *tw, int desktop)
 	return count;
 }
 
+static int highlighted_state_exists(struct taskbar_theme *theme, int active)
+{
+	int state_hl = (active << 1) | 1;
+	if (theme->states[state_hl].exists)
+		return 1;
+	return 0;
+}
+
 static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 		cairo_t *cr, PangoLayout *layout, int x, int w, int active,
 		int highlighted)
 {
-	if (task->demands_attention > 0) 
-		active = task->demands_attention - 1;
+	if (task->demands_attention > 0) {
+		if (highlighted_state_exists(theme, active))
+			highlighted = task->demands_attention - 1;
+		else
+			active = task->demands_attention - 1;
+
+	}
 
 	/* calculations */
 	int state = active << 1;
