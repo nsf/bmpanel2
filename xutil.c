@@ -236,13 +236,6 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 	int ret = 0;
 	int num;
 
-	XWMHints *wmh = XGetWMHints(c->dpy, win);
-	if (wmh->initial_state == WithdrawnState) {
-		XFree(wmh);
-		return 1;
-	}
-	XFree(wmh);
-
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
 			XA_ATOM, &num);
 	if (data) {
@@ -255,6 +248,16 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 				return 1;
 			}
 
+		}
+		XFree(data);
+	}
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE],
+			       c->atoms[XATOM_WM_STATE], 0);
+	if (data) {
+		if (data[0] == WithdrawnState) {
+			XFree(data);
+			return 1;
 		}
 		XFree(data);
 	}
