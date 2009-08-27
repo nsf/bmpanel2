@@ -223,12 +223,15 @@ static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
 		cairo_t *cr, PangoLayout *layout, int x, int w, int active,
 		int highlighted)
 {
+	/* TODO: dirty hacking here, logic refactoring required */
+	if (active)
+		task->demands_attention = 0;
+
 	if (task->demands_attention > 0) {
 		if (highlighted_state_exists(theme, active))
 			highlighted = task->demands_attention - 1;
 		else
 			active = task->demands_attention - 1;
-
 	}
 
 	/* calculations */
