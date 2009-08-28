@@ -10,6 +10,10 @@
 #include "builtin-widgets.h"
 #include "args.h"
 
+/**************************************************************************
+  Listing themes
+**************************************************************************/
+
 static void list_theme(const char *themefile, const char *shortname)
 {
 	if (!is_file_exists(themefile))
@@ -92,6 +96,10 @@ static void list_themes()
 	}
 }
 
+/**************************************************************************
+  Theme loading
+**************************************************************************/
+
 static int try_load_theme(struct config_format_tree *tree, const char *name)
 {
 	char buf[4096];
@@ -127,8 +135,34 @@ static int try_load_theme(struct config_format_tree *tree, const char *name)
 
 	return 0;
 }
+
+static int load_theme(struct config_format_tree *theme, const char *theme_override)
+{
+	int theme_load_status = -1;
+	const char *theme_name;
+
+	if (theme_override)
+		theme_name = theme_override;
+	else
+		theme_name = find_config_format_entry_value(&g_settings.root,
+							    "theme");
+
+	if (theme_name)
+		theme_load_status = try_load_theme(theme, theme_name);
+
+	if (theme_load_status < 0) {
+		if (theme_name)
+			XWARNING("Failed to load theme: \"%s\", "
+				 "trying default \"native\"", theme_name);
+		else
+			XWARNING("Missing theme parameter, trying default \"native\"");
+		theme_load_status = try_load_theme(theme, "native");
+	}
+
+	return theme_load_status;
+}
 	
-static struct config_format_tree tree;
+static struct config_format_tree theme;
 static struct panel p;
 
 static void sigint_handler(int xxx)
@@ -141,6 +175,17 @@ static void sigterm_handler(int xxx)
 {
 	XWARNING("sigterm signal received, stopping main loop...");
 	g_main_loop_quit(p.loop);
+}
+
+static gboolean say_hi(gpointer data)
+{
+	XWARNING("Hi!");
+	return 0;
+}
+
+static void sigusr1_handler(int xxx)
+{
+	g_idle_add(say_hi, 0);
 }
 
 static void mysignal(int sig, void (*handler)(int))
@@ -190,29 +235,17 @@ static void parse_bmpanel2_args(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	int theme_load_status = -1;
-	const char *theme_name;
+	g_thread_init(0);
+	if (!g_thread_supported()) {
+		XWARNING("Threads are required for bmpanel2");
+		return -1;
+	}
 	
 	parse_bmpanel2_args(argc, argv);
 	load_settings();
 
-	if (theme_override)
-		theme_name = theme_override;
-	else
-		theme_name = find_config_format_entry_value(&g_settings.root,
-							    "theme");
-	if (theme_name)
-		theme_load_status = try_load_theme(&tree, theme_name);
-
-	if (theme_load_status < 0) {
-		if (theme_name)
-			XWARNING("Failed to load theme: %s, "
-				 "trying default \"native\"", theme_name);
-		theme_load_status = try_load_theme(&tree, "native");
-	}
-
-	if (theme_load_status < 0)
-		XDIE("Failed to load theme: native");
+	if (load_theme(&theme, theme_override) < 0)
+		XDIE("Failed to load theme");
 	
 	register_widget_interface(&desktops_interface);
 	register_widget_interface(&taskbar_interface);
@@ -222,15 +255,16 @@ int main(int argc, char **argv)
 	register_widget_interface(&launchbar_interface);
 	register_widget_interface(&empty_interface);
 
-	init_panel(&p, &tree, -1, -1, -1);
+	init_panel(&p, &theme, -1, -1, -1);
 
 	mysignal(SIGINT, sigint_handler);
 	mysignal(SIGTERM, sigterm_handler);
+	mysignal(SIGUSR1, sigusr1_handler);
 
 	panel_main_loop(&p);
 	
 	free_panel(&p);
-	free_config_format_tree(&tree);
+	free_config_format_tree(&theme);
 	clean_image_cache();
 	clean_static_buf();
 	free_settings();

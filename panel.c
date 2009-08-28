@@ -606,7 +606,7 @@ static gboolean panel_second_timeout(gpointer data)
 	expose_panel(p);
 	/* just in case, actually it helps a lot */
 	process_events(p);
-	return TRUE;
+	return 1;
 }
 
 static gboolean panel_x_in(GIOChannel *gio, GIOCondition condition, gpointer data)
