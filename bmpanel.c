@@ -161,9 +161,64 @@ static int load_theme(struct config_format_tree *theme, const char *theme_overri
 
 	return theme_load_status;
 }
+
+/*************************************************************************/
 	
 static struct config_format_tree theme;
 static struct panel p;
+
+/* options */
+static int show_usage;
+static int show_version;
+static int show_list;
+static const char *theme_override;
+
+static int reload = 0;
+
+#define BMPANEL2_VERSION_STR "bmpanel2 version 2.0 alpha\n"
+#define BMPANEL2_USAGE \
+"usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
+
+static const char *bmpanel2_version_str = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
+
+static const char *get_theme_name()
+{
+	if (theme_override)
+		return theme_override;
+	else {
+		const char *theme;
+		theme = find_config_format_entry_value(&g_settings.root,
+						       "theme");
+		if (theme)
+			return theme;
+		else
+			return "native";
+	}
+}
+
+static void reload_config()
+{
+	char *previous_theme = xstrdup(get_theme_name());
+
+	free_settings();
+	load_settings();
+
+	if (strcmp(get_theme_name(), previous_theme) != 0) {
+		/* free theme */
+		free_config_format_tree(&theme);
+		reconfigure_free_panel(&p);
+		clean_image_cache();
+
+		/* reload */
+		if (load_theme(&theme, theme_override) < 0)
+			XDIE("Failed to load theme");
+
+		reconfigure_panel(&p, &theme);
+	} else {
+		reconfigure_widgets(&p);
+	}
+	xfree(previous_theme);
+}
 
 static void sigint_handler(int xxx)
 {
@@ -177,15 +232,10 @@ static void sigterm_handler(int xxx)
 	g_main_loop_quit(p.loop);
 }
 
-static gboolean say_hi(gpointer data)
-{
-	XWARNING("Hi!");
-	return 0;
-}
-
 static void sigusr1_handler(int xxx)
 {
-	g_idle_add(say_hi, 0);
+	reload = 1;
+	g_main_loop_quit(p.loop);
 }
 
 static void mysignal(int sig, void (*handler)(int))
@@ -195,18 +245,6 @@ static void mysignal(int sig, void (*handler)(int))
 	sa.sa_flags = 0;
 	sigaction(sig, &sa, 0);
 }
-
-/* options */
-static int show_usage;
-static int show_version;
-static int show_list;
-static const char *theme_override;
-
-#define BMPANEL2_VERSION_STR "bmpanel2 version 2.0 alpha\n"
-#define BMPANEL2_USAGE \
-"usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
-
-static const char *bmpanel2_version_str = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
 
 static void parse_bmpanel2_args(int argc, char **argv)
 {
@@ -235,15 +273,8 @@ static void parse_bmpanel2_args(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	g_thread_init(0);
-	if (!g_thread_supported()) {
-		XWARNING("Threads are required for bmpanel2");
-		return -1;
-	}
-	
 	parse_bmpanel2_args(argc, argv);
 	load_settings();
-
 	if (load_theme(&theme, theme_override) < 0)
 		XDIE("Failed to load theme");
 	
@@ -262,6 +293,11 @@ int main(int argc, char **argv)
 	mysignal(SIGUSR1, sigusr1_handler);
 
 	panel_main_loop(&p);
+	while (reload) {
+		reload_config();
+		reload = 0;
+		panel_main_loop(&p);
+	}
 	
 	free_panel(&p);
 	free_config_format_tree(&theme);

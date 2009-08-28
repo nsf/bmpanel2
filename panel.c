@@ -451,6 +451,7 @@ void free_panel(struct panel *panel)
 		struct widget *w = &panel->widgets[i];
 		(*w->interface->destroy_widget_private)(w);
 	}
+	panel->widgets_n = 0;
 
 	g_object_unref(panel->layout);
 	cairo_destroy(panel->cr);
@@ -458,6 +459,100 @@ void free_panel(struct panel *panel)
 	XFreePixmap(panel->connection.dpy, panel->bg);
 	free_panel_theme(&panel->theme);
 	x_disconnect(&panel->connection);
+}
+
+void reconfigure_free_panel(struct panel *panel)
+{
+	/* free stuff */
+	if (panel->render->free_private)
+		(*panel->render->free_private)(panel);
+
+	size_t i;
+	for (i = 0; i < panel->widgets_n; ++i) {
+		struct widget *w = &panel->widgets[i];
+		(*w->interface->destroy_widget_private)(w);
+	}
+	panel->widgets_n = 0;
+
+	g_object_unref(panel->layout);
+	cairo_destroy(panel->cr);
+	free_panel_theme(&panel->theme);
+}
+
+void reconfigure_panel(struct panel *panel, struct config_format_tree *tree)
+{
+	/* reload theme */
+	if (load_panel_theme(&panel->theme, tree))
+		XDIE("Failed to load theme format file");
+	
+	/* reparse config values */
+	panel->drag_threshold = parse_int("drag_threshold",
+					  &g_settings.root, 30);
+	
+	/* check render interface */
+	select_render_interface(panel);
+
+	/* move panel */
+	struct x_connection *c = &panel->connection;
+	struct panel_theme *t = &panel->theme;
+
+	int x,y,w,h;
+	long strut[12] = {0};
+	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
+	panel->x = x;
+	panel->y = y;
+	panel->width = w;
+	panel->height = h;
+	
+	XFreePixmap(panel->connection.dpy, panel->bg);
+	panel->bg = x_create_default_pixmap(c, w, h);
+	
+	/* render private */
+	if (panel->render->create_private)
+		(*panel->render->create_private)(panel);
+
+	/* rendering context */
+	(*panel->render->create_dc)(panel);
+
+	/* create text layout */
+	panel->layout = pango_cairo_create_layout(panel->cr);
+	
+	/* reparse panel widgets */
+	parse_panel_widgets(panel, tree);
+	recalculate_widgets_sizes(panel);
+
+	/* all ok, update window */
+	XSetWindowBackgroundPixmap(c->dpy, panel->win, panel->bg);
+	XFlush(c->dpy);
+	expose_panel(panel);
+
+	XMoveResizeWindow(c->dpy, panel->win, x, y, w, h);
+	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
+	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
+			 strut, 12);
+
+	XSizeHints size_hints;
+	size_hints.x = x;
+	size_hints.y = y;
+	size_hints.width = w;
+	size_hints.height = h;
+
+	size_hints.flags = PPosition | PMaxSize | PMinSize;
+	size_hints.min_width = size_hints.max_width = w;
+	size_hints.min_height = size_hints.max_height = h;
+	XSetWMNormalHints(c->dpy, panel->win, &size_hints);
+	XFlush(c->dpy);
+}
+
+void reconfigure_widgets(struct panel *panel)
+{
+	size_t i;
+	for (i = 0; i < panel->widgets_n; ++i) {
+		struct widget *w = &panel->widgets[i];
+		if (w->interface->reconfigure)
+			(*w->interface->reconfigure)(w);
+	}
+	recalculate_widgets_sizes(panel);
 }
 
 static void panel_property_notify(struct panel *p, XPropertyEvent *e)
@@ -543,6 +638,7 @@ static int process_events(struct panel *p)
 		case UnmapNotify:
 		case VisibilityNotify:
 		case ReparentNotify:
+		case SelectionClear:
 			/* skip? */
 			break;
 
@@ -634,6 +730,6 @@ void panel_main_loop(struct panel *panel)
 	g_timeout_add(1000, panel_second_timeout, panel);
 
 	g_main_loop_run(panel->loop);
-	g_main_destroy(panel->loop);
+	g_main_loop_unref(panel->loop);
 }
 

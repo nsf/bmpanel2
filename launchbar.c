@@ -8,6 +8,7 @@ static void draw(struct widget *w);
 static void mouse_motion(struct widget *w, XMotionEvent *e);
 static void mouse_leave(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
+static void reconfigure(struct widget *w);
 
 struct widget_interface launchbar_interface = {
 	.theme_name		= "launchbar",
@@ -17,7 +18,8 @@ struct widget_interface launchbar_interface = {
 	.draw			= draw,
 	.mouse_motion		= mouse_motion,
 	.mouse_leave		= mouse_leave,
-	.button_click		= button_click
+	.button_click		= button_click,
+	.reconfigure		= reconfigure
 };
 
 static int get_item(struct launchbar_widget *lw, int x)
@@ -102,6 +104,23 @@ static void destroy_widget_private(struct widget *w)
 	}
 	FREE_ARRAY(lw->items);
 	xfree(lw);
+}
+
+static void reconfigure(struct widget *w)
+{
+	struct launchbar_widget *lw = (struct launchbar_widget*)w->private;
+
+	/* free items */	
+	size_t i;
+	for (i = 0; i < lw->items_n; ++i) {
+		cairo_surface_destroy(lw->items[i].icon);
+		xfree(lw->items[i].execstr);
+	}
+	CLEAR_ARRAY(lw->items);
+	lw->active = -1;
+	int items = parse_items(lw);
+
+	w->width = items * (lw->icon_size[0] + 5) + 5;
 }
 
 static void draw(struct widget *w)

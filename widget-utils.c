@@ -438,8 +438,10 @@ void free_static_buf(void *ptr)
 
 void clean_static_buf()
 {
-	if (static_buf)
+	if (static_buf) {
 		xfree(static_buf);
+		static_buf = 0;
+	}
 }
 
 /**************************************************************************
