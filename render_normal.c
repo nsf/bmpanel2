@@ -1,34 +1,16 @@
 #include "gui.h"
 #include "widget-utils.h"
 
-static void create_win(struct panel *p, int x, int y, 
-		       unsigned int w, unsigned int h, long event_mask);
 static void create_dc(struct panel *p);
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h);
 static void panel_resize(struct panel *p);
 
 struct render_interface render_normal = {
 	.name = "normal",
-	.create_win = create_win,
 	.create_dc = create_dc,
 	.blit = blit,
 	.panel_resize = panel_resize
 };
-
-static void create_win(struct panel *p, int x, int y, 
-		       unsigned int w, unsigned int h, long event_mask)
-{
-	struct x_connection *c = &p->connection;
-
-	p->bg = x_create_default_pixmap(c, w, h);
-
-	XSetWindowAttributes attrs;
-	attrs.background_pixmap = p->bg;
-	attrs.event_mask = event_mask;
-
-	p->win = x_create_default_window(c, x, y, w, h, 
-					 CWBackPixmap | CWEventMask, &attrs);
-}
 
 static void create_dc(struct panel *p)
 {

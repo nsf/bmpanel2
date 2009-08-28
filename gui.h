@@ -157,10 +157,6 @@ struct panel {
 struct render_interface {
 	const char *name;
 
-	/* creates p->win and p->bg */
-	void (*create_win)(struct panel *p, int x, int y, 
-			   unsigned int w, unsigned int h, long event_mask);
-
 	/* creates private render data (called after create_win) */
 	void (*create_private)(struct panel *p);
 	void (*free_private)(struct panel *p);

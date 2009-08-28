@@ -161,10 +161,15 @@ static void create_window(struct panel *panel, int ax, int ay, int aw)
 		get_strut_for_position(c, t, x, y, w, h, strut);
 	}
 
-	(*panel->render->create_win)(panel, x, y, w, h, 
-			ExposureMask | StructureNotifyMask | ButtonPressMask |
-			ButtonReleaseMask | PointerMotionMask | EnterWindowMask |
-			LeaveWindowMask);
+	panel->bg = x_create_default_pixmap(c, w, h);
+
+	XSetWindowAttributes attrs;
+	attrs.background_pixmap = panel->bg;
+	attrs.event_mask = ExposureMask | StructureNotifyMask | ButtonPressMask |
+		ButtonReleaseMask | PointerMotionMask | EnterWindowMask |
+		LeaveWindowMask;
+	panel->win = x_create_default_window(c, x, y, w, h, 
+					     CWBackPixmap | CWEventMask, &attrs);
 
 	panel->x = x;
 	panel->y = y;
