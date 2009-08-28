@@ -153,9 +153,11 @@ static int parse_format_entry(struct config_format_entry *te,
 			vend = ctx->cur;
 
 			te->value = vstart;
-			*vend = '\0';
-			ctx->cur++; /* next line */
-			ctx->line++;
+			if (*vend) {
+				*vend = '\0';
+				ctx->cur++; /* next line */
+				ctx->line++;
+			}
 	}
 	
 	/* delayed nullifing */
