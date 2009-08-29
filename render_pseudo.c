@@ -64,7 +64,6 @@ static void create_dc(struct panel *p)
 
 	p->cr = cairo_create(backbuf);
 	cairo_surface_destroy(backbuf);
-	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
 }
 	
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
@@ -83,9 +82,12 @@ static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 		cairo_restore(pr->buf_cr);
 	}
 	/* composite gui with background */
-	cairo_set_operator(p->cr, CAIRO_OPERATOR_OVER);
 	blit_image_ex(cairo_get_target(p->cr), pr->buf_cr, x, y, w, h, x, y);
+	cairo_save(p->cr);
 	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
+	cairo_set_source_rgba(p->cr, 0, 0, 0, 0);
+	cairo_paint(p->cr);
+	cairo_restore(p->cr);
 	
 	/* put everything to the background pixmap and clear area */
 	blit_image_ex(cairo_get_target(pr->buf_cr), pr->blit_cr, x, y, w, h, x, y);
@@ -122,7 +124,6 @@ static void panel_resize(struct panel *p)
 
 	p->cr = cairo_create(backbuf);
 	cairo_surface_destroy(backbuf);
-	cairo_set_operator(p->cr, CAIRO_OPERATOR_SOURCE);
 
 	/* p->bg */
 	XFreePixmap(c->dpy, p->bg);

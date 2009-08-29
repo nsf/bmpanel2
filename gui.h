@@ -87,6 +87,7 @@ struct widget {
 
 	int needs_expose;
 	int no_separator;
+	int paint_replace; /* for transparent render */
 
 	void *private; /* private part */
 };

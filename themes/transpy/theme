@@ -8,6 +8,7 @@ panel
 	transparent
 
 desktop_switcher
+	paint_replace
 	idle
 		left_corner lblack_l.png
 		left lblack_t.png
@@ -28,6 +29,7 @@ desktop_switcher
 			offset 0 1
 
 taskbar
+	paint_replace
 	idle
 		left lblack_l.png
 		center lblack_t.png
@@ -53,6 +55,7 @@ systray
 		offset 0 1
 
 clock
+	paint_replace
 	background
 		center bg.png
 

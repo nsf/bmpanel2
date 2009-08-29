@@ -252,6 +252,7 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 			if ((*we->create_widget_private)(w, e, tree) == 0) {
 				panel->widgets_n++;
 				w->no_separator = parse_bool("no_separator", e);
+				w->paint_replace = parse_bool("paint_replace", e);
 			} else {
 				XWARNING("Failed to create widget: \"%s\"", e->name);
 			}
@@ -342,9 +343,14 @@ static void expose_whole_panel(struct panel *panel)
 		/* background */
 		pattern_image(panel->theme.background, panel->cr, x, 0, w, 0);
 
+		cairo_save(panel->cr);
+		if (wi->paint_replace)
+			cairo_set_operator(panel->cr, CAIRO_OPERATOR_SOURCE);
+
 		/* widget contents */
 		if (wi->interface->draw)
 			(*wi->interface->draw)(wi);
+		cairo_restore(panel->cr);
 
 		/* separator */
 		x += w;
@@ -385,8 +391,13 @@ static void expose_panel(struct panel *panel)
 		if (w->needs_expose) {
 			pattern_image(panel->theme.background, panel->cr, 
 					w->x, 0, w->width, 0);
+			cairo_save(panel->cr);
+			if (w->paint_replace)
+				cairo_set_operator(panel->cr, CAIRO_OPERATOR_SOURCE);
 			if (w->interface->draw)
 				(*w->interface->draw)(w);
+			cairo_restore(panel->cr);
+
 			(*panel->render->blit)(panel, w->x, 0, 
 					       w->width, panel->height);
 			w->needs_expose = 0;
