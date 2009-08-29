@@ -245,6 +245,14 @@ char *parse_string(const char *name, struct config_format_entry *e, const char *
 	return xstrdup(def);
 }
 
+char *parse_string_or_null(const char *name, struct config_format_entry *e)
+{
+	const char *v = find_config_format_entry_value(e, name);
+	if (v)
+		return xstrdup(v);
+	return 0;
+}
+
 void required_entry_not_found(struct config_format_entry *e, const char *name)
 {
 	char buf[2048];

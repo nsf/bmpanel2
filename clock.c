@@ -1,4 +1,5 @@
 #include <time.h>
+#include "settings.h"
 #include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
@@ -6,6 +7,8 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
 static void clock_tick(struct widget *w);
+static void button_click(struct widget *w, XButtonEvent *e);
+static void reconfigure(struct widget *w);
 
 struct widget_interface clock_interface = {
 	.theme_name 		= "clock",
@@ -13,7 +16,9 @@ struct widget_interface clock_interface = {
 	.create_widget_private 	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
 	.draw 			= draw,
-	.clock_tick 		= clock_tick
+	.clock_tick 		= clock_tick,
+	.button_click		= button_click,
+	.reconfigure		= reconfigure
 };
 
 /**************************************************************************
@@ -70,6 +75,11 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		pics_width += image_width(cw->theme.background.left);
 		pics_width += image_width(cw->theme.background.right);
 	}
+	cw->clock_prog = parse_string_or_null("clock_prog", 
+					      &g_settings.root);
+	cw->mouse_button = parse_int("clock_mouse_button", 
+				     &g_settings.root, 1);
+
 	w->width = text_width + pics_width;
 	w->private = cw;
 	return 0;
@@ -79,6 +89,8 @@ static void destroy_widget_private(struct widget *w)
 {
 	struct clock_widget *cw = (struct clock_widget*)w->private;
 	free_clock_theme(&cw->theme);
+	if (cw->clock_prog) 
+		xfree(cw->clock_prog);
 	xfree(cw);
 }
 
@@ -146,3 +158,24 @@ static void clock_tick(struct widget *w)
 	w->needs_expose = 1;
 }
 
+static void button_click(struct widget *w, XButtonEvent *e)
+{
+	struct clock_widget *cw = (struct clock_widget*)w->private;
+	if (!cw->clock_prog)
+		return;
+
+	if (cw->mouse_button == e->button && e->type == ButtonRelease)
+		g_spawn_command_line_async(cw->clock_prog, 0);
+}
+
+static void reconfigure(struct widget *w)
+{
+	struct clock_widget *cw = (struct clock_widget*)w->private;
+	if (cw->clock_prog)
+		xfree(cw->clock_prog);
+	
+	cw->clock_prog = parse_string_or_null("clock_prog", 
+					      &g_settings.root);
+	cw->mouse_button = parse_int("clock_mouse_button", 
+				     &g_settings.root, 1);
+}

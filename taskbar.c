@@ -17,6 +17,7 @@ static void mouse_motion(struct widget *w, XMotionEvent *e);
 static void mouse_leave(struct widget *w);
 
 static void clock_tick(struct widget *w);
+static void reconfigure(struct widget *w);
 
 struct widget_interface taskbar_interface = {
 	.theme_name 		= "taskbar",
@@ -32,7 +33,8 @@ struct widget_interface taskbar_interface = {
 	.client_msg		= client_msg,
 	.mouse_motion		= mouse_motion,
 	.mouse_leave		= mouse_leave,
-	.clock_tick		= clock_tick
+	.clock_tick		= clock_tick,
+	.reconfigure		= reconfigure
 };
 
 /**************************************************************************
@@ -219,19 +221,22 @@ static int highlighted_state_exists(struct taskbar_theme *theme, int active)
 	return 0;
 }
 
-static void draw_task(struct taskbar_task *task, struct taskbar_theme *theme,
+static void draw_task(struct taskbar_task *task, struct taskbar_widget *tw,
 		cairo_t *cr, PangoLayout *layout, int x, int w, int active,
 		int highlighted)
 {
-	/* TODO: dirty hacking here, logic refactoring required */
-	if (active)
-		task->demands_attention = 0;
+	struct taskbar_theme *theme = &tw->theme;
 
-	if (task->demands_attention > 0) {
-		if (highlighted_state_exists(theme, active))
-			highlighted = task->demands_attention - 1;
-		else
-			active = task->demands_attention - 1;
+	if (tw->task_urgency_hint) {
+		if (active)
+			task->demands_attention = 0;
+
+		if (task->demands_attention > 0) {
+			if (highlighted_state_exists(theme, active))
+				highlighted = task->demands_attention - 1;
+			else
+				active = task->demands_attention - 1;
+		}
 	}
 
 	/* calculations */
@@ -418,6 +423,8 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	tw->taken = None;
 	tw->task_death_threshold = parse_int("task_death_threshold", 
 					     &g_settings.root, 50);
+	tw->task_urgency_hint = parse_bool("task_urgency_hint",
+					   &g_settings.root);
 	tw->dnd_cur = XCreateFontCursor(c->dpy, XC_fleur);
 	tw->highlighted = -1;
 
@@ -467,7 +474,8 @@ static void draw(struct widget *w)
 #define TASKS_NEED_CORRECTION (taskw != tw->theme.task_max_width)
 		/* last task width correction */
 		if (TASKS_NEED_CORRECTION &&
-		    (i == tw->tasks_n - 1 || tw->tasks[i+1].desktop != t->desktop))
+		    (i == tw->tasks_n - 1 || 
+		     (t->desktop != -1 && tw->tasks[i+1].desktop != t->desktop)))
 		{
 			taskw = (w->x + w->width) - x;
 		}
@@ -492,7 +500,7 @@ static void draw(struct widget *w)
 		}
 
 
-		draw_task(t, &tw->theme, cr, w->panel->layout,
+		draw_task(t, tw, cr, w->panel->layout,
 			  x, taskw, t->win == tw->active, i == tw->highlighted);
 		x += taskw;
 	}
@@ -763,4 +771,14 @@ static void clock_tick(struct widget *w)
 			t->demands_attention = 1 + (seconds % 2);
 		}
 	}
+}
+
+static void reconfigure(struct widget *w)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+
+	tw->task_death_threshold = parse_int("task_death_threshold", 
+					     &g_settings.root, 50);
+	tw->task_urgency_hint = parse_bool("task_urgency_hint",
+					   &g_settings.root);
 }

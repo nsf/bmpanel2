@@ -62,8 +62,11 @@ struct taskbar_widget {
 	Window dnd_win;
 	Window taken;
 
-	int task_death_threshold;
 	Cursor dnd_cur;
+	
+	/* parameters from bmpanel2rc */
+	int task_death_threshold;
+	int task_urgency_hint;
 };
 
 extern struct widget_interface taskbar_interface;
@@ -80,6 +83,10 @@ struct clock_theme {
 
 struct clock_widget {
 	struct clock_theme theme;
+	
+	/* parameters from bmpanel2rc */
+	char *clock_prog;
+	int mouse_button;
 };
 
 extern struct widget_interface clock_interface;
@@ -180,6 +187,7 @@ struct launchbar_item {
 };
 
 struct launchbar_widget {
+	/* parameters from bmpanel2rc */
 	/* array */
 	struct launchbar_item *items;
 	size_t items_n;

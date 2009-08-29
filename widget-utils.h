@@ -68,6 +68,7 @@ int parse_int(const char *name, struct config_format_entry *e, int def);
 int parse_bool(const char *name, struct config_format_entry *e);
 char *parse_string(const char *name, struct config_format_entry *e, 
 		   const char *def);
+char *parse_string_or_null(const char *name, struct config_format_entry *e);
 
 /* nice error message */
 void required_entry_not_found(struct config_format_entry *e, const char *name);

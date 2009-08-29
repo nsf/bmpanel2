@@ -1,5 +1,5 @@
-#include "builtin-widgets.h"
 #include "settings.h"
+#include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 				 struct config_format_tree *tree);
