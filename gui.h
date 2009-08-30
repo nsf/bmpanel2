@@ -76,6 +76,8 @@ struct widget_interface {
 	/* this is a hack, but it is required for pseudo-transparency */
 	void (*panel_exposed)(struct widget *w);
 	void (*reconfigure)(struct widget *w);
+	int (*retheme_reconfigure)(struct widget *w, struct config_format_entry *e,
+				   struct config_format_tree *tree);
 };
 
 struct widget {
@@ -98,6 +100,11 @@ struct widget_interface *lookup_widget_interface(const char *themename);
 /**************************************************************************
   Panel
 **************************************************************************/
+
+struct widget_stash {
+	struct widget *widgets;
+	size_t widgets_n;
+};
 
 #define PANEL_POSITION_TOP 0
 #define PANEL_POSITION_BOTTOM 1
@@ -185,8 +192,9 @@ extern struct render_interface render_pseudo;
 void init_panel(struct panel *panel, struct config_format_tree *tree,
 		int x, int y, int w);
 void free_panel(struct panel *panel);
-void reconfigure_free_panel(struct panel *panel);
-void reconfigure_panel(struct panel *panel, struct config_format_tree *tree);
+void reconfigure_free_panel(struct panel *panel, struct widget_stash *stash);
+void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
+		       struct widget_stash *stash);
 void reconfigure_widgets(struct panel *panel);
 void panel_main_loop(struct panel *panel);
 

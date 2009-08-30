@@ -42,9 +42,9 @@ static void try_add_image_to_cache(struct image *img)
 	images_cache[images_cache_n++] = img;	
 }
 
-static void free_image(struct image *img)
+static void free_image(struct image *img, int final)
 {
-	if (cairo_surface_get_reference_count(img->surface) > 1)
+	if (final && cairo_surface_get_reference_count(img->surface) > 1)
 		XWARNING("Image: \"%s\" has big ref count", img->filename);
 	xfree(img->filename);
 	cairo_surface_destroy(img->surface);
@@ -89,10 +89,10 @@ cairo_surface_t *get_image_part(const char *path, int x, int y, int w, int h)
 	return dest;
 }
 
-void clean_image_cache()
+void clean_image_cache(int final)
 {
 	size_t i;
 	for (i = 0; i < images_cache_n; ++i)
-		free_image(images_cache[i]);
+		free_image(images_cache[i], final);
 	images_cache_n = 0;
 }

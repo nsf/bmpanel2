@@ -8,6 +8,8 @@ static void win_destroy(struct widget *w, XDestroyWindowEvent *e);
 static void configure(struct widget *w, XConfigureEvent *e);
 static void panel_exposed(struct widget *w);
 static void draw(struct widget *w);
+static int retheme_reconfigure(struct widget *w, struct config_format_entry *e, 
+			       struct config_format_tree *tree);
 
 struct widget_interface systray_interface = {
 	.theme_name 		= "systray",
@@ -18,7 +20,8 @@ struct widget_interface systray_interface = {
 	.win_destroy 		= win_destroy,
 	.configure		= configure,
 	.draw			= draw,
-	.panel_exposed		= panel_exposed
+	.panel_exposed		= panel_exposed,
+	.retheme_reconfigure	= retheme_reconfigure
 };
 
 /**************************************************************************
@@ -240,6 +243,8 @@ static void panel_exposed(struct widget *w)
 	for (i = 0; i < sw->icons_n; ++i) {
 		XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y, 
 				  st->icon_size[0], st->icon_size[1]);
+		XResizeWindow(c->dpy, sw->icons[i].icon, 
+			      st->icon_size[0], st->icon_size[1]);
 		if (!sw->icons[i].mapped) {
 			XMapRaised(c->dpy, sw->icons[i].embedder);
 			sw->icons[i].mapped = 1;
@@ -308,4 +313,23 @@ static void draw(struct widget *w)
 			blit_image(st->background.right, cr, x, 0);
 		x -= centerw;
 	}
+}
+
+static int retheme_reconfigure(struct widget *w, struct config_format_entry *e, 
+			       struct config_format_tree *tree)
+{
+	struct systray_widget *sw = (struct systray_widget*)w->private;
+	struct systray_theme *st = &sw->theme;
+	struct systray_theme tmptheme;
+	CLEAR_STRUCT(&tmptheme);
+
+	if (parse_systray_theme(&tmptheme, e, tree)) { 
+		XWARNING("Failed to parse systray theme");
+		return -1;
+	}
+
+	free_systray_theme(st);
+	*st = tmptheme;	
+	update_systray_width(w);
+	return 0;
 }

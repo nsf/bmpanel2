@@ -204,16 +204,17 @@ static void reload_config()
 	load_settings();
 
 	if (strcmp(get_theme_name(), previous_theme) != 0) {
+		struct widget_stash ws;
 		/* free theme */
 		free_config_format_tree(&theme);
-		reconfigure_free_panel(&p);
-		clean_image_cache();
+		reconfigure_free_panel(&p, &ws);
 
 		/* reload */
 		if (load_theme(&theme, theme_override) < 0)
 			XDIE("Failed to load theme");
 
-		reconfigure_panel(&p, &theme);
+		reconfigure_panel(&p, &theme, &ws);
+		clean_image_cache(0);
 	} else {
 		reconfigure_widgets(&p);
 	}
@@ -277,6 +278,7 @@ int main(int argc, char **argv)
 	load_settings();
 	if (load_theme(&theme, theme_override) < 0)
 		XDIE("Failed to load theme");
+	clean_image_cache(0);
 	
 	register_widget_interface(&desktops_interface);
 	register_widget_interface(&taskbar_interface);
@@ -301,8 +303,8 @@ int main(int argc, char **argv)
 	
 	free_panel(&p);
 	free_config_format_tree(&theme);
-	clean_image_cache();
 	clean_static_buf();
+	clean_image_cache(1);
 	free_settings();
 	xmemstat(0, 0, 1);
 	return EXIT_SUCCESS;

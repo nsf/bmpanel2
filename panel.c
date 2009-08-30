@@ -3,6 +3,16 @@
 #include "settings.h"
 #include "widget-utils.h"
 
+static int find_widget_in_stash(const char *interface, struct widget_stash *stash)
+{
+	size_t i;
+	for (i = 0; i < stash->widgets_n; ++i) {
+		if (!strcmp(stash->widgets[i].interface->theme_name, interface))
+			return (int)i;
+	}
+	return -1;
+}
+
 /**************************************************************************
   Panel theme
 **************************************************************************/
@@ -260,6 +270,56 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 	}
 }
 
+static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
+					      struct panel *panel, 
+					      struct config_format_tree *tree)
+{
+	size_t i;
+	for (i = 0; i < tree->root.children_n; ++i) {
+		struct config_format_entry *e = &tree->root.children[i];
+		struct widget_interface *we = lookup_widget_interface(e->name);
+		if (we) {
+			if (panel->widgets_n == PANEL_MAX_WIDGETS)
+				XDIE("error: Widgets limit reached");
+			
+			struct widget *w = &panel->widgets[panel->widgets_n];
+
+			w->interface = we;
+			w->panel = panel;
+			w->needs_expose = 0;
+			
+			int stashwi = find_widget_in_stash(e->name, stash);
+			if (stashwi != -1 && we->retheme_reconfigure) {
+				/* pop widget from the stash */
+				struct widget *sw = &stash->widgets[stashwi];
+				*w = *sw;
+				*sw = stash->widgets[stash->widgets_n-1];
+				stash->widgets_n--;
+
+				/* try retheme or destroy */
+				if ((*we->retheme_reconfigure)(w, e, tree) == 0) {
+					panel->widgets_n++;
+
+					w->no_separator = parse_bool("no_separator", e);
+					w->paint_replace = parse_bool("paint_replace", e);
+
+					continue;
+				} else 
+					(*w->interface->destroy_widget_private)(w);
+			}
+
+			/* create new one if failed */
+			if ((*we->create_widget_private)(w, e, tree) == 0) {
+				panel->widgets_n++;
+				w->no_separator = parse_bool("no_separator", e);
+				w->paint_replace = parse_bool("paint_replace", e);
+			} else {
+				XWARNING("Failed to create widget: \"%s\"", e->name);
+			}
+		}
+	}
+}
+
 void recalculate_widgets_sizes(struct panel *panel)
 {
 	const int min_fill_size = 200;
@@ -472,17 +532,17 @@ void free_panel(struct panel *panel)
 	x_disconnect(&panel->connection);
 }
 
-void reconfigure_free_panel(struct panel *panel)
+void reconfigure_free_panel(struct panel *panel, struct widget_stash *stash)
 {
 	/* free stuff */
 	if (panel->render->free_private)
 		(*panel->render->free_private)(panel);
 
-	size_t i;
-	for (i = 0; i < panel->widgets_n; ++i) {
-		struct widget *w = &panel->widgets[i];
-		(*w->interface->destroy_widget_private)(w);
-	}
+	stash->widgets = xmalloc(sizeof(struct widget) * panel->widgets_n);
+	stash->widgets_n = panel->widgets_n;
+	memcpy(stash->widgets, panel->widgets, 
+	       sizeof(struct widget) * panel->widgets_n);
+
 	panel->widgets_n = 0;
 
 	g_object_unref(panel->layout);
@@ -490,7 +550,8 @@ void reconfigure_free_panel(struct panel *panel)
 	free_panel_theme(&panel->theme);
 }
 
-void reconfigure_panel(struct panel *panel, struct config_format_tree *tree)
+void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
+		       struct widget_stash *stash)
 {
 	/* reload theme */
 	if (load_panel_theme(&panel->theme, tree))
@@ -529,7 +590,13 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree)
 	panel->layout = pango_cairo_create_layout(panel->cr);
 	
 	/* reparse panel widgets */
-	parse_panel_widgets(panel, tree);
+	retheme_reconfigure_panel_widgets(stash, panel, tree);
+	size_t i;
+	for (i = 0; i < stash->widgets_n; ++i) {
+		struct widget *w = &stash->widgets[i];
+		(*w->interface->destroy_widget_private)(w);
+	}
+	xfree(stash->widgets);
 	recalculate_widgets_sizes(panel);
 
 	/* all ok, update window */
