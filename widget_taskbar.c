@@ -580,6 +580,8 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 
 	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
 		struct taskbar_task *t = &tw->tasks[ti];
+		if (x_is_window_hidden(c, t->win))
+			remove_task(tw, ti);
 		t->demands_attention = x_is_window_demands_attention(c, t->win);
 		return;
 	}
