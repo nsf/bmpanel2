@@ -173,8 +173,6 @@ static int show_version;
 static int show_list;
 static const char *theme_override;
 
-static int reload = 0;
-
 #define BMPANEL2_VERSION_STR "bmpanel2 version 2.0 alpha\n"
 #define BMPANEL2_USAGE \
 "usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
@@ -233,10 +231,15 @@ static void sigterm_handler(int xxx)
 	g_main_loop_quit(p.loop);
 }
 
+static gboolean reload_config_event(gpointer data)
+{
+	reload_config();
+	return 0;
+}
+
 static void sigusr1_handler(int xxx)
 {
-	reload = 1;
-	g_main_loop_quit(p.loop);
+	g_idle_add(reload_config_event, 0);
 }
 
 static void mysignal(int sig, void (*handler)(int))
@@ -274,6 +277,9 @@ static void parse_bmpanel2_args(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+	g_thread_init(0);
+	if (!g_thread_supported())
+		XDIE("bmpanel2 requires glib with thread support enabled");
 	parse_bmpanel2_args(argc, argv);
 	load_settings();
 	if (load_theme(&theme, theme_override) < 0)
@@ -295,11 +301,6 @@ int main(int argc, char **argv)
 	mysignal(SIGUSR1, sigusr1_handler);
 
 	panel_main_loop(&p);
-	while (reload) {
-		reload_config();
-		reload = 0;
-		panel_main_loop(&p);
-	}
 	
 	free_panel(&p);
 	free_config_format_tree(&theme);
