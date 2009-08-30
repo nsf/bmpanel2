@@ -21,19 +21,19 @@ SET(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/bmpanel.c
 	${CMAKE_CURRENT_SOURCE_DIR}/xutil.c
 	${CMAKE_CURRENT_SOURCE_DIR}/panel.c
-	${CMAKE_CURRENT_SOURCE_DIR}/taskbar.c
-	${CMAKE_CURRENT_SOURCE_DIR}/clock.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_taskbar.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_clock.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-interface.c
 	${CMAKE_CURRENT_SOURCE_DIR}/image-cache.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-utils.c
 	${CMAKE_CURRENT_SOURCE_DIR}/event-dispatchers.c
 	${CMAKE_CURRENT_SOURCE_DIR}/xdg.c
 	${CMAKE_CURRENT_SOURCE_DIR}/settings.c
-	${CMAKE_CURRENT_SOURCE_DIR}/decor.c
-	${CMAKE_CURRENT_SOURCE_DIR}/desktops.c
-	${CMAKE_CURRENT_SOURCE_DIR}/systray.c
-	${CMAKE_CURRENT_SOURCE_DIR}/launchbar.c
-	${CMAKE_CURRENT_SOURCE_DIR}/empty.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_decor.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_desktops.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_systray.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_launchbar.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget_empty.c
 	${CMAKE_CURRENT_SOURCE_DIR}/render_normal.c
 	${CMAKE_CURRENT_SOURCE_DIR}/render_pseudo.c
 	${CMAKE_CURRENT_SOURCE_DIR}/args.c
