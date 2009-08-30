@@ -583,6 +583,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		if (x_is_window_hidden(c, t->win))
 			remove_task(tw, ti);
 		t->demands_attention = x_is_window_demands_attention(c, t->win);
+		w->needs_expose = 1;
 		return;
 	}
 }
