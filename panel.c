@@ -558,8 +558,7 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 		XDIE("Failed to load theme format file");
 	
 	/* reparse config values */
-	panel->drag_threshold = parse_int("drag_threshold",
-					  &g_settings.root, 30);
+	reconfigure_panel_config(panel);
 	
 	/* check render interface */
 	select_render_interface(panel);
@@ -620,6 +619,12 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 	size_hints.min_height = size_hints.max_height = h;
 	XSetWMNormalHints(c->dpy, panel->win, &size_hints);
 	XFlush(c->dpy);
+}
+
+void reconfigure_panel_config(struct panel *panel)
+{
+	panel->drag_threshold = parse_int("drag_threshold",
+					  &g_settings.root, 30);
 }
 
 void reconfigure_widgets(struct panel *panel)

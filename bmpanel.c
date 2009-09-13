@@ -214,6 +214,7 @@ static void reload_config()
 		reconfigure_panel(&p, &theme, &ws);
 		clean_image_cache(0);
 	} else {
+		reconfigure_panel_config(&p);
 		reconfigure_widgets(&p);
 	}
 	xfree(previous_theme);
