@@ -260,11 +260,14 @@ class IconList(gtk.Widget):
 
 	def remove(self, where_index):
 		assert(where_index >= 0 and where_index < len(self.icons))
+		commit_change = False
 		if self.icons[where_index].icon != None and self.icons[where_index].prog != None:
-			self.changed_cb()
+			commit_change = True
 		del self.icons[where_index]
 		self._validate_active()
 		self._update_gui()
+		if commit_change:
+			self.changed_cb()
 
 	def change(self, where_index, prog, icon):
 		assert(where_index >= 0 and where_index < len(self.icons))
