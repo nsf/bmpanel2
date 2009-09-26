@@ -435,7 +435,11 @@ class LaunchbarEditor:
 			active = iconlist.active
 			if response != gtk.RESPONSE_OK:
 				if active != -1:
-					e2.set_filename(iconlist.icons[active].icon)
+					icon = iconlist.icons[active].icon
+					if icon:
+						e2.set_filename(iconlist.icons[active].icon)
+					else:
+						e2.unselect_all()
 				return
 			if active != -1:
 				a = iconlist.icons[active]
