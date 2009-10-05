@@ -20,6 +20,7 @@ class ThemesListbox:
 	def __init__(self):
 		scroll = gtk.ScrolledWindow()
 		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scroll.set_shadow_type(gtk.SHADOW_IN)
 
 		model = gtk.ListStore(gobject.TYPE_STRING,
 					gobject.TYPE_PYOBJECT)
@@ -47,10 +48,8 @@ class ThemesListbox:
 		view.get_selection().connect('changed', self.view_cursor_changed)
 
 		scroll.add(view)
-		frame = gtk.Frame()
-		frame.add(scroll)
-		frame.set_size_request(200, -1)
-		self.widget = frame
+		scroll.set_size_request(200, -1)
+		self.widget = scroll
 
 	def view_cursor_changed(self, selection):
 		(model, it) = selection.get_selected()
