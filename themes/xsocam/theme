@@ -29,6 +29,9 @@ desktop_switcher
 
 	separator ds_separator_img.png
 
+launchbar 
+	icon_size 24 24
+
 taskbar
 	idle
 		left tb_left_idle_img.png

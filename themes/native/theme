@@ -7,9 +7,6 @@ panel
 	separator separator_img.png
 	background tile_img.png
 
-#decor decor_test.png
-#	no_separator
-
 desktop_switcher
 	idle
 		left_corner ds_left_corner_idle_img.png
@@ -32,6 +29,8 @@ desktop_switcher
 
 	separator ds_separator_img.png
 
+launchbar 
+	icon_size 24 24
 
 taskbar
 	idle
