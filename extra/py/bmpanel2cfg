@@ -6,8 +6,43 @@ from gtk import gdk
 
 g_remote = bmpanel2.Bmpanel2Remote()
 g_config = bmpanel2.Bmpanel2Config()
-g_themes = bmpanel2.Bmpanel2Themes()
 g_launch = bmpanel2.Bmpanel2Launchbar(g_config)
+
+#----------------------------------------------------------------------
+from threading import Thread
+
+class ThemeDeferredLoader(Thread):
+	def __init__(self, view, model, callback):
+		Thread.__init__(self)
+		self.gui_view = view
+		self.gui_model = model
+		self.gui_callback = callback
+
+	def run(self):
+		view = self.gui_view
+		model = self.gui_model
+
+		themes = bmpanel2.Bmpanel2Themes()
+		gdk.threads_enter()
+		for t in themes.themes:
+			name = t.dirname
+			if t.name:
+				name = t.name
+			model.append((name, t))
+		current_theme = g_config.get_theme()
+		current_theme_num = 0
+
+		for i in xrange(len(model)):
+			if model[i][1].dirname == current_theme:
+				current_theme_num = i
+				break
+
+		view.set_cursor((current_theme_num,))
+		view.scroll_to_cell((current_theme_num,))
+		view.get_selection().connect('changed', self.gui_callback)
+		view.set_sensitive(True)
+		gdk.threads_leave()
+#----------------------------------------------------------------------
 
 def reconfigure():
 	g_config.save()
@@ -28,24 +63,10 @@ class ThemesListbox:
 		column = gtk.TreeViewColumn("Theme", renderer, text=0)
 		view = gtk.TreeView(model)
 		view.append_column(column)
+		view.set_sensitive(False)
 
-		for t in g_themes.themes:
-			name = t.dirname
-			if t.name:
-				name = t.name
-
-			model.append((name, t))
-
-		current_theme = g_config.get_theme()
-		current_theme_num = 0
-		for i in xrange(len(model)):
-			if model[i][1].dirname == current_theme:
-				current_theme_num = i
-				break
-
-		view.set_cursor((current_theme_num,))
-		view.scroll_to_cell((current_theme_num,))
-		view.get_selection().connect('changed', self.view_cursor_changed)
+		theme_loader = ThemeDeferredLoader(view, model, self.view_cursor_changed)
+		theme_loader.start()
 
 		scroll.add(view)
 		scroll.set_size_request(200, -1)
@@ -529,6 +550,8 @@ class LaunchbarEditor:
 			node2 = bmpanel2.ConfigNode(name="icon", value=i.icon)
 			g_config.tree.append_node_as_child(node2, node)
 		reconfigure()
+
+gdk.threads_init()
 
 def die(widget, data=None):
 	gtk.main_quit()
