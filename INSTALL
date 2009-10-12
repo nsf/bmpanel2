@@ -11,6 +11,8 @@ BMPanel2 currently installs following files:
 	PREFIX/share/bmpanel2/themes/native/*
 	PREFIX/share/bmpanel2/themes/transpy/*
 
+--------------------------------------------------------------
+**** TODO: This is deprecated ****
 You can also force separation for binary and data in two
 completely different places.
 
@@ -21,6 +23,7 @@ In that case:
 	BMPANEL2_BINARY_PATH/bmpanel2
 	BMPANEL2_DATA_PATH/themes/native/*
 	BMPANEL2_DATA_PATH/themes/transpy/*
+--------------------------------------------------------------
 
 But using this variables isn't recommended! If you don't know what you're doing,
 contact me, I'll explain and fix this guide.
