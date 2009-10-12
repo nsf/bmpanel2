@@ -249,23 +249,24 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 	for (i = 0; i < tree->root.children_n; ++i) {
 		struct config_format_entry *e = &tree->root.children[i];
 		struct widget_interface *we = lookup_widget_interface(e->name);
-		if (we) {
-			if (panel->widgets_n == PANEL_MAX_WIDGETS)
-				XDIE("error: Widgets limit reached");
-			
-			struct widget *w = &panel->widgets[panel->widgets_n];
+		if (!we) 
+			continue;
 
-			w->interface = we;
-			w->panel = panel;
-			w->needs_expose = 0;
+		if (panel->widgets_n == PANEL_MAX_WIDGETS)
+			XDIE("error: Widgets limit reached");
+		
+		struct widget *w = &panel->widgets[panel->widgets_n];
 
-			if ((*we->create_widget_private)(w, e, tree) == 0) {
-				panel->widgets_n++;
-				w->no_separator = parse_bool("no_separator", e);
-				w->paint_replace = parse_bool("paint_replace", e);
-			} else {
-				XWARNING("Failed to create widget: \"%s\"", e->name);
-			}
+		w->interface = we;
+		w->panel = panel;
+		w->needs_expose = 0;
+
+		if ((*we->create_widget_private)(w, e, tree) == 0) {
+			panel->widgets_n++;
+			w->no_separator = parse_bool("no_separator", e);
+			w->paint_replace = parse_bool("paint_replace", e);
+		} else {
+			XWARNING("Failed to create widget: \"%s\"", e->name);
 		}
 	}
 }
