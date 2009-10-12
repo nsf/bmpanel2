@@ -173,7 +173,7 @@ static int show_version;
 static int show_list;
 static const char *theme_override;
 
-#define BMPANEL2_VERSION_STR "bmpanel2 version 2.0 alpha\n"
+#define BMPANEL2_VERSION_STR "bmpanel2 version 2.1\n"
 #define BMPANEL2_USAGE \
 "usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
 
