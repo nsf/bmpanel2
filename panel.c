@@ -279,44 +279,45 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 	for (i = 0; i < tree->root.children_n; ++i) {
 		struct config_format_entry *e = &tree->root.children[i];
 		struct widget_interface *we = lookup_widget_interface(e->name);
-		if (we) {
-			if (panel->widgets_n == PANEL_MAX_WIDGETS)
-				XDIE("error: Widgets limit reached");
+		if (!we)
+			continue;
 			
-			struct widget *w = &panel->widgets[panel->widgets_n];
+		if (panel->widgets_n == PANEL_MAX_WIDGETS)
+			XDIE("error: Widgets limit reached");
+		
+		struct widget *w = &panel->widgets[panel->widgets_n];
 
-			w->interface = we;
-			w->panel = panel;
-			w->needs_expose = 0;
-			
-			int stashwi = find_widget_in_stash(e->name, stash);
-			if (stashwi != -1 && we->retheme_reconfigure) {
-				/* pop widget from the stash */
-				struct widget *sw = &stash->widgets[stashwi];
-				*w = *sw;
-				*sw = stash->widgets[stash->widgets_n-1];
-				stash->widgets_n--;
+		w->interface = we;
+		w->panel = panel;
+		w->needs_expose = 0;
+		
+		int stashwi = find_widget_in_stash(e->name, stash);
+		if (stashwi != -1 && we->retheme_reconfigure) {
+			/* pop widget from the stash */
+			struct widget *sw = &stash->widgets[stashwi];
+			*w = *sw;
+			*sw = stash->widgets[stash->widgets_n-1];
+			stash->widgets_n--;
 
-				/* try retheme or destroy */
-				if ((*we->retheme_reconfigure)(w, e, tree) == 0) {
-					panel->widgets_n++;
-
-					w->no_separator = parse_bool("no_separator", e);
-					w->paint_replace = parse_bool("paint_replace", e);
-
-					continue;
-				} else 
-					(*w->interface->destroy_widget_private)(w);
-			}
-
-			/* create new one if failed */
-			if ((*we->create_widget_private)(w, e, tree) == 0) {
+			/* try retheme or destroy */
+			if ((*we->retheme_reconfigure)(w, e, tree) == 0) {
 				panel->widgets_n++;
+
 				w->no_separator = parse_bool("no_separator", e);
 				w->paint_replace = parse_bool("paint_replace", e);
-			} else {
-				XWARNING("Failed to create widget: \"%s\"", e->name);
-			}
+
+				continue;
+			} else 
+				(*w->interface->destroy_widget_private)(w);
+		}
+
+		/* create new one if failed */
+		if ((*we->create_widget_private)(w, e, tree) == 0) {
+			panel->widgets_n++;
+			w->no_separator = parse_bool("no_separator", e);
+			w->paint_replace = parse_bool("paint_replace", e);
+		} else {
+			XWARNING("Failed to create widget: \"%s\"", e->name);
 		}
 	}
 }
@@ -449,20 +450,21 @@ static void expose_panel(struct panel *panel)
 	size_t i;
 	for (i = 0; i < panel->widgets_n; ++i) {
 		struct widget *w = &panel->widgets[i];
-		if (w->needs_expose) {
-			pattern_image(panel->theme.background, panel->cr, 
-					w->x, 0, w->width, 0);
-			cairo_save(panel->cr);
-			if (w->paint_replace)
-				cairo_set_operator(panel->cr, CAIRO_OPERATOR_SOURCE);
-			if (w->interface->draw)
-				(*w->interface->draw)(w);
-			cairo_restore(panel->cr);
+		if (!w->needs_expose)
+			continue;
+		
+		pattern_image(panel->theme.background, panel->cr, 
+				w->x, 0, w->width, 0);
+		cairo_save(panel->cr);
+		if (w->paint_replace)
+			cairo_set_operator(panel->cr, CAIRO_OPERATOR_SOURCE);
+		if (w->interface->draw)
+			(*w->interface->draw)(w);
+		cairo_restore(panel->cr);
 
-			(*panel->render->blit)(panel, w->x, 0, 
-					       w->width, panel->height);
-			w->needs_expose = 0;
-		}
+		(*panel->render->blit)(panel, w->x, 0, 
+				       w->width, panel->height);
+		w->needs_expose = 0;
 	}
 	XFlush(dpy);
 }
