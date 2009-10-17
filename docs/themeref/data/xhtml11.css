@@ -10,29 +10,30 @@ body {
 }
 
 a {
-  color: blue;
+  color: green;
   text-decoration: underline;
 }
 a:visited {
-  color: fuchsia;
+  color: MediumSeaGreen;
 }
 
 em {
   font-style: italic;
-  color: navy;
+  color: green;
 }
 
 strong {
   font-weight: bold;
-  color: #083194;
+  color: darkgreen;
 }
 
 tt {
-  color: navy;
+  color: black;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #527bbd;
+/*  color: #527bbd;*/
+  color: darkgreen;
   font-family: sans-serif;
   margin-top: 1.2em;
   margin-bottom: 0.5em;
@@ -40,7 +41,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1, h2, h3 {
-  border-bottom: 1px solid silver;
+  border-bottom: 1px solid darkgreen;
 }
 h2 {
   padding-top: 0.5em;
@@ -58,7 +59,7 @@ div.sectionbody {
 }
 
 hr {
-  border: 1px solid silver;
+  border: 1px solid darkgreen;
 }
 
 p {
@@ -91,7 +92,7 @@ span#revision {
 div#footer {
   font-family: sans-serif;
   font-size: small;
-  border-top: 1px solid silver;
+  border-top: 1px solid darkgreen;
   padding-top: 0.5em;
   margin-top: 4.0em;
 }
@@ -146,7 +147,7 @@ div.content + div.title {
 
 div.sidebarblock > div.content {
   background: #ffffee;
-  border: 1px solid silver;
+  border: 1px solid darkgreen;
   padding: 0.5em;
 }
 
@@ -154,7 +155,7 @@ div.listingblock {
   margin-right: 0%;
 }
 div.listingblock > div.content {
-  border: 1px solid silver;
+  border: 1px solid darkgreen;
   background: #f4f4f4;
   padding: 0.5em;
 }
@@ -180,11 +181,11 @@ div.admonitionblock .icon {
 }
 div.admonitionblock td.content {
   padding-left: 0.5em;
-  border-left: 2px solid silver;
+  border-left: 2px solid darkgreen;
 }
 
 div.exampleblock > div.content {
-  border-left: 2px solid silver;
+  border-left: 2px solid darkgreen;
   padding: 0.5em;
 }
 
@@ -193,7 +194,7 @@ div.verseblock div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-div.imageblock img { border: 1px solid silver; }
+div.imageblock img { border: 1px solid darkgreen; }
 span.image img { border-style: none; }
 
 dl {
@@ -204,6 +205,7 @@ dt {
   margin-top: 0.5em;
   margin-bottom: 0;
   font-style: normal;
+  color: green;
 }
 dd > *:first-child {
   margin-top: 0.1em;
@@ -251,7 +253,7 @@ td.hlist2 {
 }
 
 div#toctitle {
-  color: #527bbd;
+  color: darkgreen;
   font-family: sans-serif;
   font-size: 1.1em;
   font-weight: bold;

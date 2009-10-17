@@ -14,8 +14,8 @@ div.sidebar-title, div.image-title {
 }
 
 div.listingblock div.content {
-  border: 1px solid silver;
-  background: #f4f4f4;
+  border: 1px solid darkgreen;
+  background: honeydew;
   padding: 0.5em;
 }
 
