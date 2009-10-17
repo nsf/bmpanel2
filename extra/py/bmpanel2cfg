@@ -575,4 +575,11 @@ vbox.pack_start(lbedit.widget, False, True)
 win.add(vbox)
 win.show_all()
 
+if g_remote.started_with_theme:
+	d = gtk.MessageDialog(type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK)
+	d.set_markup("Bmpanel2 was started with <b>--theme</b> parameter. "
+		"It means it will not react on theme changes in the config file (via this tool or not).")
+	d.run()
+	d.destroy()
+
 gtk.main()
