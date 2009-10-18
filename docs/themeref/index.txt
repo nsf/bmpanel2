@@ -180,7 +180,6 @@ Parameters for built-in widgets. Also few general moments:
 
 Desktop switcher
 ~~~~~~~~~~~~~~~~
-
 image:desktops.png[]
 
 The desktop switcher is a widget that helps you to switch between
@@ -271,7 +270,6 @@ image:desktops_separator.png[]
 
 Taskbar
 ~~~~~~~
-
 image:taskbar.png[]
 
 The taskbar is a widget that allows you to switch between tasks
@@ -314,10 +312,53 @@ The *idle*, *idle_highlight*, *pressed* and *pressed_highlight*
 subsections are descriptions of how button states are drawn.
 
 idle/stretched::
-	TODO
+	If you want to have gradient-style taskbar buttons like on
+	this image:
++
+image:stretched_example.png[]
++
+You'll need to use this boolean value. If it presents, the
+*idle/center* image is being stretched while drawing a taskbar button
+instead of being repeated.
 
 idle/stretched_overlap::
-	TODO
+	This is also a boolean representing another drawing mode. It's
+	almost like the *idle/stretched*, except that it makes
+	*idle/center* stretched under the corner (left and right)
+	images. It is useful when you want to make some magic with
+	partial transparency. For better explanation see table in
+	*idle/center_offsets*.
+
+idle/center_offsets::
+	This is a pair of offsets represented by two integers.
+	Actually by manipulating these values you can turn
+	*idle/stretched* into *idle/stretched_overlap*. To do that you
+	need this:
++
+----------------------------------------------
+	stretched
+	center_offsets -[idle/left width] -[idle/right width]
+----------------------------------------------
++
+OK, if you still doesn't get it, let me show you few examples:
++
+[valign="center",cols="1%,99%"]
+|==========
+| image:stretched_no_center_offsets.png[] | stretched, no
+center_offsets
+| image:stretched_overlap_no_center_offsets.png[] | stretched_overlap,
+no center_offsets +
+or +
+stretched, center_offsets -26 -26
+| image:stretched_center_offsets_5_5.png[] | stretched, center_offsets
+5 5
+| image:stretched_center_offsets_m5_0.png[] | stretched,
+center_offsets -5 0
+| image:stretched_overlap_center_offsets_0_5.png[] |
+stretched_overlap, center_offsets 0 5
+|==========
++
+I hope you get it now. If not, let me know.
 
 idle/left::
 	Defines an appearance of the left part of a button on a
@@ -341,18 +382,18 @@ idle/font::
 
 idle/icon_offset::
 	Defines an offset (in pixels) for an icon on a button. Only
-	makes sense if *default_icon* is defined. The value is
+	makes sense if the *default_icon* is defined. The value is
 	presented as two numbers. An offset for X and Y axis
 	respectively.
 
 idle_hightlight/*::
-	 *Idle_highlight* state parameters are the same as *idle*.
+	*Idle_highlight* state parameters are the same as *idle*.
 
 pressed/*::
-	 *Pressed* state parameters are the same as *idle*.
+	*Pressed* state parameters are the same as *idle*.
 
 pressed_highlight/*::
-	 *Pressed_highlight* state parameters are the same as *idle*.
+	*Pressed_highlight* state parameters are the same as *idle*.
 
 separator::
 	'(Not implemented)' It was in bmpanel 0.9.x, does anyone
@@ -369,7 +410,6 @@ task_max_width::
 
 Systray
 ~~~~~~~
-
 image:systray.png[]
 
 The system tray widget. Also known as notification area. Some
@@ -406,7 +446,6 @@ background/*::
 
 Clock
 ~~~~~
-
 image:clock.png[]
 
 Clock widget. Shows time.
@@ -457,15 +496,40 @@ time_format::
 
 Decor
 ~~~~~
-*TODO*
+Decor widget. Basicly it's just an image.. aka decoration. No
+functionality.
+
+---------------------------------
+decor sweet_image.png
+---------------------------------
 
 Empty
 ~~~~~
-*TODO*
+Empty. Abyss of nothingness. If you need to skip some space between
+widgets, you should definitely use *empty*. Just don't forget to
+specify the amount of pixels you need to skip.
+
+---------------------------------
+empty 25
+---------------------------------
 
 Launchbar
 ~~~~~~~~~
-*TODO*
+image:launchbar.png[]
+
+Launch bar. This widget contains clickable icons with user defined
+programs to run. The actual content of this widget is defined in the
+bmpane2rc file (*TODO*: add link to the man page (which doesn't exist
+yet)).
+
+---------------------------------
+launchbar
+	icon_size 16 16
+---------------------------------
+
+icon_size::
+	Defines a size of an icon. Two numbers - width and height
+	respectively (in pixels).
 
 // vim: set syntax=asciidoc:
 

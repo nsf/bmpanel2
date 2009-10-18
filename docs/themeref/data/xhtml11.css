@@ -222,7 +222,7 @@ div.olist2 > ol {
 }
 
 div.tableblock > table {
-  border: 3px solid #527bbd;
+  border: 3px solid darkgreen;
 }
 thead {
   font-family: sans-serif;
