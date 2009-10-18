@@ -2,9 +2,9 @@
 
 static inline int point_in_rect(int px, int py, int x, int y, int w, int h)
 {
-	return (px > x &&
+	return (px >= x &&
 		px < x + w &&
-		py > y &&
+		py >= y &&
 		py < y + h);
 }
 
