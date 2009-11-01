@@ -3,6 +3,10 @@ panel
 	separator separator_img.png
 	background tile_img.png
 
+theme
+	name XSOcaM Dark
+	author nsf <no.smile.face@gmail.com>
+
 desktop_switcher
 	idle
 		left_corner ds_left_corner_idle_img.png
