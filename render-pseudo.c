@@ -99,7 +99,6 @@ static void update_bg(struct panel *p)
 	struct x_connection *c = &p->connection;
 	struct pseudo_render *pr = p->render_private;
 
-	x_update_root_pmap(c);
 	cairo_surface_destroy(pr->wallpaper);
 	
 	if (c->root_pixmap != None)

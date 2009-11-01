@@ -643,10 +643,10 @@ void reconfigure_widgets(struct panel *panel)
 
 static void panel_property_notify(struct panel *p, XPropertyEvent *e)
 {
-	if (e->atom == p->connection.atoms[XATOM_XROOTPMAP_ID] &&
-	    p->render->update_bg) 
-	{
-		(*p->render->update_bg)(p);
+	if (e->atom == p->connection.atoms[XATOM_XROOTPMAP_ID]) {
+		x_update_root_pmap(&p->connection);
+		if (p->render->update_bg)
+			(*p->render->update_bg)(p);
 	}
 }
 
