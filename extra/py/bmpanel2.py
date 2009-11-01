@@ -436,14 +436,16 @@ class Bmpanel2Remote:
 # Bmpanel2Themes
 #----------------------------------------------------------------------
 class Theme:
-	def __init__(self, dirname, name=None, author=None):
+	def __init__(self, dirname, name=None, author=None, path=None):
 		self.dirname = dirname
 		self.name = name
 		self.author = author
+		self.path = path
 
 class Bmpanel2Themes:
 	def _try_load_theme(self, dirname, themefile):
 		c = ConfigFormat(themefile)
+		path = os.path.dirname(themefile)
 		name = None
 		author = None
 		try:
@@ -453,7 +455,8 @@ class Bmpanel2Themes:
 		except:
 			pass
 
-		self.themes.append(Theme(dirname, name, author))
+		if not dirname in self.themes:
+			self.themes[dirname] = Theme(dirname, name, author, path)
 
 	def _lookup_for_themes(self, d):
 		try:
@@ -468,7 +471,7 @@ class Bmpanel2Themes:
 				self._try_load_theme(f, path)
 
 	def __init__(self):
-		self.themes = []
+		self.themes = {}
 		dirs = XDG_get_data_dirs()
 		for d in dirs:
 			path = os.path.join(d, "bmpanel2/themes")
@@ -476,7 +479,9 @@ class Bmpanel2Themes:
 
 		def get_dirname(theme):
 			return theme.dirname
-		self.themes.sort(key=get_dirname)
+		tmp = self.themes.values()
+		tmp.sort(key=get_dirname)
+		self.themes = tmp
 #----------------------------------------------------------------------
 # Bmpanel2Launchbar
 #----------------------------------------------------------------------

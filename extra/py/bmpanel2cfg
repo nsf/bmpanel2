@@ -28,7 +28,7 @@ class ThemeDeferredLoader(Thread):
 			name = t.dirname
 			if t.name:
 				name = t.name
-			model.append((name, t))
+			model.append((name, t, t.path))
 		current_theme = g_config.get_theme()
 		current_theme_num = 0
 
@@ -41,6 +41,7 @@ class ThemeDeferredLoader(Thread):
 		view.scroll_to_cell((current_theme_num,))
 		view.get_selection().connect('changed', self.gui_callback)
 		view.set_sensitive(True)
+		view.set_tooltip_column(2)
 		gdk.threads_leave()
 #----------------------------------------------------------------------
 
@@ -58,7 +59,8 @@ class ThemesListbox:
 		scroll.set_shadow_type(gtk.SHADOW_IN)
 
 		model = gtk.ListStore(gobject.TYPE_STRING,
-					gobject.TYPE_PYOBJECT)
+					gobject.TYPE_PYOBJECT,
+					gobject.TYPE_STRING)
 		renderer = gtk.CellRendererText()
 		column = gtk.TreeViewColumn("Theme", renderer, text=0)
 		view = gtk.TreeView(model)
