@@ -478,7 +478,10 @@ class Bmpanel2Themes:
 			self._lookup_for_themes(path)
 
 		def get_dirname(theme):
-			return theme.dirname
+			if theme.name:
+				return theme.name
+			else:
+				return theme.dirname
 		tmp = self.themes.values()
 		tmp.sort(key=get_dirname)
 		self.themes = tmp
