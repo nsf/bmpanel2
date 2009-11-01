@@ -412,15 +412,25 @@ class Bmpanel2Config:
 class Bmpanel2Remote:
 	def __init__(self):
 		self.started_with_theme = False
+		self.pid = None
 		self.update_pid()
 
 	def update_pid(self):
-		self.pid = int(os.popen("pidof bmpanel2").read().splitlines()[0])
-		args = os.popen("ps --no-heading o %a -p {0}".format(self.pid)).read().splitlines()[0]
-		self.started_with_theme = args.find("--theme") != -1
+		# find pid
+		try:
+			self.pid = int(os.popen("pidof bmpanel2").read().splitlines()[0])
+		except:
+			return
+		# check if bmpanel2 was started with "--theme" parameter
+		try:
+			args = os.popen("ps --no-heading o %a -p {0}".format(self.pid)).read().splitlines()[0]
+			self.started_with_theme = args.find("--theme") != -1
+		except:
+			pass
 
 	def reconfigure(self):
-		os.kill(self.pid, 10)
+		if self.pid:
+			os.kill(self.pid, 10)
 
 #----------------------------------------------------------------------
 # Bmpanel2Themes

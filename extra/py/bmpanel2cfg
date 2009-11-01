@@ -274,7 +274,10 @@ class IconList(gtk.Widget):
 
 	def insert(self, where_index, prog=None, icon=None):
 		assert(where_index >= 0 and where_index < len(self.icons))
-		ic = Icon(prog, icon, self._load_pixbuf_for_icon(icon))
+		try:
+			ic = Icon(prog, icon, self._load_pixbuf_for_icon(icon))
+		except:
+			return
 		self.icons.insert(where_index, ic)
 		self._update_gui()
 
@@ -324,7 +327,10 @@ class IconList(gtk.Widget):
 
 	# utility
 	def append(self, prog=None, icon=None):
-		ic = Icon(prog, icon, self._load_pixbuf_for_icon(icon))
+		try:
+			ic = Icon(prog, icon, self._load_pixbuf_for_icon(icon))
+		except:
+			return
 		self.icons.append(ic)
 		self._update_gui()
 
