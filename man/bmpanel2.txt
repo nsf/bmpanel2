@@ -60,4 +60,9 @@ Noir theme:
 
 * Andrew Nayenko <resver@gmail.com>
 
+A lot of Creative Commons covered theme ports (alduin, auriel, curvy,
+flora, striped):
+
+* weakhead (http://weakhead.deviantart.com)
+
 // vim: set syntax=asciidoc:
