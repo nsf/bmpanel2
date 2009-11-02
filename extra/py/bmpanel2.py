@@ -506,7 +506,10 @@ class Bmpanel2Launchbar:
 
 	def __iter__(self):
 		for c in self.launchbar.children:
-			yield LaunchbarItem(c.value, c['icon'].value)
+			try:
+				yield LaunchbarItem(c.value, c['icon'].value)
+			except:
+				pass
 
 	def __getitem__(self, n):
 		c = self.launchbar.children[n]
