@@ -51,6 +51,7 @@ static char *atom_names[] = {
 	"UTF8_STRING",
 	"_MOTIF_WM_HINTS",
 	"_XROOTPMAP_ID",
+	"ESETROOT_PMAP_ID",
 	"XdndAware",
 	"XdndPosition",
 	"XdndStatus"
@@ -104,7 +105,7 @@ Window x_get_prop_window(struct x_connection *c, Window win, Atom at)
 
 Pixmap x_get_prop_pixmap(struct x_connection *c, Window win, Atom at)
 {
-	Pixmap num = 0;
+	Pixmap num = None;
 	Pixmap *data;
 
 	data = x_get_prop_data(c, win, at, XA_PIXMAP, 0);
@@ -159,7 +160,7 @@ void x_connect(struct x_connection *c, const char *display)
 	c->default_colormap 	= DefaultColormap(c->dpy, c->screen);
 	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
 	c->root 		= RootWindow(c->dpy, c->screen);
-	c->root_pixmap 		= x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
+	x_update_root_pmap(c);
 
 	XSelectInput(c->dpy, c->root, PropertyChangeMask | StructureNotifyMask);
 
@@ -177,6 +178,8 @@ void x_disconnect(struct x_connection *c)
 void x_update_root_pmap(struct x_connection *c)
 {
 	c->root_pixmap = x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);
+	if (c->root_pixmap == None)
+		c->root_pixmap = x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID2]);
 }
 
 Window x_create_default_window(struct x_connection *c, int x, int y, 
