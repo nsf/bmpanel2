@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-
 """
 Bmpanel2 classes for python.
 
