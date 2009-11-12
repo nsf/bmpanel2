@@ -290,6 +290,9 @@ def XDG_get_data_dirs():
 	xdgdirs = os.getenv("XDG_DATA_DIRS")
 	if xdgdirs:
 		ret += xdgdirs.split(":")
+	else:
+		ret.append("/usr/local/share")
+		ret.append("/usr/share")
 	return ret
 
 #----------------------------------------------------------------------
