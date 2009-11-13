@@ -48,6 +48,33 @@ static void free_clock_theme(struct clock_theme *ct)
   Clock interface
 **************************************************************************/
 
+static void fill_buftime(char *buf, size_t size, struct clock_theme *ct)
+{
+	time_t current_time;
+	current_time = time(0);
+	strftime(buf, size, ct->time_format, localtime(&current_time));
+}
+
+static int get_clock_width(struct widget *w, const char *bufover)
+{
+	struct clock_widget *cw = (struct clock_widget*)w->private;
+	int text_width = 0;
+	int pics_width = 0;
+
+	char buftime[128];
+	if (!bufover) {
+		fill_buftime(buftime, sizeof(buftime), &cw->theme);
+		bufover = buftime;
+	}
+	text_extents(w->panel->layout, cw->theme.font.pfd, 
+			bufover, &text_width, 0);
+	if (cw->theme.background.center) {
+		pics_width += image_width(cw->theme.background.left);
+		pics_width += image_width(cw->theme.background.right);
+	}
+	return text_width + pics_width;
+}
+
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
 		struct config_format_tree *tree)
 {
@@ -58,30 +85,13 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		return -1;
 	}
 
-	/* get widget width */
-	int text_width = 0;
-	int pics_width = 0;
-
-	char buftime[128];
-	struct tm tm;
-	CLEAR_STRUCT(&tm);
-	strftime(buftime, sizeof(buftime), cw->theme.time_format, &tm);
-
-	text_extents(w->panel->layout, cw->theme.font.pfd, 
-			buftime, &text_width, 0);
-
-	/* background is drawn only if the center is here */
-	if (cw->theme.background.center) {
-		pics_width += image_width(cw->theme.background.left);
-		pics_width += image_width(cw->theme.background.right);
-	}
 	cw->clock_prog = parse_string_or_null("clock_prog", 
 					      &g_settings.root);
 	cw->mouse_button = parse_int("clock_mouse_button", 
 				     &g_settings.root, 1);
 
-	w->width = text_width + pics_width;
 	w->private = cw;
+	w->width = get_clock_width(w, 0);
 	return 0;
 }
 
@@ -100,10 +110,7 @@ static void draw(struct widget *w)
 
 	/* time */
 	char buftime[128];
-	time_t current_time;
-	current_time = time(0);
-	strftime(buftime, sizeof(buftime), cw->theme.time_format, 
-			localtime(&current_time));
+	fill_buftime(buftime, sizeof(buftime), &cw->theme);
 
 	/* drawing */
 	cairo_t *cr = w->panel->cr;
@@ -154,6 +161,13 @@ static void clock_tick(struct widget *w)
 	if (!strcmp(buflasttime, buftime))
 		return;
 	strcpy(buflasttime, buftime);
+
+	int nw = get_clock_width(w, buftime);
+	if (nw != w->width) {
+		w->width = nw;
+		recalculate_widgets_sizes(w->panel);
+		return;
+	}
 
 	w->needs_expose = 1;
 }
