@@ -73,6 +73,11 @@ void *x_get_prop_data(struct x_connection *c, Window win, Atom prop,
 			&after_ret, &prop_data);
 	if (items)
 		*items = items_ret;
+	if (type != type_ret) {
+		if (prop_data)
+			XFree(prop_data);
+		return 0;
+	}
 
 	return prop_data;
 }
@@ -371,6 +376,13 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 		goto name_here;
 	/****************/
 	*atype = c->atoms[XATOM_UTF8_STRING];
+	*atom = XA_WM_ICON_NAME;
+
+	name = x_get_prop_data(c, win, XA_WM_ICON_NAME, c->atoms[XATOM_UTF8_STRING], 0);
+	if (name) 
+		goto name_here;
+	/****************/
+	*atype = c->atoms[XATOM_UTF8_STRING];
 	*atom = c->atoms[XATOM_NET_WM_VISIBLE_NAME];
 
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_NAME], 
@@ -390,6 +402,13 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 	*atom = XA_WM_NAME;
 
 	name = x_get_prop_data(c, win, XA_WM_NAME, XA_STRING, 0);
+	if (name) 
+		goto name_here;
+	/****************/
+	*atype = c->atoms[XATOM_UTF8_STRING];
+	*atom = XA_WM_NAME;
+
+	name = x_get_prop_data(c, win, XA_WM_NAME, c->atoms[XATOM_UTF8_STRING], 0);
 	if (name) 
 		goto name_here;
 	else {
