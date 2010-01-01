@@ -176,7 +176,7 @@ static const char *theme_override;
 
 #define BMPANEL2_VERSION_STR "bmpanel2 version 2.1\n"
 #define BMPANEL2_USAGE \
-"usage: bmpanel2 [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]\n"
+"usage: bmpanel2 [-h | --help] [--version] [--usage] [--list] [--theme=<theme>]\n"
 
 static const char *bmpanel2_version_str = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
 
