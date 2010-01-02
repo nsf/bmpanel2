@@ -172,6 +172,7 @@ static struct panel p;
 static int show_usage;
 static int show_version;
 static int show_list;
+static int monitor;
 static const char *theme_override;
 
 #define BMPANEL2_VERSION_STR "bmpanel2 version 2.1\n"
@@ -258,6 +259,7 @@ static void parse_bmpanel2_args(int argc, char **argv)
 		ARG_BOOLEAN("usage", &show_usage, "show usage reminder", 0),
 		ARG_BOOLEAN("version", &show_version, "print bmpanel2 version", 0),
 		ARG_BOOLEAN("list", &show_list, "list available themes", 0),
+		ARG_INTEGER("monitor", &monitor, "reside on a specific monitor (starting from 0)", 0),
 		ARG_STRING("theme", &theme_override, "override config theme parameter", 0),
 		ARG_END
 	};
@@ -297,7 +299,7 @@ int main(int argc, char **argv)
 	register_widget_interface(&launchbar_interface);
 	register_widget_interface(&empty_interface);
 
-	init_panel(&p, &theme, -1, -1, -1);
+	init_panel(&p, &theme, monitor);
 
 	mysignal(SIGINT, sigint_handler);
 	mysignal(SIGTERM, sigterm_handler);

@@ -73,8 +73,8 @@ static void select_render_interface(struct panel *p)
 }
 
 static void get_position_and_strut(const struct x_connection *c, 
-		const struct panel_theme *t, int *ox, int *oy, 
-		int *ow, int *oh, long *strut)
+		const struct panel_theme *t, int monitor,
+		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
 	int x,y,w,h;
 	x = c->workarea_x;
@@ -129,31 +129,7 @@ static void get_position_and_strut(const struct x_connection *c,
 	strut[where[t->position].e] = x+w;
 }
 
-static void get_strut_for_position(const struct x_connection *c,
-				   const struct panel_theme *t,
-				   int x, int y, int w, int h,
-				   long *strut)
-{
-	strut[0] = strut[1] = strut[3] = 0;
-	strut[2] = h;
-	
-	if (t->position == PANEL_POSITION_BOTTOM) {
-		strut[2] = 0;
-		strut[3] = c->screen_height - h;
-	}
-	
-	static const struct {
-		int s, e;
-	} where[] = {
-		[PANEL_POSITION_TOP] = {8, 9},
-		[PANEL_POSITION_BOTTOM] = {10, 11}
-	};
-
-	strut[where[t->position].s] = x;
-	strut[where[t->position].e] = x+w;
-}
-
-static void create_window(struct panel *panel, int ax, int ay, int aw)
+static void create_window(struct panel *panel, int monitor)
 {
 	struct x_connection *c = &panel->connection;
 	struct panel_theme *t = &panel->theme;
@@ -161,15 +137,8 @@ static void create_window(struct panel *panel, int ax, int ay, int aw)
 	int x,y,w,h;
 	long strut[12] = {0};
 
-	if (ax == -1)
-		get_position_and_strut(c, t, &x, &y, &w, &h, strut);
-	else {
-		x = ax;
-		y = ay;
-		w = aw;
-		h = image_height(t->background);
-		get_strut_for_position(c, t, x, y, w, h, strut);
-	}
+	get_position_and_strut(c, t, monitor, &x, &y, &w, &h, strut);
+	panel->monitor = monitor;
 
 	panel->bg = x_create_default_pixmap(c, w, h);
 
@@ -470,7 +439,7 @@ static void expose_panel(struct panel *panel)
 }
 
 void init_panel(struct panel *panel, struct config_format_tree *tree,
-		int x, int y, int w)
+		int monitor)
 {
 	CLEAR_STRUCT(panel);
 
@@ -488,7 +457,7 @@ void init_panel(struct panel *panel, struct config_format_tree *tree,
 	struct x_connection *c = &panel->connection;
 
 	/* create window */
-	create_window(panel, x, y, w);
+	create_window(panel, monitor);
 	
 	/* render private */
 	if (panel->render->create_private)
@@ -572,7 +541,7 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 
 	int x,y,w,h;
 	long strut[12] = {0};
-	get_position_and_strut(c, t, &x, &y, &w, &h, strut);
+	get_position_and_strut(c, t, panel->monitor, &x, &y, &w, &h, strut);
 	panel->x = x;
 	panel->y = y;
 	panel->width = w;
@@ -671,7 +640,7 @@ static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
 		c->workarea_width = e->width;
 		c->workarea_height = e->height;
 		
-		get_position_and_strut(c, t, &x, &y, &w, &h, strut);
+		get_position_and_strut(c, t, p->monitor, &x, &y, &w, &h, strut);
 		XMoveResizeWindow(c->dpy, p->win, x, y, w, h);
 		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
 		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 

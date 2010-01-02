@@ -145,6 +145,8 @@ struct panel {
 	int width;
 	int height;
 
+	int monitor;
+
 	/* expose flag */
 	int needs_expose;
 
@@ -190,7 +192,7 @@ extern struct render_interface render_normal;
 extern struct render_interface render_pseudo;
 
 void init_panel(struct panel *panel, struct config_format_tree *tree,
-		int x, int y, int w);
+		int monitor);
 void free_panel(struct panel *panel);
 void reconfigure_free_panel(struct panel *panel, struct widget_stash *stash);
 void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
