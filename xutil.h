@@ -54,11 +54,6 @@ struct x_connection {
 	int screen_width;
 	int screen_height;
 
-	int workarea_x;
-	int workarea_y;
-	int workarea_width;
-	int workarea_height;
-
 	Visual *default_visual;
 	Colormap default_colormap;
 	int default_depth;

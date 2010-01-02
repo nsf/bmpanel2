@@ -126,18 +126,6 @@ int x_get_window_desktop(struct x_connection *c, Window win)
 	return x_get_prop_int(c, win, c->atoms[XATOM_NET_WM_DESKTOP]);
 }
 
-static void update_workarea(struct x_connection *c)
-{
-	long *workarea = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_WORKAREA], XA_CARDINAL, 0);
-	if (workarea) {
-		c->workarea_x = workarea[0];
-		c->workarea_y = workarea[1];
-		c->workarea_width = workarea[2];
-		c->workarea_height = workarea[3];
-		XFree(workarea);	
-	}
-}
-
 void x_connect(struct x_connection *c, const char *display)
 {
 	CLEAR_STRUCT(c);
@@ -157,10 +145,6 @@ void x_connect(struct x_connection *c, const char *display)
 	c->screen 		= DefaultScreen(c->dpy);
 	c->screen_width 	= DisplayWidth(c->dpy, c->screen);
 	c->screen_height 	= DisplayHeight(c->dpy, c->screen);
-	c->workarea_x 		= 0;
-	c->workarea_y 		= 0;
-	c->workarea_width 	= c->screen_width;
-	c->workarea_height 	= c->screen_height;
 	c->default_visual 	= DefaultVisual(c->dpy, c->screen);
 	c->default_colormap 	= DefaultColormap(c->dpy, c->screen);
 	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
@@ -168,9 +152,6 @@ void x_connect(struct x_connection *c, const char *display)
 	x_update_root_pmap(c);
 
 	XSelectInput(c->dpy, c->root, PropertyChangeMask | StructureNotifyMask);
-
-	/* get workarea */
-	update_workarea(c);
 }
 
 void x_disconnect(struct x_connection *c)

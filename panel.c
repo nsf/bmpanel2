@@ -77,38 +77,37 @@ static void get_position_and_strut(const struct x_connection *c,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
 	int x,y,w,h;
-	x = c->workarea_x;
-	y = c->workarea_y;
+	x = 0;
+	y = 0;
 	h = image_height(t->background);
-	w = c->workarea_width;
+	w = c->screen_width;
 
 	strut[0] = strut[1] = strut[3] = 0;
-	strut[2] = h + c->workarea_y;
+	strut[2] = h;
 	if (t->position == PANEL_POSITION_BOTTOM) {
-		y = (c->workarea_height + c->workarea_y) - h;
+		y = c->screen_height - h;
 		strut[2] = 0;
-		strut[3] = h + c->screen_height - 
-			(c->workarea_height + c->workarea_y);
+		strut[3] = h;
 	}
 
 	/* variable width */
 	if (t->width != -1) {
 		if (t->width_in_percents)
-			w = ((float)c->workarea_width / 100.0f) * t->width;
+			w = ((float)c->screen_width / 100.0f) * t->width;
 		else
 			w = t->width;
 
 		/* limit */
-		if (w > c->workarea_width)
-			w = c->workarea_width;
+		if (w > c->screen_width)
+			w = c->screen_width;
 		
 		/* X */
 		switch (t->align) {
 		case ALIGN_CENTER:
-			x += (c->workarea_width - w) / 2;
+			x += (c->screen_width - w) / 2;
 			break;
 		case ALIGN_RIGHT:
-			x += c->workarea_width - w;
+			x += c->screen_width - w;
 			break;
 		default:
 			/* skip */
@@ -634,11 +633,6 @@ static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
 		/* resolution changed */
 		c->screen_width = e->width;
 		c->screen_height = e->height;
-
-		c->workarea_x = 0;
-		c->workarea_y = 0;
-		c->workarea_width = e->width;
-		c->workarea_height = e->height;
 		
 		get_position_and_strut(c, t, p->monitor, &x, &y, &w, &h, strut);
 		XMoveResizeWindow(c->dpy, p->win, x, y, w, h);
