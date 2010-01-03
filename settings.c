@@ -6,8 +6,13 @@ struct config_format_tree g_settings;
 
 #define BMPANEL2_CONFIG_FILE "bmpanel2/bmpanel2rc"
 
-void load_settings()
+void load_settings(const char *configfile)
 {
+	if (configfile) {
+		load_config_format_tree(&g_settings, configfile);
+		return;
+	}
+
 	char buf[4096];
 	size_t config_dirs_len;
 	char **config_dirs = get_XDG_CONFIG_DIRS(&config_dirs_len);

@@ -172,12 +172,13 @@ static struct panel p;
 static int show_usage;
 static int show_version;
 static int show_list;
-static int monitor;
 static const char *theme_override;
+static const char *config_override;
 
 #define BMPANEL2_VERSION_STR "bmpanel2 version 2.1\n"
 #define BMPANEL2_USAGE \
-"usage: bmpanel2 [-h | --help] [--version] [--usage] [--list] [--theme=<theme>]\n"
+"usage: bmpanel2 [-h | --help] [--version] [--usage] [--list] [--theme=<theme>]\n" \
+"                [--config=<config>]\n"
 
 static const char *bmpanel2_version_str = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
 
@@ -196,12 +197,17 @@ static const char *get_theme_name()
 	}
 }
 
+static int get_monitor()
+{
+	return parse_int("monitor", &g_settings.root, 0);
+}
+
 static void reload_config()
 {
 	char *previous_theme = xstrdup(get_theme_name());
 
 	free_settings();
-	load_settings();
+	load_settings(config_override);
 
 	if (strcmp(get_theme_name(), previous_theme) != 0) {
 		struct widget_stash ws;
@@ -259,7 +265,7 @@ static void parse_bmpanel2_args(int argc, char **argv)
 		ARG_BOOLEAN("usage", &show_usage, "show usage reminder", 0),
 		ARG_BOOLEAN("version", &show_version, "print bmpanel2 version", 0),
 		ARG_BOOLEAN("list", &show_list, "list available themes", 0),
-		ARG_INTEGER("monitor", &monitor, "reside on a specific monitor (starting from 0)", 0),
+		ARG_STRING("config", &config_override, "use custom configuration file", 0),
 		ARG_STRING("theme", &theme_override, "override config theme parameter", 0),
 		ARG_END
 	};
@@ -286,7 +292,7 @@ int main(int argc, char **argv)
 	if (!g_thread_supported())
 		XDIE("bmpanel2 requires glib with thread support enabled");
 	parse_bmpanel2_args(argc, argv);
-	load_settings();
+	load_settings(config_override);
 	if (load_theme(&theme, theme_override) < 0)
 		XDIE("Failed to load theme");
 	clean_image_cache(0);
@@ -299,7 +305,7 @@ int main(int argc, char **argv)
 	register_widget_interface(&launchbar_interface);
 	register_widget_interface(&empty_interface);
 
-	init_panel(&p, &theme, monitor);
+	init_panel(&p, &theme, get_monitor());
 
 	mysignal(SIGINT, sigint_handler);
 	mysignal(SIGTERM, sigterm_handler);
