@@ -76,38 +76,41 @@ static void get_position_and_strut(const struct x_connection *c,
 		const struct panel_theme *t, int monitor,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
+	if (monitor >= c->monitors_n)
+		monitor = 0;
+	struct x_monitor *mon = &c->monitors[monitor];
 	int x,y,w,h;
-	x = 0;
-	y = 0;
+	x = mon->x;
+	y = mon->y;
 	h = image_height(t->background);
-	w = c->screen_width;
+	w = mon->width;
 
 	strut[0] = strut[1] = strut[3] = 0;
-	strut[2] = h;
+	strut[2] = y + h;
 	if (t->position == PANEL_POSITION_BOTTOM) {
-		y = c->screen_height - h;
+		y += mon->height - h;
 		strut[2] = 0;
-		strut[3] = h;
+		strut[3] = c->screen_height - (mon->y + mon->height - h);
 	}
 
 	/* variable width */
 	if (t->width != -1) {
 		if (t->width_in_percents)
-			w = ((float)c->screen_width / 100.0f) * t->width;
+			w = ((float)mon->width / 100.0f) * t->width;
 		else
-			w = t->width;
+			w = mon->width;
 
 		/* limit */
-		if (w > c->screen_width)
-			w = c->screen_width;
+		if (w > mon->width)
+			w = mon->width;
 		
 		/* X */
 		switch (t->align) {
 		case ALIGN_CENTER:
-			x += (c->screen_width - w) / 2;
+			x += (mon->width - w) / 2;
 			break;
 		case ALIGN_RIGHT:
-			x += c->screen_width - w;
+			x += mon->width - w;
 			break;
 		default:
 			/* skip */
@@ -125,7 +128,7 @@ static void get_position_and_strut(const struct x_connection *c,
 	};
 
 	strut[where[t->position].s] = x;
-	strut[where[t->position].e] = x+w;
+	strut[where[t->position].e] = x+w-1;
 }
 
 static void create_window(struct panel *panel, int monitor)

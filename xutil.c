@@ -245,13 +245,6 @@ void x_connect(struct x_connection *c, const char *display)
 	XSelectInput(c->dpy, c->root, PropertyChangeMask | StructureNotifyMask);
 
 	init_monitors(c);
-	XWARNING("monitors_n: %d", c->monitors_n);
-	int i;
-	for (i = 0; i < c->monitors_n; ++i) {
-		XWARNING("%d: x: %d y: %d w: %d h: %d", i, 
-			 c->monitors[i].x, c->monitors[i].y,
-			 c->monitors[i].width, c->monitors[i].height);
-	}
 }
 
 void x_disconnect(struct x_connection *c)
