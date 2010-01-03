@@ -9,7 +9,7 @@ configfile = None
 if len(sys.argv) == 2:
 	configfile = sys.argv[1]
 
-g_remote = bmpanel2.Bmpanel2Remote()
+g_remote = bmpanel2.Bmpanel2Remote(configfile)
 g_config = bmpanel2.Bmpanel2Config(configfile)
 g_launch = bmpanel2.Bmpanel2Launchbar(g_config)
 

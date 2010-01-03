@@ -350,7 +350,7 @@ class Bmpanel2Config:
 				self.tree.append_node_as_child(node, self.tree)
 		self.fire_unsaved_notifiers(True)
 	#--------------------------------------------------------------
-	def __init__(self, configfile):
+	def __init__(self, configfile=None):
 		if configfile:
 			self.path = configfile
 		else:
@@ -419,17 +419,53 @@ class Bmpanel2Config:
 # Bmpanel2Remote
 #----------------------------------------------------------------------
 class Bmpanel2Remote:
-	def __init__(self):
+	def __init__(self, configfile=None):
+		self.configfile = configfile
 		self.started_with_theme = False
 		self.pid = None
 		self.update_pid()
 
 	def update_pid(self):
-		# find pid
+		# find pid using following algo:
+		# 1. get all bmpanel2 pids
+		#    - if there is no bmpanel2 instance, return, we can't find the PID
+		# 2. split themes into two arrays, ones that have "--config" parameter and ones that don't.
+		# 3. if we have configfile parameter: look for a bmpanel2 instance in the needed list
+		#    - if not found, return, we can't find the PID
+		# 4. if we don't have configfile parameter:
+		#    - try to use first pid from "non-config list"
+		#    - if not found, use first pid from "config list"
+
+		# (1)
 		try:
-			self.pid = int(os.popen("pidof bmpanel2").read().splitlines()[0])
+			pids = [int(item) for item in os.popen("pidof bmpanel2").read().split()]
 		except:
 			return
+
+		# (2)
+		configlist = []
+		nonconfiglist = []
+		for pid in pids:
+			args = os.popen("ps --no-heading o %a -p {0}".format(pid)).read().splitlines()[0]
+			if args.find("--config") != -1:
+				configlist.append((pid, args))
+			else:
+				nonconfiglist.append((pid, args))
+
+		# (3)
+		if self.configfile:
+			for pid, args in configlist:
+				if args.find(self.configfile) != -1:
+					self.pid = pid
+			if not self.pid:
+				return
+		# (4)
+		else:
+			try:
+				self.pid = nonconfiglist[0][0]
+			except:
+				self.pid = configlist[0][0]
+
 		# check if bmpanel2 was started with "--theme" parameter
 		try:
 			args = os.popen("ps --no-heading o %a -p {0}".format(self.pid)).read().splitlines()[0]
