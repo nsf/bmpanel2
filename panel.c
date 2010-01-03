@@ -72,11 +72,56 @@ static void select_render_interface(struct panel *p)
 		p->render = &render_normal;
 }
 
+#define MININT(a, b) ({int _a = (a), _b = (b); _a < _b ? _a : _b; })
+#define MAXINT(a, b) ({int _a = (a), _b = (b); _a > _b ? _a : _b; })
+
+static int one_monitor_on_top_of_another(const struct x_monitor *one,
+					 const struct x_monitor *another)
+{
+	int x = MAXINT(one->x, another->x);
+	int x2 = MININT(one->x + one->width, another->x + another->width);
+	if (x2 > x && one->y < another->y)
+		return 1;
+	return 0;
+}
+
+static void validate_strut(long *strut, const struct x_connection *c, 
+			   int monitor, int position)
+{
+	const struct x_monitor *top;
+	const struct x_monitor *bottom;
+	int valid = 1;
+	int i;
+
+	/* if the panel on the top, we need to check if there are any
+	 * monitors on the top of our monitor, so.. we're placing our monitor
+	 * on the bottom, a little bit tricky, but it's ok
+	 */
+	if (position == PANEL_POSITION_TOP)
+		bottom = &c->monitors[monitor];
+	else
+		top = &c->monitors[monitor];
+
+	for (i = 0; i < c->monitors_n; ++i) {
+		if (monitor == i) /* skip ourselves */
+			continue;
+		if (position == PANEL_POSITION_TOP)
+			top = &c->monitors[i];
+		else
+			bottom = &c->monitors[i];
+
+		if (one_monitor_on_top_of_another(top, bottom))
+			valid = 0;
+	}
+
+	if (!valid)
+		memset(strut, 0, sizeof(long) * 12);
+}
+
 static void get_position_and_strut(const struct x_connection *c, 
 		const struct panel_theme *t, int monitor,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
-	/* TODO: check monitors position */
 	if (monitor >= c->monitors_n)
 		monitor = 0;
 	struct x_monitor *mon = &c->monitors[monitor];
@@ -130,6 +175,8 @@ static void get_position_and_strut(const struct x_connection *c,
 
 	strut[where[t->position].s] = x;
 	strut[where[t->position].e] = x+w-1;
+
+	validate_strut(strut, c, monitor, t->position);
 }
 
 static void create_window(struct panel *panel, int monitor)
