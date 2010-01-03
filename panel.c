@@ -76,6 +76,7 @@ static void get_position_and_strut(const struct x_connection *c,
 		const struct panel_theme *t, int monitor,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
+	/* TODO: check monitors position */
 	if (monitor >= c->monitors_n)
 		monitor = 0;
 	struct x_monitor *mon = &c->monitors[monitor];
