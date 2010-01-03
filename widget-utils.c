@@ -415,6 +415,7 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
 	PangoRectangle r;
 	pango_layout_set_font_description(layout, font);
 	pango_layout_set_text(layout, text, -1);
+	pango_layout_set_width(layout, -1);
 	pango_layout_get_pixel_extents(layout, 0, &r);
 	if (w)
 		*w = r.width;
