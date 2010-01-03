@@ -119,8 +119,6 @@ static void get_position_and_strut(const struct x_connection *c,
 		const struct panel_theme *t, int monitor,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
-	if (monitor >= c->monitors_n)
-		monitor = 0;
 	struct x_monitor *mon = &c->monitors[monitor];
 	int x,y,w,h;
 	x = mon->x;
@@ -184,6 +182,8 @@ static void create_window(struct panel *panel, int monitor)
 	int x,y,w,h;
 	long strut[12] = {0};
 
+	if (monitor >= c->monitors_n)
+		monitor = 0;
 	get_position_and_strut(c, t, monitor, &x, &y, &w, &h, strut);
 	panel->monitor = monitor;
 
@@ -588,6 +588,8 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 
 	int x,y,w,h;
 	long strut[12] = {0};
+	if (monitor >= c->monitors_n)
+		monitor = 0;
 	get_position_and_strut(c, t, monitor, &x, &y, &w, &h, strut);
 	panel->monitor = monitor;
 	panel->x = x;
@@ -684,7 +686,8 @@ static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
 		c->screen_height = e->height;
 
 		x_update_monitors_info(c);
-		
+		if (p->monitor >= c->monitors_n)
+			p->monitor = 0;
 		get_position_and_strut(c, t, p->monitor, &x, &y, &w, &h, strut);
 		XMoveResizeWindow(c->dpy, p->win, x, y, w, h);
 		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);

@@ -8,6 +8,7 @@ static void draw(struct widget *w);
 static void button_click(struct widget *w, XButtonEvent *e);
 static void prop_change(struct widget *w, XPropertyEvent *e);
 static void client_msg(struct widget *w, XClientMessageEvent *e);
+static void configure(struct widget *w, XConfigureEvent *e);
 
 static void dnd_start(struct widget *w, struct drag_info *di);
 static void dnd_drag(struct widget *w, struct drag_info *di);
@@ -31,6 +32,7 @@ struct widget_interface taskbar_interface = {
 	.dnd_drag 		= dnd_drag,
 	.dnd_drop 		= dnd_drop,
 	.client_msg		= client_msg,
+	.configure		= configure,
 	.mouse_motion		= mouse_motion,
 	.mouse_leave		= mouse_leave,
 	.clock_tick		= clock_tick,
@@ -122,6 +124,51 @@ static void free_taskbar_theme(struct taskbar_theme *tt)
   Taskbar task management
 **************************************************************************/
 
+static int task_monitor_coverage(int x, int y, int w, int h, const struct x_monitor *mon)
+{
+	int ux = MAXINT(x, mon->x);
+	int ux2 = MININT(x + w, mon->x + mon->width);
+	int uy = MAXINT(y, mon->y);
+	int uy2 = MININT(y + h, mon->y + mon->height);
+	if (ux > ux2 || uy > uy2)
+		return 0;
+
+	int uw = ux2 - ux;
+	int uh = uy2 - uy;
+
+	int uarea = uw * uh;
+	int area = w * h;
+	return (uarea * 100) / area;
+}
+
+static int task_on_another_monitor(int x, int y, int w, int h,
+				   const struct x_monitor *monitors, int monitors_n,
+				   int current_monitor)
+{
+	int task_monitor = -1;
+	int maxcoverage = 0;
+	int i;
+	for (i = 0; i < monitors_n; ++i) {
+		int coverage = task_monitor_coverage(x, y, w, h, &monitors[i]);
+		if (coverage > maxcoverage) {
+			task_monitor = i;
+			maxcoverage = coverage;
+		}
+	}
+
+	if (task_monitor == current_monitor)
+		return 0;
+	else
+		return 1;
+}
+
+static void translate_coordinates(int x, int y, int *xout, int *yout,
+				  Window win, const struct x_connection *c)
+{
+	Window tmpwin;
+	XTranslateCoordinates(c->dpy, win, c->root, x, y, xout, yout, &tmpwin);
+}
+
 static int find_task_by_window(struct taskbar_widget *tw, Window win)
 {
 	size_t i;
@@ -158,11 +205,19 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 		return;
 	}
 	
-	XSelectInput(c->dpy, win, PropertyChangeMask);
+	XSelectInput(c->dpy, win, PropertyChangeMask | StructureNotifyMask);
+
+	XWindowAttributes winattrs;
+	XGetWindowAttributes(c->dpy, win, &winattrs);
 
 	CLEAR_STRUCT(&t);
 	t.win = win;
 	t.demands_attention = x_is_window_demands_attention(c, win);
+	int x, y;
+	translate_coordinates(winattrs.x, winattrs.y, &x, &y, win, c);
+	t.another_monitor = task_on_another_monitor(x, y, winattrs.width, winattrs.height,
+						    c->monitors, c->monitors_n,
+						    w->panel->monitor);
 
 	x_realloc_window_name(&t.name, c, win, &t.name_atom, &t.name_type_atom); 
 	if (tw->theme.default_icon)
@@ -204,8 +259,9 @@ static int count_tasks_on_desktop(struct taskbar_widget *tw, int desktop)
 	int count = 0;
 	size_t i;
 	for (i = 0; i < tw->tasks_n; ++i) {
-		if (tw->tasks[i].desktop == desktop ||
-		    tw->tasks[i].desktop == -1) /* count "all desktops" too */
+		if ((tw->tasks[i].desktop == desktop ||
+		     tw->tasks[i].desktop == -1) && /* count "all desktops" too */
+		    tw->tasks[i].another_monitor == 0) /* only our monitor */
 		{
 			count++;
 		}
@@ -331,6 +387,26 @@ static void move_task(struct taskbar_widget *tw, int what, int where)
 	}
 }
 
+static int get_taskbar_task_at(struct widget *w, int x)
+{
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+
+	size_t i;
+	for (i = 0; i < tw->tasks_n; ++i) {
+		struct taskbar_task *t = &tw->tasks[i];
+		if ((t->desktop != tw->desktop &&
+		     t->desktop != -1) ||
+		    t->another_monitor)
+		{
+			continue;
+		}
+
+		if (x < (t->x + t->w) && x > t->x)
+			return (int)i;
+	}
+	return -1;
+}
+
 /**************************************************************************
   Updates
 **************************************************************************/
@@ -377,25 +453,6 @@ static void update_tasks(struct widget *w, struct x_connection *c)
 	}
 	
 	XFree(wins);
-}
-
-static int get_taskbar_task_at(struct widget *w, int x)
-{
-	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
-
-	size_t i;
-	for (i = 0; i < tw->tasks_n; ++i) {
-		struct taskbar_task *t = &tw->tasks[i];
-		if (t->desktop != tw->desktop &&
-		    t->desktop != -1)
-		{
-			continue;
-		}
-
-		if (x < (t->x + t->w) && x > t->x)
-			return (int)i;
-	}
-	return -1;
 }
 
 /**************************************************************************
@@ -460,25 +517,23 @@ static void draw(struct widget *w)
 		taskw = tw->theme.task_max_width;
 
 	int x = w->x;
+	int curtask = 0;
 	size_t i;
 
 	for (i = 0; i < tw->tasks_n; ++i) {
 		struct taskbar_task *t = &tw->tasks[i];
 		
-		if (t->desktop != tw->desktop &&
-		    t->desktop != -1)
+		if ((t->desktop != tw->desktop &&
+		     t->desktop != -1) ||
+		    t->another_monitor == 1)
 		{
 			continue;
 		}
 
 #define TASKS_NEED_CORRECTION (taskw != tw->theme.task_max_width)
 		/* last task width correction */
-		if (TASKS_NEED_CORRECTION &&
-		    (i == tw->tasks_n - 1 || 
-		     (t->desktop != -1 && tw->tasks[i+1].desktop != t->desktop)))
-		{
+		if (TASKS_NEED_CORRECTION && curtask == count-1)
 			taskw = (w->x + w->width) - x;
-		}
 		
 		/* save position for other events */
 		t->x = x;
@@ -503,6 +558,7 @@ static void draw(struct widget *w)
 		draw_task(t, tw, cr, w->panel->layout,
 			  x, taskw, t->win == tw->active, i == tw->highlighted);
 		x += taskw;
+		curtask++;
 	}
 }
 
@@ -772,6 +828,39 @@ static void clock_tick(struct widget *w)
 		if (t->demands_attention > 0) {
 			w->needs_expose = 1;
 			t->demands_attention = 1 + (seconds % 2);
+		}
+	}
+}
+
+static void configure(struct widget *w, XConfigureEvent *e)
+{
+	struct x_connection *c = &w->panel->connection;
+	const struct x_monitor *monitors = c->monitors;
+	int monitors_n = c->monitors_n;
+	int curmon = w->panel->monitor;
+
+	/* do nothing if there is only one monitor */
+	if (monitors_n == 1)
+		return;
+
+	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
+	int ti = find_task_by_window(tw, e->window);
+	if (ti != -1) {
+		struct taskbar_task *t = &tw->tasks[ti];
+
+		/* figure out if the task is located on another monitor */
+		XWindowAttributes winattrs;
+		XGetWindowAttributes(c->dpy, e->window, &winattrs);
+
+		int x, y;
+		translate_coordinates(winattrs.x, winattrs.y, &x, &y, e->window, c);
+		int another_monitor = task_on_another_monitor(x, y, winattrs.width, winattrs.height,
+							      monitors, monitors_n, curmon);
+
+		/* finally if task state is changed: redraw! */
+		if (t->another_monitor != another_monitor) {
+			t->another_monitor = another_monitor;
+			w->needs_expose = 1;
 		}
 	}
 }

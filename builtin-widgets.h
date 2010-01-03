@@ -24,6 +24,7 @@ struct taskbar_task {
 	int geom_x; /* for _NET_WM_ICON_GEOMETRY */
 	int geom_w;
 	int demands_attention;
+	int another_monitor; /* for multihead setups */
 
 	/* I'm using only one name source Atom and I'm watching it for
 	 * updates. 
