@@ -72,9 +72,6 @@ static void select_render_interface(struct panel *p)
 		p->render = &render_normal;
 }
 
-#define MININT(a, b) ({int _a = (a), _b = (b); _a < _b ? _a : _b; })
-#define MAXINT(a, b) ({int _a = (a), _b = (b); _a > _b ? _a : _b; })
-
 static int one_monitor_on_top_of_another(const struct x_monitor *one,
 					 const struct x_monitor *another)
 {
