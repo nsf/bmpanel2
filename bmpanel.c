@@ -209,7 +209,14 @@ static void reload_config()
 	free_settings();
 	load_settings(config_override);
 
-	if (strcmp(get_theme_name(), previous_theme)) {
+	int new_monitor = get_monitor();
+
+	if (strcmp(get_theme_name(), previous_theme) ||
+	    new_monitor != p.monitor)
+	{
+		/* TODO: optimize here, when changing monitor,
+		 * it's not necessary to reload theme
+		 */
 		struct widget_stash ws;
 		/* free theme */
 		free_config_format_tree(&theme);
@@ -219,7 +226,7 @@ static void reload_config()
 		if (load_theme(&theme, theme_override) < 0)
 			XDIE("Failed to load theme");
 
-		reconfigure_panel(&p, &theme, &ws);
+		reconfigure_panel(&p, &theme, &ws, new_monitor);
 		clean_image_cache(0);
 	} else {
 		reconfigure_panel_config(&p);

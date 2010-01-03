@@ -196,7 +196,7 @@ void init_panel(struct panel *panel, struct config_format_tree *tree,
 void free_panel(struct panel *panel);
 void reconfigure_free_panel(struct panel *panel, struct widget_stash *stash);
 void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
-		       struct widget_stash *stash);
+		       struct widget_stash *stash, int monitor);
 void reconfigure_panel_config(struct panel *panel);
 void reconfigure_widgets(struct panel *panel);
 void panel_main_loop(struct panel *panel);

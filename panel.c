@@ -526,7 +526,7 @@ void reconfigure_free_panel(struct panel *panel, struct widget_stash *stash)
 }
 
 void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
-		       struct widget_stash *stash)
+		       struct widget_stash *stash, int monitor)
 {
 	/* reload theme */
 	if (load_panel_theme(&panel->theme, tree))
@@ -544,7 +544,8 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 
 	int x,y,w,h;
 	long strut[12] = {0};
-	get_position_and_strut(c, t, panel->monitor, &x, &y, &w, &h, strut);
+	get_position_and_strut(c, t, monitor, &x, &y, &w, &h, strut);
+	panel->monitor = monitor;
 	panel->x = x;
 	panel->y = y;
 	panel->width = w;
