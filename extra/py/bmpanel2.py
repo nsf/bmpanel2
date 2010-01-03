@@ -404,6 +404,12 @@ class Bmpanel2Config:
 	def set_clock_prog(self, value):
 		self._set_str_value('clock_prog', value)
 
+	def get_monitor(self):
+		return self._get_int_value('monitor', 0)
+
+	def set_monitor(self, value):
+		self._set_int_value('monitor', value)
+
 	# TODO: launchbar
 
 #----------------------------------------------------------------------

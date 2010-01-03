@@ -209,7 +209,7 @@ static void reload_config()
 	free_settings();
 	load_settings(config_override);
 
-	if (strcmp(get_theme_name(), previous_theme) != 0) {
+	if (strcmp(get_theme_name(), previous_theme)) {
 		struct widget_stash ws;
 		/* free theme */
 		free_config_format_tree(&theme);

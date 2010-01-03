@@ -153,6 +153,11 @@ class ParametersTable:
 				g_config.get_task_death_threshold, 0, 9999)
 		self.add_row("Task death threshold:", e)
 
+		monitors_n = gtk.gdk.screen_get_default().get_n_monitors()
+		e = make_number(g_config.set_monitor,
+				g_config.get_monitor, 0, monitors_n - 1)
+		self.add_row("Monitor:", e)
+
 
 	def add_row(self, label_text, widget):
 		label = gtk.Label(label_text)
