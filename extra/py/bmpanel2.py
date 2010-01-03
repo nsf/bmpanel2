@@ -350,8 +350,11 @@ class Bmpanel2Config:
 				self.tree.append_node_as_child(node, self.tree)
 		self.fire_unsaved_notifiers(True)
 	#--------------------------------------------------------------
-	def __init__(self):
-		self.path = os.path.join(XDG_get_config_home(), "bmpanel2/bmpanel2rc")
+	def __init__(self, configfile):
+		if configfile:
+			self.path = configfile
+		else:
+			self.path = os.path.join(XDG_get_config_home(), "bmpanel2/bmpanel2rc")
 		self.tree = ConfigFormat(self.path)
 
 		# an array of function pointers
