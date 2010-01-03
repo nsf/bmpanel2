@@ -255,6 +255,12 @@ void x_disconnect(struct x_connection *c)
 	XCloseDisplay(c->dpy);
 }
 
+void x_update_monitors_info(struct x_connection *c)
+{
+	xfree(c->monitors);
+	init_monitors(c);
+}
+
 void x_update_root_pmap(struct x_connection *c)
 {
 	c->root_pixmap = x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID]);

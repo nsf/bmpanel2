@@ -87,6 +87,7 @@ struct x_connection {
 
 void x_connect(struct x_connection *c, const char *display);
 void x_disconnect(struct x_connection *c);
+void x_update_monitors_info(struct x_connection *c);
 
 /*
  * default window is (ommiting 5 parameters):

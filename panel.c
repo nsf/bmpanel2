@@ -637,6 +637,8 @@ static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
 		/* resolution changed */
 		c->screen_width = e->width;
 		c->screen_height = e->height;
+
+		x_update_monitors_info(c);
 		
 		get_position_and_strut(c, t, p->monitor, &x, &y, &w, &h, strut);
 		XMoveResizeWindow(c->dpy, p->win, x, y, w, h);
