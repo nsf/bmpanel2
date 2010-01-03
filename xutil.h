@@ -5,7 +5,16 @@
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/extensions/shape.h>
+#include "config.h"
 #include "util.h"
+
+#ifdef HAVE_XINERAMA
+ #include <X11/extensions/Xinerama.h>
+#endif
+
+#ifdef HAVE_XRANDR
+ #include <X11/extensions/Xrandr.h>
+#endif
 
 enum x_atom {
 	XATOM_WM_STATE,
@@ -46,6 +55,12 @@ enum x_atom {
 	XATOM_COUNT
 };
 
+struct x_monitor {
+	int x;
+	int y;
+	int width;
+	int height;
+};
 
 struct x_connection {
 	Display *dpy;
@@ -53,6 +68,9 @@ struct x_connection {
 	int screen;
 	int screen_width;
 	int screen_height;
+
+	struct x_monitor *monitors;
+	int monitors_n;
 
 	Visual *default_visual;
 	Colormap default_colormap;

@@ -126,6 +126,97 @@ int x_get_window_desktop(struct x_connection *c, Window win)
 	return x_get_prop_int(c, win, c->atoms[XATOM_NET_WM_DESKTOP]);
 }
 
+/**************************************************************************
+  multiheads setup
+**************************************************************************/
+
+static int init_xrandr(struct x_connection *c)
+{
+#ifdef HAVE_XRANDR_TODO
+	XRRScreenResources *resources;
+	struct x_monitor *monitors;
+	int i, monitors_n;
+
+	resources = XRRGetScreenResourcesCurrent(c->dpy, c->root);
+	if (!resources)
+		return 0;
+
+	monitors = xmallocz(sizeof(struct x_monitor) * resources->noutput);
+	for (i = 0; i < resources->noutput; ++i) {
+		XRROutputInfo *output = XRRGetOutputInfo(c->dpy, 
+							 resources, 
+							 resources->outputs[i]);
+
+      		if (output->connection == RR_Disconnected)
+		        continue;
+
+      		if (output->crtc) {
+			XRRCrtcInfo *crtc = XRRGetCrtcInfo(c->dpy, resources, output->crtc);
+			/* TODO */
+			XRRFreeCrtcInfo (crtc);
+		}
+
+		XRRFreeOutputInfo (output);
+	}
+	XRRFreeScreenResources(resources);
+	return monitors_n > 0;
+#else
+	return 0;
+#endif
+}
+
+static int init_xinerama(struct x_connection *c)
+{
+#ifdef HAVE_XINERAMA
+	XineramaScreenInfo *xmonitors;
+	struct x_monitor *monitors;
+	int i, monitors_n;
+
+	if (!XineramaIsActive(c->dpy))
+		return 0;
+
+	xmonitors = XineramaQueryScreens(c->dpy, &monitors_n);
+	if (!xmonitors)
+		return 0;
+	
+	if (monitors_n <= 0) {
+		XFree(xmonitors);
+		return 0;
+	}
+
+	monitors = xmallocz(sizeof(struct x_monitor) * monitors_n);
+	for (i = 0; i < monitors_n; ++i) {
+		monitors[i].x = xmonitors[i].x_org;
+		monitors[i].y = xmonitors[i].y_org;
+		monitors[i].width = xmonitors[i].width;
+		monitors[i].height = xmonitors[i].height;
+	}
+	XFree(xmonitors);
+
+	c->monitors = monitors;
+	c->monitors_n = monitors_n;
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+static void init_monitors(struct x_connection *c)
+{
+	if (init_xrandr(c))
+		return;
+	if (init_xinerama(c))
+		return;
+
+	c->monitors = xmallocz(sizeof(struct x_monitor));
+	c->monitors_n = 1;
+	*c->monitors = (struct x_monitor){0,0,c->screen_width,c->screen_height};
+}
+
+/**************************************************************************
+  *the* interface
+**************************************************************************/
+
 void x_connect(struct x_connection *c, const char *display)
 {
 	CLEAR_STRUCT(c);
@@ -152,10 +243,20 @@ void x_connect(struct x_connection *c, const char *display)
 	x_update_root_pmap(c);
 
 	XSelectInput(c->dpy, c->root, PropertyChangeMask | StructureNotifyMask);
+
+	init_monitors(c);
+	XWARNING("monitors_n: %d", c->monitors_n);
+	int i;
+	for (i = 0; i < c->monitors_n; ++i) {
+		XWARNING("%d: x: %d y: %d w: %d h: %d", i, 
+			 c->monitors[i].x, c->monitors[i].y,
+			 c->monitors[i].width, c->monitors[i].height);
+	}
 }
 
 void x_disconnect(struct x_connection *c)
 {
+	xfree(c->monitors);
 	if (c->argb_visual)
 		XFreeColormap(c->dpy, c->argb_colormap);
 	XCloseDisplay(c->dpy);
