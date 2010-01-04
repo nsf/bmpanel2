@@ -220,10 +220,10 @@ static int init_xinerama(struct x_connection *c)
 
 static void init_monitors(struct x_connection *c)
 {
-	if (init_xrandr(c))
+	if (init_xinerama(c))
 		return;
 
-	if (init_xinerama(c))
+	if (init_xrandr(c))
 		return;
 
 	c->monitors = xmallocz(sizeof(struct x_monitor));
