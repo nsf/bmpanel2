@@ -132,14 +132,19 @@ int x_get_window_desktop(struct x_connection *c, Window win)
 
 static int init_xrandr(struct x_connection *c)
 {
-#ifdef HAVE_XRANDR_TODO
+#ifdef HAVE_XRANDR
 	XRRScreenResources *resources;
 	struct x_monitor *monitors;
-	int i, monitors_n;
+	int i, monitors_n = 0;
 
 	resources = XRRGetScreenResourcesCurrent(c->dpy, c->root);
 	if (!resources)
 		return 0;
+
+	if (!resources->noutput) {
+		XRRFreeScreenResources(resources);
+		return 0;
+	}
 
 	monitors = xmallocz(sizeof(struct x_monitor) * resources->noutput);
 	for (i = 0; i < resources->noutput; ++i) {
@@ -147,19 +152,31 @@ static int init_xrandr(struct x_connection *c)
 							 resources, 
 							 resources->outputs[i]);
 
-      		if (output->connection == RR_Disconnected)
+		if (output->connection == RR_Disconnected)
 		        continue;
 
       		if (output->crtc) {
 			XRRCrtcInfo *crtc = XRRGetCrtcInfo(c->dpy, resources, output->crtc);
-			/* TODO */
+			monitors[monitors_n].x = crtc->x;
+			monitors[monitors_n].y = crtc->y;
+			monitors[monitors_n].width = crtc->width;
+			monitors[monitors_n].height = crtc->height;
 			XRRFreeCrtcInfo (crtc);
+			monitors_n++;
 		}
 
 		XRRFreeOutputInfo (output);
 	}
 	XRRFreeScreenResources(resources);
-	return monitors_n > 0;
+
+	if (!monitors_n) {
+		xfree(monitors);
+		return 0;
+	}
+	c->monitors = monitors;
+	c->monitors_n = monitors_n;
+
+	return 1;
 #else
 	return 0;
 #endif
@@ -205,6 +222,7 @@ static void init_monitors(struct x_connection *c)
 {
 	if (init_xrandr(c))
 		return;
+
 	if (init_xinerama(c))
 		return;
 
