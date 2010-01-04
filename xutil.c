@@ -220,8 +220,11 @@ static int init_xinerama(struct x_connection *c)
 
 static void init_monitors(struct x_connection *c)
 {
-	if (init_xinerama(c))
-		return;
+	int opcode, event, error;
+	if (XQueryExtension(c->dpy, "XINERAMA", &opcode, &event, &error)) {
+		if (init_xinerama(c))
+			return;
+	}
 
 	if (init_xrandr(c))
 		return;
