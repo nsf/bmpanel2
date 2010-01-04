@@ -158,6 +158,10 @@ class ParametersTable:
 				g_config.get_task_death_threshold, 0, 9999)
 		self.add_row("Task death threshold:", e)
 
+		e = make_string(g_config.set_task_visible_monitors,
+				g_config.get_task_visible_monitors)
+		self.add_row("Task visible monitors:", e)
+
 		monitors_n = gtk.gdk.screen_get_default().get_n_monitors()
 		e = make_number(g_config.set_monitor,
 				g_config.get_monitor, 0, monitors_n - 1)

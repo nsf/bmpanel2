@@ -413,6 +413,12 @@ class Bmpanel2Config:
 	def set_monitor(self, value):
 		self._set_int_value('monitor', value)
 
+	def get_task_visible_monitors(self):
+		return self._get_str_value('task_visible_monitors', '')
+
+	def set_task_visible_monitors(self, value):
+		self._set_str_value('task_visible_monitors', value)
+
 	# TODO: launchbar
 
 #----------------------------------------------------------------------
