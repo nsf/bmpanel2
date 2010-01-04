@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include "settings.h"
 #include "builtin-widgets.h"
 
@@ -38,6 +39,25 @@ struct widget_interface taskbar_interface = {
 	.clock_tick		= clock_tick,
 	.reconfigure		= reconfigure
 };
+
+static unsigned int parse_task_visible_monitors(const char *str)
+{
+	if (!str)
+		return 0;
+
+	unsigned int bitarray = 0;
+	const char *c = str;
+	while (*c) {
+		char *newc = 0;
+		long int monitor = strtol(c, &newc, 10);
+		c = newc;
+		if (monitor <= 31)
+			bitarray |= 1 << monitor;
+		while (!isdigit(*c) && *c)
+			c++;
+	}
+	return bitarray;
+}
 
 /**************************************************************************
   Taskbar theme
@@ -130,7 +150,11 @@ static int is_task_visible(struct widget *w, struct taskbar_task *task)
 
 	/* be aware of "on all desktops" tasks */
 	int gooddesktop = tw->desktop == task->desktop || task->desktop == -1;
-	int goodmonitor = w->panel->monitor == task->monitor;
+	int goodmonitor; 
+	if (tw->task_visible_monitors)
+		goodmonitor = tw->task_visible_monitors & (1 << task->monitor);
+	else
+		goodmonitor = w->panel->monitor == task->monitor;
 
 	return gooddesktop && goodmonitor;
 }
@@ -481,6 +505,9 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 					     &g_settings.root, 50);
 	tw->task_urgency_hint = parse_bool("task_urgency_hint",
 					   &g_settings.root);
+	const char *tvmstr = find_config_format_entry_value(&g_settings.root, 
+							    "task_visible_monitors");
+	tw->task_visible_monitors = parse_task_visible_monitors(tvmstr);
 	tw->dnd_cur = XCreateFontCursor(c->dpy, XC_fleur);
 	tw->highlighted = -1;
 
@@ -867,4 +894,7 @@ static void reconfigure(struct widget *w)
 					     &g_settings.root, 50);
 	tw->task_urgency_hint = parse_bool("task_urgency_hint",
 					   &g_settings.root);
+	const char *tvmstr = find_config_format_entry_value(&g_settings.root, 
+							    "task_visible_monitors");
+	tw->task_visible_monitors = parse_task_visible_monitors(tvmstr);
 }

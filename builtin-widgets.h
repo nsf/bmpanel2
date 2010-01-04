@@ -68,6 +68,7 @@ struct taskbar_widget {
 	/* parameters from bmpanel2rc */
 	int task_death_threshold;
 	int task_urgency_hint;
+	unsigned int task_visible_monitors;
 };
 
 extern struct widget_interface taskbar_interface;
