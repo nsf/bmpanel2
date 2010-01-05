@@ -1,0 +1,2 @@
+#cmakedefine HAVE_XINERAMA 1
+#cmakedefine HAVE_XRANDR 1
