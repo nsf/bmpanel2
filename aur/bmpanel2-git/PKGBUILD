@@ -9,6 +9,8 @@ license=('MIT')
 depends=('libxext' 'pango' 'libxinerama')
 optdepends=('pygtk: bmpanel2cfg utility')
 makedepends=('git' 'cmake' 'gcc' 'make' 'pkgconfig' 'asciidoc' 'python')
+provides=('bmpanel2')
+conflicts=('bmpanel2')
 #-----------------------------------------------------------------------------
 # dependencies (* - direct deps, + - indirect deps):
 #
