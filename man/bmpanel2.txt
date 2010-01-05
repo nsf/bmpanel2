@@ -9,7 +9,8 @@ systray, clock, launcher, etc.) with themeing capabilities.
 SYNOPSIS
 --------
 [verse]
-'bmpanel2' [-h|--help] [--version] [--usage] [--list] [--theme=<theme>]
+'bmpanel2' [-h | --help] [--version] [--usage] [--list] [--theme=<theme>]
+         [--config=<config>]
 
 DESCRIPTION
 -----------
@@ -48,6 +49,9 @@ OPTIONS
 
 --theme=<theme>::
 	Override theme parameter in the config file.
+
+--config=<config>::
+	Override default config file.
 
 AUTHORS
 -------
