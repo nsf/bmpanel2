@@ -6,6 +6,10 @@ Bmpanel2 classes for python.
  3. Themes operations (list, install, create bundle).
  4. Config operations (all variables as a python interface, get/set,
     etc).
+
+Also note that this API cannot be described as stable or final. Please,
+don't rely on it, sorry for that. I don't mind if you copy this file
+to your project and use it in any imaginable way.
 """
 
 import sys, os
