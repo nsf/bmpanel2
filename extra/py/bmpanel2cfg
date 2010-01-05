@@ -575,12 +575,31 @@ class LaunchbarEditor:
 
 gdk.threads_init()
 
+def delete_window(widget, event):
+	# check for incomplete icons in launchbar editor, and warn the user about it
+	incomplete_exists = False
+	for i in lbedit.iconlist.icons:
+		if not i.prog or not i.icon:
+			incomplete_exists = True
+			break
+
+	if incomplete_exists:
+		d = gtk.MessageDialog(type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL)
+		d.set_markup("There are incomplete items in the launch bar editor, "
+			"they will not be saved. Are you sure you want to quit?")
+		response = d.run()
+		d.destroy()
+		if response == gtk.RESPONSE_CANCEL:
+			return True
+	return False
+
 def die(widget, data=None):
 	gtk.main_quit()
 
 win = gtk.Window(gtk.WINDOW_TOPLEVEL)
 win.set_title("Bmpanel2 Config")
 win.connect('destroy', die)
+win.connect('delete-event', delete_window)
 
 themeslb = ThemesListbox()
 paramtbl = ParametersTable()
