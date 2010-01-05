@@ -567,6 +567,8 @@ class LaunchbarEditor:
 		for i in children:
 			g_config.tree.remove_node(i)
 		for i in self.iconlist.icons:
+			if not i.prog or not i.icon:
+				continue
 			node = bmpanel2.ConfigNode(name="exec", value=i.prog)
 			g_config.tree.append_node_as_child(node, lb)
 			node2 = bmpanel2.ConfigNode(name="icon", value=i.icon)
