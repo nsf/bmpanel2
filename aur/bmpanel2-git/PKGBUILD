@@ -19,7 +19,7 @@ conflicts=('bmpanel2')
 # * pango - text drawing
 #   + cairo - raster/vector drawing
 #   + glib2 - main loop
-# * libxinerama - bmpanel2 uses it by default, but it can be configure 
+# * libxinerama - bmpanel2 uses it by default, but it can be configured
 #                 to use libxrandr too/instead.
 #
 # and also optional dependencies:
