@@ -380,6 +380,9 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 		offsetx = w - r.width;
 		break;
 	}
+
+	if (ellipsized && offsetx < 0)
+		offsetx = 0;
 	
 	offsetx += ti->offset[0];
 	offsety += ti->offset[1];
