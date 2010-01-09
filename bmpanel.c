@@ -304,14 +304,6 @@ int main(int argc, char **argv)
 		XDIE("Failed to load theme");
 	clean_image_cache(0);
 	
-	register_widget_interface(&desktops_interface);
-	register_widget_interface(&taskbar_interface);
-	register_widget_interface(&clock_interface);
-	register_widget_interface(&decor_interface);
-	register_widget_interface(&systray_interface);
-	register_widget_interface(&launchbar_interface);
-	register_widget_interface(&empty_interface);
-
 	init_panel(&p, &theme, get_monitor());
 
 	mysignal(SIGINT, sigint_handler);

@@ -97,7 +97,6 @@ struct widget {
 	void *private; /* private part */
 };
 
-int register_widget_interface(struct widget_interface *wc);
 struct widget_interface *lookup_widget_interface(const char *themename);
 
 /**************************************************************************
