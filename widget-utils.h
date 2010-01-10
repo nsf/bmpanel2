@@ -96,6 +96,9 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 void text_extents(PangoLayout *layout, PangoFontDescription *font, 
 		  const char *text, int *w, int *h);
 
+void draw_rectangle_outline(cairo_t *cr, unsigned char *color, int x, int y, int w, int h);
+void fill_rectangle(cairo_t *cr, unsigned char *color, int x, int y, int w, int h);
+
 /**************************************************************************
   X imaging utils
 **************************************************************************/

@@ -428,6 +428,40 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
 		*h = r.height;
 }
 
+void draw_rectangle_outline(cairo_t *cr, unsigned char *color, int x, int y, int w, int h)
+{
+	cairo_save(cr);
+
+	cairo_set_line_width(cr, 1);
+	cairo_set_line_cap(cr, CAIRO_LINE_CAP_SQUARE);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+
+	cairo_set_source_rgb(cr,
+			(double)color[0] / 255.0,
+			(double)color[1] / 255.0,
+			(double)color[2] / 255.0);
+        cairo_rectangle(cr, x, y, w-1, h-1);
+        cairo_stroke(cr);
+
+	cairo_restore(cr);
+}
+
+void fill_rectangle(cairo_t *cr, unsigned char *color, int x, int y, int w, int h)
+{
+	cairo_save(cr);
+
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+
+        cairo_rectangle(cr, x, y, w, h);
+	cairo_set_source_rgb(cr,
+			(double)color[0] / 255.0,
+			(double)color[1] / 255.0,
+			(double)color[2] / 255.0);
+	cairo_fill(cr);
+
+	cairo_restore(cr);
+}
+
 /**************************************************************************
   Buffer utils
 **************************************************************************/
