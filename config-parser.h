@@ -119,8 +119,8 @@ void free_config_format_tree(struct config_format_tree *tree);
  *
  * @return The null pointer if not found, a pointer to the entry on success.
  */
-struct config_format_entry *find_config_format_entry(struct config_format_entry *e, 
-		const char *name);
+struct config_format_entry *find_config_format_entry(struct config_format_entry *e,
+						     const char *name);
 
 /**
  * Look for a child entry value by name.
@@ -130,8 +130,8 @@ struct config_format_entry *find_config_format_entry(struct config_format_entry 
  *
  * @return The null pointer if not found, a pointer to the value on success.
  */
-const char *find_config_format_entry_value(struct config_format_entry *e, 
-		const char *name);
+char *find_config_format_entry_value(struct config_format_entry *e,
+				     const char *name);
 
 /**
  * Write a path of an entry to a buffer using parent information.

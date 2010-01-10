@@ -316,7 +316,7 @@ void free_config_format_tree(struct config_format_tree *tree)
 }
 
 struct config_format_entry *find_config_format_entry(struct config_format_entry *e, 
-		const char *name)
+						     const char *name)
 {
 	size_t i;
 	for (i = 0; i < e->children_n; ++i) {
@@ -326,8 +326,8 @@ struct config_format_entry *find_config_format_entry(struct config_format_entry 
 	return 0;
 }
 
-const char *find_config_format_entry_value(struct config_format_entry *e, 
-		const char *name)
+char *find_config_format_entry_value(struct config_format_entry *e,
+				     const char *name)
 {
 	struct config_format_entry *ee = find_config_format_entry(e, name);
 	return (ee) ? ee->value : 0;
