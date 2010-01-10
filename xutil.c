@@ -562,6 +562,13 @@ void x_send_dnd_message(struct x_connection *c, Window win,
 	XSendEvent(c->dpy, win, False, NoEventMask, (XEvent*)&e);
 }
 
+void x_translate_coordinates(struct x_connection *c, int x, int y,
+			     int *xout, int *yout, Window win)
+{
+	Window tmpwin;
+	XTranslateCoordinates(c->dpy, win, c->root, x, y, xout, yout, &tmpwin);
+}
+
 /**************************************************************************
   X error trap
 **************************************************************************/

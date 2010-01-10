@@ -193,13 +193,6 @@ static int task_monitor(int x, int y, int w, int h,
 	return task_monitor;
 }
 
-static void translate_coordinates(int x, int y, int *xout, int *yout,
-				  Window win, const struct x_connection *c)
-{
-	Window tmpwin;
-	XTranslateCoordinates(c->dpy, win, c->root, x, y, xout, yout, &tmpwin);
-}
-
 static int find_task_by_window(struct taskbar_widget *tw, Window win)
 {
 	size_t i;
@@ -245,7 +238,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 	t.win = win;
 	t.demands_attention = x_is_window_demands_attention(c, win);
 	int x, y;
-	translate_coordinates(winattrs.x, winattrs.y, &x, &y, win, c);
+	x_translate_coordinates(c, winattrs.x, winattrs.y, &x, &y, win);
 	t.monitor = task_monitor(x, y, winattrs.width, winattrs.height,
 				 c->monitors, c->monitors_n);
 
@@ -874,7 +867,7 @@ static void configure(struct widget *w, XConfigureEvent *e)
 		XGetWindowAttributes(c->dpy, e->window, &winattrs);
 
 		int x, y;
-		translate_coordinates(winattrs.x, winattrs.y, &x, &y, e->window, c);
+		x_translate_coordinates(c, winattrs.x, winattrs.y, &x, &y, e->window);
 		int monitor = task_monitor(x, y, winattrs.width, winattrs.height,
 					   monitors, monitors_n);
 
