@@ -132,6 +132,70 @@ struct desktops_widget {
 extern struct widget_interface desktops_interface;
 
 /**************************************************************************
+  Pager
+**************************************************************************/
+
+struct pager_state {
+	unsigned char border[3];
+	unsigned char fill[3];
+	unsigned char inactive_window_border[3];
+	unsigned char inactive_window_fill[3];
+	unsigned char active_window_border[3];
+	unsigned char active_window_fill[3];
+	struct text_info font;
+	int exists;
+};
+
+struct pager_theme {
+	/* pressed, idle, pressed_highlight, idle_highlight */
+	struct pager_state states[4];
+	int height;
+	int desktop_spacing;
+};
+
+struct pager_desktop {
+	int x;
+	int w;
+	int needs_expose;
+	int num_tasks;
+};
+
+struct pager_task {
+	Window win;
+	int x; /* coordinates aren't translated */
+	int y;
+	int w;
+	int h;
+	int visible;
+	int desktop; /* desktop this task affects */
+	int stackpos; /* if it was changed we need to redraw */
+	int alive; /* flag, used when syncing tasks with NETWM */
+};
+
+struct pager_widget {
+	struct pager_theme theme;
+
+	/* array */
+	struct pager_desktop *desktops;
+	size_t desktops_n;
+	size_t desktops_alloc;
+
+	int active;
+	int highlighted;
+	Window active_win;
+
+	/* use this value to convert window sizes */
+	int div;
+
+	Window *windows; /* from NETWM */
+	int windows_n;
+
+	GHashTable *tasks; /* synced table of windows with retrieved parameters */
+};
+
+extern struct widget_interface pager_interface;
+
+/**************************************************************************
   Decor
 **************************************************************************/
 

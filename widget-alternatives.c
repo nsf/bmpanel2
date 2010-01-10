@@ -26,6 +26,7 @@ static struct widget_alternative_def desktops_alternatives[] = {
 };
 
 static struct widget_alternative_def *widget_alternatives[] = {
+	desktops_alternatives,
 	0
 };
 

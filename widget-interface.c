@@ -3,6 +3,7 @@
 
 static struct widget_interface *widget_interfaces[] = {
 	&desktops_interface,
+	&pager_interface,
 	&taskbar_interface,
 	&clock_interface,
 	&decor_interface,

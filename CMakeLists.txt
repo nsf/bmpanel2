@@ -28,6 +28,7 @@ SET(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-clock.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-decor.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-desktops.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget-pager.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-systray.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-launchbar.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-empty.c
