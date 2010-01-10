@@ -229,10 +229,11 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 		return;
 	}
 	
-	XSelectInput(c->dpy, win, PropertyChangeMask | StructureNotifyMask);
 
 	XWindowAttributes winattrs;
 	XGetWindowAttributes(c->dpy, win, &winattrs);
+	long mask = winattrs.your_event_mask | PropertyChangeMask | StructureNotifyMask;
+	XSelectInput(c->dpy, win, mask);
 
 	CLEAR_STRUCT(&t);
 	t.win = win;
@@ -649,7 +650,8 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		}
 	}
 
-	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
+	if (e->atom == c->atoms[XATOM_NET_WM_STATE] ||
+	    e->atom == c->atoms[XATOM_WM_STATE]) {
 		struct taskbar_task *t = &tw->tasks[ti];
 		if (x_is_window_hidden(c, t->win))
 			remove_task(tw, ti);
