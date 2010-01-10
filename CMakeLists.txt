@@ -22,6 +22,7 @@ SET(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/xdg.c
 	${CMAKE_CURRENT_SOURCE_DIR}/settings.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-interface.c
+	${CMAKE_CURRENT_SOURCE_DIR}/widget-alternatives.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-utils.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-taskbar.c
 	${CMAKE_CURRENT_SOURCE_DIR}/widget-clock.c

@@ -13,6 +13,12 @@ static int find_widget_in_stash(const char *interface, struct widget_stash *stas
 	return -1;
 }
 
+static char *get_preferred_alternatives()
+{
+	return find_config_format_entry_value(&g_settings.root,
+					      "preferred_alternatives");
+}
+
 /**************************************************************************
   Panel theme
 **************************************************************************/
@@ -261,6 +267,10 @@ static void create_window(struct panel *panel, int monitor)
 
 static void parse_panel_widgets(struct panel *panel, struct config_format_tree *tree)
 {
+	char *preferred_alternatives = get_preferred_alternatives();
+	if (preferred_alternatives)
+		update_alternatives_preference(preferred_alternatives, tree);
+
 	size_t i;
 	for (i = 0; i < tree->root.children_n; ++i) {
 		struct config_format_entry *e = &tree->root.children[i];
@@ -270,6 +280,9 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 
 		if (panel->widgets_n == PANEL_MAX_WIDGETS)
 			XDIE("error: Widgets limit reached");
+
+		if (!validate_widget_for_alternatives(e->name))
+			continue;
 		
 		struct widget *w = &panel->widgets[panel->widgets_n];
 
@@ -285,6 +298,8 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 			XWARNING("Failed to create widget: \"%s\"", e->name);
 		}
 	}
+
+	reset_alternatives();
 }
 
 static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,

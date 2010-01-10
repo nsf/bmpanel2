@@ -99,6 +99,11 @@ struct widget {
 
 struct widget_interface *lookup_widget_interface(const char *themename);
 
+/* alternatives */
+void update_alternatives_preference(char *prefstr, struct config_format_tree *tree);
+int validate_widget_for_alternatives(const char *theme_name);
+void reset_alternatives();
+
 /**************************************************************************
   Panel
 **************************************************************************/

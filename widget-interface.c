@@ -22,3 +22,4 @@ struct widget_interface *lookup_widget_interface(const char *themename)
 	}
 	return 0;
 }
+
