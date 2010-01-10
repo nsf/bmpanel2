@@ -387,6 +387,53 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 	return ret;
 }
 
+int x_is_window_hidden_really(struct x_connection *c, Window win)
+{
+	Atom *data;
+	int ret = 0;
+	int num;
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
+			XA_ATOM, &num);
+	if (data) {
+		while (num) {
+			num--;
+			if (data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK] ||
+			    data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP])
+			{
+				XFree(data);
+				return 1;
+			}
+
+		}
+		XFree(data);
+	}
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE],
+			       c->atoms[XATOM_WM_STATE], 0);
+	if (data) {
+		if (data[0] == WithdrawnState) {
+			XFree(data);
+			return 1;
+		}
+		XFree(data);
+	}
+
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
+	if (!data)
+		return 0;
+
+	while (num) {
+		num--;
+		if (data[num] == c->atoms[XATOM_NET_WM_STATE_SKIP_TASKBAR] ||
+		    data[num] == c->atoms[XATOM_NET_WM_STATE_HIDDEN])
+			ret = 1;
+	}
+	XFree(data);
+
+	return ret;
+}
+
 int x_is_window_demands_attention(struct x_connection *c, Window win)
 {
 	Atom *data;

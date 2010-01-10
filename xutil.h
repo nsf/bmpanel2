@@ -130,6 +130,7 @@ void x_set_prop_array(struct x_connection *c, Window win, Atom type,
 		      const long *values, size_t len);
 
 int x_is_window_hidden(struct x_connection *c, Window win);
+int x_is_window_hidden_really(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
 int x_is_window_demands_attention(struct x_connection *c, Window win);
 
