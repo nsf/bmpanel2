@@ -65,6 +65,8 @@ int parse_align(const char *name, struct config_format_entry *e);
 int parse_int_or_percents(const char *name, struct config_format_entry *e,
 			  int def, int *ispercents);
 int parse_int(const char *name, struct config_format_entry *e, int def);
+int parse_color(unsigned char *out, const char *name, struct config_format_entry *e,
+		unsigned char *def);
 int parse_bool(const char *name, struct config_format_entry *e);
 char *parse_string(const char *name, struct config_format_entry *e, 
 		   const char *def);

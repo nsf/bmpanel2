@@ -23,10 +23,12 @@ static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 }
 
 
-static int parse_color(unsigned char *out, const char *name, 
-		       struct config_format_entry *e)
+int parse_color(unsigned char *out, const char *name, struct config_format_entry *e,
+		unsigned char *def)
 {
-	out[0] = out[1] = out[2] = 0;
+	out[0] = def[0];
+	out[1] = def[1];
+	out[2] = def[2];
 	struct config_format_entry *ee = find_config_format_entry(e, name);
 	if (ee && ee->value) {
 		if (3 == sscanf(ee->value, "%hhu %hhu %hhu", &out[0], &out[1], &out[2]))
@@ -180,10 +182,10 @@ void free_triple_image(struct triple_image *tbt)
 int parse_text_info(struct text_info *out, struct config_format_entry *e)
 {
 	out->pfd = pango_font_description_from_string(e->value);
-	parse_color(out->color, "color", e);
+	parse_color(out->color, "color", e, (unsigned char[]){0,0,0});
 	parse_2ints(out->offset, "offset", e);
 	out->align = parse_align("align", e);
-	parse_color(out->shadow_color, "shadow_color", e);
+	parse_color(out->shadow_color, "shadow_color", e, (unsigned char[]){0,0,0});
 	parse_2ints(out->shadow_offset, "shadow_offset", e);
 
 	return 0;
