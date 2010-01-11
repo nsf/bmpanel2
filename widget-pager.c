@@ -309,6 +309,7 @@ static void draw(struct widget *w)
 	int h = pw->theme.height;
 
 	for (i = 0; i < pw->desktops_n; ++i) {
+		struct pager_desktop *pd = &pw->desktops[i];
 		int state = (i == pw->active) << 1;
 		int state_hl = ((i == pw->active) << 1) | (i == pw->highlighted);
 		struct pager_state *ps;
@@ -318,8 +319,8 @@ static void draw(struct widget *w)
 		else
 			ps = &pw->theme.states[state];
 		
-		pw->desktops[i].x = x;
-		fill_rectangle(cr, ps->fill, x, y, pw->desktops[i].w, h);
+		pd->x = x;
+		fill_rectangle(cr, ps->fill, x, y, pd->w, h);
 
 		size_t j;
 		for (j = 0; j < pw->windows_n; ++j) {
@@ -346,8 +347,8 @@ static void draw(struct widget *w)
 			}
 		}
 
-		draw_rectangle_outline(cr, ps->border, x, y, pw->desktops[i].w, h);
-		x += pw->desktops[i].w + pw->theme.desktop_spacing;
+		draw_rectangle_outline(cr, ps->border, x, y, pd->w, h);
+		x += pd->w + pw->theme.desktop_spacing;
 	}
 }
 
