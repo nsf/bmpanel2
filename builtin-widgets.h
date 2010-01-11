@@ -158,6 +158,8 @@ struct pager_desktop {
 	int w;
 	int needs_expose;
 	int num_tasks;
+	int offx;
+	int offy;
 };
 
 struct pager_task {
@@ -191,6 +193,8 @@ struct pager_widget {
 	int windows_n;
 
 	GHashTable *tasks; /* synced table of windows with retrieved parameters */
+
+	int current_monitor_only;
 };
 
 extern struct widget_interface pager_interface;

@@ -1,3 +1,4 @@
+#include "settings.h"
 #include "builtin-widgets.h"
 
 static int create_widget_private(struct widget *w, struct config_format_entry *e, 
@@ -13,6 +14,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di);
 static void configure(struct widget *w, XConfigureEvent *e);
 static void mouse_motion(struct widget *w, XMotionEvent *e);
 static void mouse_leave(struct widget *w);
+static void reconfigure(struct widget *w);
 
 struct widget_interface pager_interface = {
 	.theme_name 		= "pager",
@@ -26,7 +28,8 @@ struct widget_interface pager_interface = {
 	.client_msg		= client_msg,
 	.configure		= configure,
 	.mouse_motion		= mouse_motion,
-	.mouse_leave		= mouse_leave
+	.mouse_leave		= mouse_leave,
+	.reconfigure		= reconfigure
 };
 
 /**************************************************************************
@@ -237,12 +240,22 @@ static void resize_desktops(struct widget *w)
 	struct pager_widget *pw = (struct pager_widget*)w->private;
 	if (pw->theme.height > w->panel->height)
 		pw->theme.height = w->panel->height - 2;
-	pw->div = c->screen_height / pw->theme.height;
 
-	int desktop_width = c->screen_width / pw->div;
+	struct x_monitor *mon = &c->monitors[w->panel->monitor];
+	if (!pw->current_monitor_only) {
+		mon->x = mon->y = 0;
+		mon->width = c->screen_width;
+		mon->height = c->screen_height;
+	}
+
+	pw->div = mon->height / pw->theme.height;
+	int desktop_width = mon->width / pw->div;
 	size_t i;
-	for (i = 0; i < pw->desktops_n; ++i)
+	for (i = 0; i < pw->desktops_n; ++i) {
 		pw->desktops[i].w = desktop_width;
+		pw->desktops[i].offx = mon->x;
+		pw->desktops[i].offy = mon->y;
+	}
 
 	w->width = pw->desktops_n * desktop_width + 
 		(pw->desktops_n - 1) * pw->theme.desktop_spacing;
@@ -277,6 +290,8 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 
 	INIT_ARRAY(pw->desktops, 16);
 	w->private = pw;
+
+	pw->current_monitor_only = parse_bool("pager_current_monitor_only", &g_settings.root);
 
 	struct x_connection *c = &w->panel->connection;
 	update_desktops(pw, c);
@@ -333,8 +348,8 @@ static void draw(struct widget *w)
 				unsigned char *window_border;
 				struct rect intersection;
 				struct rect winr;
-				winr.x = r.x + t->x / pw->div;
-				winr.y = r.y + t->y / pw->div;
+				winr.x = r.x + (t->x - pd->offx) / pw->div;
+				winr.y = r.y + (t->y - pd->offy) / pw->div;
 				winr.w = t->w / pw->div;
 				winr.h = t->h / pw->div;
 				if (!rect_intersection(&intersection, &winr, &r))
@@ -494,4 +509,10 @@ static void mouse_leave(struct widget *w)
 		pw->highlighted = -1;
 		w->needs_expose = 1;
 	}
+}
+
+static void reconfigure(struct widget *w)
+{
+	struct pager_widget *pw = (struct pager_widget*)w->private;
+	pw->current_monitor_only = parse_bool("pager_current_monitor_only", &g_settings.root);
 }

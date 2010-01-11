@@ -505,10 +505,14 @@ int rect_intersection(struct rect *rout, struct rect *r1, struct rect *r2)
 	if (ix > ix2 || iy > iy2)
 		return 0;
 
-	rout->x = ix;
-	rout->y = iy;
 	rout->w = ix2 - ix;
 	rout->h = iy2 - iy;
+
+	if (rout->w == 0 || rout->h == 0)
+		return 0;
+
+	rout->x = ix;
+	rout->y = iy;
 
 	return 1;
 }
