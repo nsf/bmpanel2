@@ -171,7 +171,7 @@ static void update_tasks(struct widget *w)
 			t->win = win;
 			t->alive = 1;
 			t->desktop = x_get_window_desktop(c, win);
-			t->visible = !x_is_window_hidden_really(c, win);
+			t->visible = x_is_window_visible_on_screen(c, win);
 			t->stackpos = i;
 
 			g_hash_table_insert(pw->tasks, &t->win, t);
@@ -368,7 +368,7 @@ static void draw(struct widget *w)
 		}
 
 		draw_rectangle_outline(cr, ps->border, &r);
-		r.x += pd->w + pw->theme.desktop_spacing;
+		r.x += r.w + pw->theme.desktop_spacing;
 	}
 }
 
@@ -429,7 +429,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	}
 	
 	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
-		t->visible = !x_is_window_hidden_really(c, t->win);
+		t->visible = x_is_window_visible_on_screen(c, t->win);
 		w->needs_expose = 1;
 		return;
 	}

@@ -341,10 +341,10 @@ void x_set_prop_array(struct x_connection *c, Window win, Atom type,
 			PropModeReplace, (unsigned char*)values, len);
 }
 
-int x_is_window_hidden(struct x_connection *c, Window win)
+int x_is_window_visible_on_panel(struct x_connection *c, Window win)
 {
 	Atom *data;
-	int ret = 0;
+	int ret = 1;
 	int num;
 
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
@@ -356,7 +356,7 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 			    data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP]) 
 			{
 				XFree(data);
-				return 1;
+				return 0;
 			}
 
 		}
@@ -368,29 +368,29 @@ int x_is_window_hidden(struct x_connection *c, Window win)
 	if (data) {
 		if (data[0] == WithdrawnState) {
 			XFree(data);
-			return 1;
+			return 0;
 		}
 		XFree(data);
 	}
 
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
 	if (!data)
-		return 0;
+		return 1;
 
 	while (num) {
 		num--;
 		if (data[num] == c->atoms[XATOM_NET_WM_STATE_SKIP_TASKBAR])
-			ret = 1;
+			ret = 0;
 	}
 	XFree(data);
 
 	return ret;
 }
 
-int x_is_window_hidden_really(struct x_connection *c, Window win)
+int x_is_window_visible_on_screen(struct x_connection *c, Window win)
 {
 	Atom *data;
-	int ret = 0;
+	int ret = 1;
 	int num;
 
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
@@ -402,7 +402,7 @@ int x_is_window_hidden_really(struct x_connection *c, Window win)
 			    data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP])
 			{
 				XFree(data);
-				return 1;
+				return 0;
 			}
 
 		}
@@ -414,20 +414,20 @@ int x_is_window_hidden_really(struct x_connection *c, Window win)
 	if (data) {
 		if (data[0] == WithdrawnState) {
 			XFree(data);
-			return 1;
+			return 0;
 		}
 		XFree(data);
 	}
 
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
 	if (!data)
-		return 0;
+		return 1;
 
 	while (num) {
 		num--;
 		if (data[num] == c->atoms[XATOM_NET_WM_STATE_SKIP_TASKBAR] ||
 		    data[num] == c->atoms[XATOM_NET_WM_STATE_HIDDEN])
-			ret = 1;
+			ret = 0;
 	}
 	XFree(data);
 

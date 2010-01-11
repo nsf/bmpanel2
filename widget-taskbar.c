@@ -209,7 +209,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 	struct taskbar_task t;
 
 	x_set_error_trap();
-	if (x_is_window_hidden(c, win)) {
+	if (!x_is_window_visible_on_panel(c, win)) {
 		if (x_done_error_trap())
 			return;
 		// we need this if window will apear later
@@ -642,7 +642,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	if (e->atom == c->atoms[XATOM_NET_WM_STATE] ||
 	    e->atom == c->atoms[XATOM_WM_STATE]) {
 		struct taskbar_task *t = &tw->tasks[ti];
-		if (x_is_window_hidden(c, t->win))
+		if (!x_is_window_visible_on_panel(c, t->win))
 			remove_task(tw, ti);
 		t->demands_attention = x_is_window_demands_attention(c, t->win);
 		w->needs_expose = 1;

@@ -129,8 +129,8 @@ void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at);
 void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
 		      const long *values, size_t len);
 
-int x_is_window_hidden(struct x_connection *c, Window win);
-int x_is_window_hidden_really(struct x_connection *c, Window win);
+int x_is_window_visible_on_panel(struct x_connection *c, Window win);
+int x_is_window_visible_on_screen(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
 int x_is_window_demands_attention(struct x_connection *c, Window win);
 
