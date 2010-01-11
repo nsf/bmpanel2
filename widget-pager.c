@@ -140,7 +140,7 @@ static void select_window_input(struct x_connection *c, Window win)
 	XSelectInput(c->dpy, win, mask);
 }
 
-static void update_tasks(struct widget *w)
+static int update_tasks(struct widget *w)
 {
 	struct x_connection *c = &w->panel->connection;
 	struct pager_widget *pw = (struct pager_widget*)w->private;
@@ -150,7 +150,7 @@ static void update_tasks(struct widget *w)
 	pw->windows = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_CLIENT_LIST_STACKING],
 				      XA_WINDOW, &pw->windows_n);
 	if (!pw->windows_n)
-		return;
+		return 0;
 
 	int needs_expose = 0;
 	size_t i;
@@ -172,6 +172,7 @@ static void update_tasks(struct widget *w)
 			t->alive = 1;
 			t->desktop = x_get_window_desktop(c, win);
 			t->visible = x_is_window_visible_on_screen(c, win);
+			t->visible_on_panel = x_is_window_visible_on_panel(c, win);
 			t->stackpos = i;
 
 			g_hash_table_insert(pw->tasks, &t->win, t);
@@ -180,6 +181,7 @@ static void update_tasks(struct widget *w)
 	}
 
 	g_hash_table_foreach_remove(pw->tasks, (GHRFunc)task_remove_dead, 0);
+	return needs_expose;
 }
 
 static void clear_tasks(struct pager_widget *pw)
@@ -318,6 +320,7 @@ static void draw(struct widget *w)
 {
 	struct pager_widget *pw = (struct pager_widget*)w->private;
 	cairo_t *cr = w->panel->cr;
+	PangoLayout *layout = w->panel->layout;
 	size_t i;
 	struct rect r;
 	r.x = w->x;
@@ -339,10 +342,13 @@ static void draw(struct widget *w)
 		r.w = pd->w;
 		fill_rectangle(cr, ps->fill, &r);
 
+		size_t visible_tasks_count = 0;
 		size_t j;
 		for (j = 0; j < pw->windows_n; ++j) {
 			Window win = pw->windows[j];
 			struct pager_task *t = g_hash_table_lookup(pw->tasks, &win);
+			if (t && t->visible_on_panel && (t->desktop == i || t->desktop == -1))
+				visible_tasks_count++;
 			if (t && t->visible && (t->desktop == i || t->desktop == -1)) {
 				unsigned char *window_fill;
 				unsigned char *window_border;
@@ -368,6 +374,12 @@ static void draw(struct widget *w)
 		}
 
 		draw_rectangle_outline(cr, ps->border, &r);
+		if (ps->font.pfd && visible_tasks_count) {
+			/* draw number */
+			char buf[10];
+			snprintf(buf, sizeof(buf), "%u", visible_tasks_count);
+			draw_text(cr, layout, &ps->font, buf, r.x, r.y, r.w, r.h, 0);
+		}
 		r.x += r.w + pw->theme.desktop_spacing;
 	}
 }
@@ -412,8 +424,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		}
 
 		if (e->atom == c->atoms[XATOM_NET_CLIENT_LIST_STACKING]) {
-			update_tasks(w);
-			w->needs_expose = 1;
+			w->needs_expose = update_tasks(w);
 			return;
 		}
 	}
@@ -430,6 +441,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	
 	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
 		t->visible = x_is_window_visible_on_screen(c, t->win);
+		t->visible_on_panel = x_is_window_visible_on_panel(c, t->win);
 		w->needs_expose = 1;
 		return;
 	}

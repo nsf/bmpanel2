@@ -169,6 +169,7 @@ struct pager_task {
 	int w;
 	int h;
 	int visible;
+	int visible_on_panel;
 	int desktop; /* desktop this task affects */
 	int stackpos; /* if it was changed we need to redraw */
 	int alive; /* flag, used when syncing tasks with NETWM */
