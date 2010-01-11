@@ -100,6 +100,20 @@ void draw_rectangle_outline(cairo_t *cr, unsigned char *color, int x, int y, int
 void fill_rectangle(cairo_t *cr, unsigned char *color, int x, int y, int w, int h);
 
 /**************************************************************************
+  Calculation utils
+**************************************************************************/
+
+struct rect {
+	int x;
+	int y;
+	int w;
+	int h;
+};
+
+int rect_intersection(struct rect *rout, struct rect *r1, struct rect *r2);
+int rect_coverage(struct rect *r1, struct rect *r2); /* in percents */
+
+/**************************************************************************
   X imaging utils
 **************************************************************************/
 

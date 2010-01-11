@@ -161,19 +161,8 @@ static int is_task_visible(struct widget *w, struct taskbar_task *task)
 
 static int task_monitor_coverage(int x, int y, int w, int h, const struct x_monitor *mon)
 {
-	int ux = MAXINT(x, mon->x);
-	int ux2 = MININT(x + w, mon->x + mon->width);
-	int uy = MAXINT(y, mon->y);
-	int uy2 = MININT(y + h, mon->y + mon->height);
-	if (ux > ux2 || uy > uy2)
-		return 0;
-
-	int uw = ux2 - ux;
-	int uh = uy2 - uy;
-
-	int uarea = uw * uh;
-	int area = w * h;
-	return (uarea * 100) / area;
+	return rect_coverage(&(struct rect){x, y, w, h},
+			     &(struct rect){mon->x, mon->y, mon->width, mon->height});
 }
 
 static int task_monitor(int x, int y, int w, int h,

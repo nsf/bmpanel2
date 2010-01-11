@@ -493,6 +493,38 @@ void clean_static_buf()
 }
 
 /**************************************************************************
+  Calculation utils
+**************************************************************************/
+
+int rect_intersection(struct rect *rout, struct rect *r1, struct rect *r2)
+{
+	int ix = MAXINT(r1->x, r2->x);
+	int ix2 = MININT(r1->x + r1->w, r2->x + r2->w);
+	int iy = MAXINT(r1->y, r2->y);
+	int iy2 = MININT(r1->y + r1->h, r2->y + r2->h);
+	if (ix > ix2 || iy > iy2)
+		return 0;
+
+	rout->x = ix;
+	rout->y = iy;
+	rout->w = ix2 - ix;
+	rout->h = iy2 - iy;
+
+	return 1;
+}
+
+int rect_coverage(struct rect *r1, struct rect *r2)
+{
+	struct rect intersection;
+	if (!rect_intersection(&intersection, r1, r2))
+		return 0;
+
+	int iarea = intersection.w * intersection.h;
+	int r1area = r1->w * r1->h;
+	return (iarea * 100) / r1area;
+}
+
+/**************************************************************************
   X imaging utils
 **************************************************************************/
 
