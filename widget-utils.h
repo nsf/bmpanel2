@@ -76,6 +76,20 @@ char *parse_string_or_null(const char *name, struct config_format_entry *e);
 void required_entry_not_found(struct config_format_entry *e, const char *name);
 
 /**************************************************************************
+  Calculation utils
+**************************************************************************/
+
+struct rect {
+	int x;
+	int y;
+	int w;
+	int h;
+};
+
+int rect_intersection(struct rect *rout, struct rect *r1, struct rect *r2);
+int rect_coverage(struct rect *r1, struct rect *r2); /* in percents */
+
+/**************************************************************************
   Drawing utils
 **************************************************************************/
 
@@ -96,22 +110,8 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 void text_extents(PangoLayout *layout, PangoFontDescription *font, 
 		  const char *text, int *w, int *h);
 
-void draw_rectangle_outline(cairo_t *cr, unsigned char *color, int x, int y, int w, int h);
-void fill_rectangle(cairo_t *cr, unsigned char *color, int x, int y, int w, int h);
-
-/**************************************************************************
-  Calculation utils
-**************************************************************************/
-
-struct rect {
-	int x;
-	int y;
-	int w;
-	int h;
-};
-
-int rect_intersection(struct rect *rout, struct rect *r1, struct rect *r2);
-int rect_coverage(struct rect *r1, struct rect *r2); /* in percents */
+void draw_rectangle_outline(cairo_t *cr, unsigned char *color, struct rect *r);
+void fill_rectangle(cairo_t *cr, unsigned char *color, struct rect *r);
 
 /**************************************************************************
   X imaging utils

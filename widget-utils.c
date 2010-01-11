@@ -428,7 +428,7 @@ void text_extents(PangoLayout *layout, PangoFontDescription *font,
 		*h = r.height;
 }
 
-void draw_rectangle_outline(cairo_t *cr, unsigned char *color, int x, int y, int w, int h)
+void draw_rectangle_outline(cairo_t *cr, unsigned char *color, struct rect *r)
 {
 	cairo_save(cr);
 
@@ -440,19 +440,19 @@ void draw_rectangle_outline(cairo_t *cr, unsigned char *color, int x, int y, int
 			(double)color[0] / 255.0,
 			(double)color[1] / 255.0,
 			(double)color[2] / 255.0);
-        cairo_rectangle(cr, x, y, w-1, h-1);
+        cairo_rectangle(cr, r->x, r->y, r->w-1, r->h-1);
         cairo_stroke(cr);
 
 	cairo_restore(cr);
 }
 
-void fill_rectangle(cairo_t *cr, unsigned char *color, int x, int y, int w, int h)
+void fill_rectangle(cairo_t *cr, unsigned char *color, struct rect *r)
 {
 	cairo_save(cr);
 
 	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 
-        cairo_rectangle(cr, x, y, w, h);
+        cairo_rectangle(cr, r->x, r->y, r->w, r->h);
 	cairo_set_source_rgb(cr,
 			(double)color[0] / 255.0,
 			(double)color[1] / 255.0,

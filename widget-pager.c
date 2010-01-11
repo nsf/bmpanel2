@@ -304,9 +304,10 @@ static void draw(struct widget *w)
 	struct pager_widget *pw = (struct pager_widget*)w->private;
 	cairo_t *cr = w->panel->cr;
 	size_t i;
-	int x = w->x;
-	int y = (w->panel->height - pw->theme.height) / 2;
-	int h = pw->theme.height;
+	struct rect r;
+	r.x = w->x;
+	r.y = (w->panel->height - pw->theme.height) / 2;
+	r.h = pw->theme.height;
 
 	for (i = 0; i < pw->desktops_n; ++i) {
 		struct pager_desktop *pd = &pw->desktops[i];
@@ -319,8 +320,9 @@ static void draw(struct widget *w)
 		else
 			ps = &pw->theme.states[state];
 		
-		pd->x = x;
-		fill_rectangle(cr, ps->fill, x, y, pd->w, h);
+		pd->x = r.x;
+		r.w = pd->w;
+		fill_rectangle(cr, ps->fill, &r);
 
 		size_t j;
 		for (j = 0; j < pw->windows_n; ++j) {
@@ -329,11 +331,15 @@ static void draw(struct widget *w)
 			if (t && t->visible && (t->desktop == i || t->desktop == -1)) {
 				unsigned char *window_fill;
 				unsigned char *window_border;
-				int mx, my, mw, mh;
-				mx = t->x / pw->div;
-				my = t->y / pw->div;
-				mw = t->w / pw->div;
-				mh = t->h / pw->div;
+				struct rect intersection;
+				struct rect winr;
+				winr.x = r.x + t->x / pw->div;
+				winr.y = r.y + t->y / pw->div;
+				winr.w = t->w / pw->div;
+				winr.h = t->h / pw->div;
+				if (!rect_intersection(&intersection, &winr, &r))
+					continue;
+
 				if (win == pw->active_win) {
 					window_fill = ps->active_window_fill;
 					window_border = ps->active_window_border;
@@ -341,14 +347,13 @@ static void draw(struct widget *w)
 					window_fill = ps->inactive_window_fill;
 					window_border = ps->inactive_window_border;
 				}
-				fill_rectangle(cr, window_fill, x + mx, y + my, mw, mh);
-				draw_rectangle_outline(cr, window_border, 
-						       x + mx, y + my, mw, mh);
+				fill_rectangle(cr, window_fill, &intersection);
+				draw_rectangle_outline(cr, window_border, &intersection);
 			}
 		}
 
-		draw_rectangle_outline(cr, ps->border, x, y, pd->w, h);
-		x += pd->w + pw->theme.desktop_spacing;
+		draw_rectangle_outline(cr, ps->border, &r);
+		r.x += pd->w + pw->theme.desktop_spacing;
 	}
 }
 
