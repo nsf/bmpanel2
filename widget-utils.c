@@ -9,7 +9,6 @@
 static int parse_image_dimensions(int *x, int *y, int *w, int *h,
 		struct config_format_entry *e)
 {
-	/* XXX */
 	struct config_format_entry *ee = find_config_format_entry(e, "xywh");
 	if (ee && ee->value) {
 		if (4 == sscanf(ee->value, "%d %d %d %d", x, y, w, h))
