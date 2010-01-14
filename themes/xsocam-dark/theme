@@ -51,7 +51,7 @@ pager
 
 	pressed
 		border 0 0 0
-		fill 200 200 200
+		fill 220 220 220
 		inactive_window_border 76 76 76
 		inactive_window_fill 140 140 140
 		active_window_border 0 0 0
