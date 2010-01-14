@@ -495,9 +495,12 @@ class Bmpanel2Remote:
 		except:
 			pass
 
-	def reconfigure(self):
+	def reconfigure(self, reload_theme=False):
 		if self.pid:
-			os.kill(self.pid, 10)
+			if reload_theme:
+				os.kill(self.pid, 12)
+			else:
+				os.kill(self.pid, 10)
 
 #----------------------------------------------------------------------
 # Bmpanel2Themes

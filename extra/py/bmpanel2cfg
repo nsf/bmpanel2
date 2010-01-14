@@ -54,6 +54,10 @@ def reconfigure():
 	g_config.save()
 	g_remote.reconfigure()
 
+def reconfigure_and_reload_theme():
+	g_config.save()
+	g_remote.reconfigure(True)
+
 #----------------------------------------------------------------------
 # ThemesListbox
 #----------------------------------------------------------------------
@@ -85,12 +89,12 @@ class ThemesListbox:
 			return
 		theme = model.get_value(it, 1)
 		g_config.set_theme(theme.dirname)
-		reconfigure()
+		reconfigure_and_reload_theme()
 
 #----------------------------------------------------------------------
 # Parameters Table
 #----------------------------------------------------------------------
-def make_alternatives_selector(config, choices):
+def make_alternatives_selector(config, choices, reconf=reconfigure_and_reload_theme):
 	choices.insert(0, "none")
 	model = gtk.ListStore(gobject.TYPE_STRING)
 	for c in choices:
@@ -123,22 +127,22 @@ def make_alternatives_selector(config, choices):
 		if c != "none":
 			current.add(c)
 		config.set_preferred_alternatives(" ".join(current))
-		reconfigure()
+		reconf()
 
 	w.connect('changed', changed, choices)
 	return w
 
-def make_boolean(setter, getter):
+def make_boolean(setter, getter, reconf=reconfigure):
 	w = gtk.CheckButton()
 	w.set_active(getter())
 	def changed(checkbox):
 		active = checkbox.get_active()
 		setter(active)
-		reconfigure()
+		reconf()
 	w.connect('toggled', changed)
 	return w
 
-def make_string(setter, getter):
+def make_string(setter, getter, reconf=reconfigure):
 	w = gtk.Entry()
 	try:
 		w.set_text(getter())
@@ -148,11 +152,11 @@ def make_string(setter, getter):
 	def changed(entry):
 		text = entry.get_text()
 		setter(text)
-		reconfigure()
+		reconf()
 	w.connect('changed', changed)
 	return w
 
-def make_number(setter, getter, mmin, mmax):
+def make_number(setter, getter, mmin, mmax, reconf=reconfigure):
 	w = gtk.SpinButton()
 	w.set_increments(1,5)
 	w.set_range(mmin, mmax)
@@ -160,7 +164,7 @@ def make_number(setter, getter, mmin, mmax):
 	def changed(num):
 		n = num.get_value_as_int()
 		setter(n)
-		reconfigure()
+		reconf()
 	w.connect('value-changed', changed)
 	return w
 
@@ -205,7 +209,8 @@ class ParametersTable:
 
 		monitors_n = gtk.gdk.screen_get_default().get_n_monitors()
 		e = make_number(g_config.set_monitor,
-				g_config.get_monitor, 0, monitors_n - 1)
+				g_config.get_monitor, 0, monitors_n - 1,
+				reconfigure_and_reload_theme)
 		self.add_row("Monitor:", e)
 
 		e = make_boolean(g_config.set_pager_current_monitor_only,
@@ -217,8 +222,6 @@ class ParametersTable:
 		self.add_label("Alternatives:")
 
 		e = make_alternatives_selector(g_config, ["pager", "desktop_switcher"])
-		self.add_row(None, e)
-		e = make_alternatives_selector(g_config, ["taskbar", "taskbar2"])
 		self.add_row(None, e)
 
 	def add_separator(self):
