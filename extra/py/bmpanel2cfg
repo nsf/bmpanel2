@@ -100,7 +100,10 @@ def make_alternatives_selector(config, choices, reconf=reconfigure_and_reload_th
 	for c in choices:
 		model.append((c,))
 
-	current = config.get_preferred_alternatives().split()
+	current = []
+	try: current += config.get_preferred_alternatives().split()
+	except: pass
+
 	i = None
 	for c in current:
 		try:
@@ -121,7 +124,11 @@ def make_alternatives_selector(config, choices, reconf=reconfigure_and_reload_th
 
 	def changed(combo, choices):
 		c = choices[combo.get_active()]
-		current = set(config.get_preferred_alternatives().split())
+
+		current = set()
+		try: current.add(config.get_preferred_alternatives().split())
+		except: pass
+
 		for choice in choices:
 			current.discard(choice)
 		if c != "none":
