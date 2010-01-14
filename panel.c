@@ -306,6 +306,11 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 					      struct panel *panel, 
 					      struct config_format_tree *tree)
 {
+	/* TODO: omg ugly copy & paste */
+	char *preferred_alternatives = get_preferred_alternatives();
+	if (preferred_alternatives)
+		update_alternatives_preference(preferred_alternatives, tree);
+
 	size_t i;
 	for (i = 0; i < tree->root.children_n; ++i) {
 		struct config_format_entry *e = &tree->root.children[i];
@@ -316,6 +321,9 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 		if (panel->widgets_n == PANEL_MAX_WIDGETS)
 			XDIE("error: Widgets limit reached");
 		
+		if (!validate_widget_for_alternatives(e->name))
+			continue;
+
 		struct widget *w = &panel->widgets[panel->widgets_n];
 
 		w->interface = we;
@@ -351,6 +359,8 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 			XWARNING("Failed to create widget: \"%s\"", e->name);
 		}
 	}
+
+	reset_alternatives();
 }
 
 void recalculate_widgets_sizes(struct panel *panel)
