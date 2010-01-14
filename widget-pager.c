@@ -243,20 +243,20 @@ static void resize_desktops(struct widget *w)
 	if (pw->theme.height > w->panel->height)
 		pw->theme.height = w->panel->height - 2;
 
-	struct x_monitor *mon = &c->monitors[w->panel->monitor];
+	struct x_monitor mon = c->monitors[w->panel->monitor];
 	if (!pw->current_monitor_only) {
-		mon->x = mon->y = 0;
-		mon->width = c->screen_width;
-		mon->height = c->screen_height;
+		mon.x = mon.y = 0;
+		mon.width = c->screen_width;
+		mon.height = c->screen_height;
 	}
 
-	pw->div = mon->height / pw->theme.height;
-	int desktop_width = mon->width / pw->div;
+	pw->div = mon.height / pw->theme.height;
+	int desktop_width = mon.width / pw->div;
 	size_t i;
 	for (i = 0; i < pw->desktops_n; ++i) {
 		pw->desktops[i].w = desktop_width;
-		pw->desktops[i].offx = mon->x;
-		pw->desktops[i].offy = mon->y;
+		pw->desktops[i].offx = mon.x;
+		pw->desktops[i].offy = mon.y;
 	}
 
 	w->width = pw->desktops_n * desktop_width + 
@@ -526,5 +526,10 @@ static void mouse_leave(struct widget *w)
 static void reconfigure(struct widget *w)
 {
 	struct pager_widget *pw = (struct pager_widget*)w->private;
-	pw->current_monitor_only = parse_bool("pager_current_monitor_only", &g_settings.root);
+	int current_monitor_only = parse_bool("pager_current_monitor_only", &g_settings.root);
+	if (current_monitor_only != pw->current_monitor_only) {
+		pw->current_monitor_only = current_monitor_only;
+		resize_desktops(w);
+		recalculate_widgets_sizes(w->panel);
+	}
 }
