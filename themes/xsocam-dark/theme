@@ -7,6 +7,9 @@ theme
 	name XSOcaM Dark
 	author nsf <no.smile.face@gmail.com>
 
+empty 5
+	no_separator
+
 desktop_switcher
 	idle
 		left_corner ds_left_corner_idle_img.png
@@ -32,6 +35,34 @@ desktop_switcher
 			shadow_color 200 200 200
 
 	separator ds_separator_img.png
+
+pager
+	idle
+		border 76 76 76
+		fill 178 178 178
+		inactive_window_border 76 76 76
+		inactive_window_fill 140 140 140
+		active_window_border 0 0 0
+		active_window_fill 80 80 80
+		font DejaVuSans 8
+			color 0 0 0
+			offset -4 5
+			align right
+
+	pressed
+		border 0 0 0
+		fill 200 200 200
+		inactive_window_border 76 76 76
+		inactive_window_fill 140 140 140
+		active_window_border 0 0 0
+		active_window_fill 80 80 80
+		font DejaVuSans 8
+			color 0 0 0
+			offset -4 5
+			align right
+
+	height 24
+	desktop_spacing 5
 
 launchbar
 	icon_size 24 24
