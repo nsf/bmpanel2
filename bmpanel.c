@@ -182,57 +182,39 @@ static const char *config_override;
 
 static const char *bmpanel2_version_str = BMPANEL2_VERSION_STR BMPANEL2_USAGE;
 
-static const char *get_theme_name()
-{
-	if (theme_override)
-		return theme_override;
-	else {
-		const char *theme;
-		theme = find_config_format_entry_value(&g_settings.root,
-						       "theme");
-		if (theme)
-			return theme;
-		else
-			return "native";
-	}
-}
-
 static int get_monitor()
 {
 	return parse_int("monitor", &g_settings.root, 0);
 }
 
-static void reload_config()
+static void reload_config_and_theme()
 {
-	char *previous_theme = xstrdup(get_theme_name());
+	/* TODO: optimize here, when changing monitor,
+	 * it's not necessary to reload theme
+	 */
+	struct widget_stash ws;
 
 	free_settings();
 	load_settings(config_override);
 
-	int new_monitor = get_monitor();
+	/* free theme */
+	free_config_format_tree(&theme);
+	reconfigure_free_panel(&p, &ws);
 
-	if (strcmp(get_theme_name(), previous_theme) ||
-	    new_monitor != p.monitor)
-	{
-		/* TODO: optimize here, when changing monitor,
-		 * it's not necessary to reload theme
-		 */
-		struct widget_stash ws;
-		/* free theme */
-		free_config_format_tree(&theme);
-		reconfigure_free_panel(&p, &ws);
+	/* reload */
+	if (load_theme(&theme, theme_override) < 0)
+		XDIE("Failed to load theme");
 
-		/* reload */
-		if (load_theme(&theme, theme_override) < 0)
-			XDIE("Failed to load theme");
+	reconfigure_panel(&p, &theme, &ws, get_monitor());
+	clean_image_cache(0);
+}
 
-		reconfigure_panel(&p, &theme, &ws, new_monitor);
-		clean_image_cache(0);
-	} else {
-		reconfigure_panel_config(&p);
-		reconfigure_widgets(&p);
-	}
-	xfree(previous_theme);
+static void reload_config()
+{
+	free_settings();
+	load_settings(config_override);
+	reconfigure_panel_config(&p);
+	reconfigure_widgets(&p);
 }
 
 static void sigint_handler(int xxx)
@@ -249,13 +231,21 @@ static void sigterm_handler(int xxx)
 
 static gboolean reload_config_event(gpointer data)
 {
-	reload_config();
+	if ((int)data)
+		reload_config_and_theme();
+	else
+		reload_config();
 	return 0;
 }
 
 static void sigusr1_handler(int xxx)
 {
 	g_idle_add(reload_config_event, 0);
+}
+
+static void sigusr2_handler(int xxx)
+{
+	g_idle_add(reload_config_event, (gpointer)1);
 }
 
 static void mysignal(int sig, void (*handler)(int))
@@ -309,6 +299,7 @@ int main(int argc, char **argv)
 	mysignal(SIGINT, sigint_handler);
 	mysignal(SIGTERM, sigterm_handler);
 	mysignal(SIGUSR1, sigusr1_handler);
+	mysignal(SIGUSR2, sigusr2_handler);
 
 	panel_main_loop(&p);
 	
