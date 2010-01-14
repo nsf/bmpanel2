@@ -423,6 +423,18 @@ class Bmpanel2Config:
 	def set_task_visible_monitors(self, value):
 		self._set_str_value('task_visible_monitors', value)
 
+	def get_pager_current_monitor_only(self):
+		return self._get_bool_value('pager_current_monitor_only')
+
+	def set_pager_current_monitor_only(self, value):
+		self._set_bool_value('pager_current_monitor_only', value)
+
+	def get_preferred_alternatives(self):
+		return self._get_str_value('preferred_alternatives', '')
+
+	def set_preferred_alternatives(self, value):
+		self._set_str_value('preferred_alternatives', value)
+
 	# TODO: launchbar
 
 #----------------------------------------------------------------------

@@ -90,6 +90,44 @@ class ThemesListbox:
 #----------------------------------------------------------------------
 # Parameters Table
 #----------------------------------------------------------------------
+def make_alternatives_selector(config, choices):
+	choices.insert(0, "none")
+	model = gtk.ListStore(gobject.TYPE_STRING)
+	for c in choices:
+		model.append((c,))
+
+	current = config.get_preferred_alternatives().split()
+	i = None
+	for c in current:
+		try:
+			i = choices.index(c)
+			break
+		except:
+			pass
+
+	w = gtk.ComboBox()
+	w.set_model(model)
+	if i:
+		w.set_active(i)
+	else:
+		w.set_active(0)
+	cell = gtk.CellRendererText()
+	w.pack_start(cell, True)
+	w.add_attribute(cell, 'text', 0)
+
+	def changed(combo, choices):
+		c = choices[combo.get_active()]
+		current = set(config.get_preferred_alternatives().split())
+		for choice in choices:
+			current.discard(choice)
+		if c != "none":
+			current.add(c)
+		config.set_preferred_alternatives(" ".join(current))
+		reconfigure()
+
+	w.connect('changed', changed, choices)
+	return w
+
 def make_boolean(setter, getter):
 	w = gtk.CheckButton()
 	w.set_active(getter())
@@ -158,6 +196,9 @@ class ParametersTable:
 				g_config.get_task_death_threshold, 0, 9999)
 		self.add_row("Task death threshold:", e)
 
+		#-----------------------------------------------------
+		self.add_separator()
+
 		e = make_string(g_config.set_task_visible_monitors,
 				g_config.get_task_visible_monitors)
 		self.add_row("Task visible monitors:", e)
@@ -167,12 +208,36 @@ class ParametersTable:
 				g_config.get_monitor, 0, monitors_n - 1)
 		self.add_row("Monitor:", e)
 
+		e = make_boolean(g_config.set_pager_current_monitor_only,
+                                 g_config.get_pager_current_monitor_only)
+		self.add_row("Pager shows current\nmonitor only:", e)
 
-	def add_row(self, label_text, widget):
+		#-----------------------------------------------------
+		self.add_separator()
+		self.add_label("Alternatives:")
+
+		e = make_alternatives_selector(g_config, ["pager", "desktop_switcher"])
+		self.add_row(None, e)
+		e = make_alternatives_selector(g_config, ["taskbar", "taskbar2"])
+		self.add_row(None, e)
+
+	def add_separator(self):
+		sep = gtk.HSeparator()
+		row = self.table.props.n_rows
+		self.table.attach(sep, 0, 2, row, row+1, gtk.FILL, 0, 5, 0)
+
+	def add_label(self, label_text):
 		label = gtk.Label(label_text)
 		label.set_alignment(0, 0)
 		row = self.table.props.n_rows
-		self.table.attach(label, 0, 1, row, row+1, gtk.EXPAND | gtk.FILL, 0, 5, 0)
+		self.table.attach(label, 0, 2, row, row+1, gtk.FILL, 0, 5, 0)
+
+	def add_row(self, label_text, widget):
+		row = self.table.props.n_rows
+		if label_text is not None:
+			label = gtk.Label(label_text)
+			label.set_alignment(0, 0)
+			self.table.attach(label, 0, 1, row, row+1, gtk.EXPAND | gtk.FILL, 0, 5, 0)
 		self.table.attach(widget, 1, 2, row, row+1, gtk.FILL, 0, 5, 0)
 
 #----------------------------------------------------------------------
