@@ -14,6 +14,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 		p->last_click_widget = 0;
 		p->last_click_x = 0;
 		p->last_click_y = 0;
+		p->last_button = 0;
 	}
 
 	size_t i;
@@ -25,6 +26,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 					p->last_click_widget = w;
 					p->last_click_x = e->x;
 					p->last_click_y = e->y;
+					p->last_button = e->button;
 				}
 				if (w->interface->button_click)
 					(*w->interface->button_click)(w, e);
@@ -65,8 +67,8 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 				if (w->interface->mouse_motion)
 					(*w->interface->mouse_motion)(w, e);
 			} else {
-				if (p->under_mouse && 
-					p->under_mouse->interface->mouse_leave)
+				if (p->under_mouse &&
+				    p->under_mouse->interface->mouse_leave)
 				{
 					(*p->under_mouse->interface->
 						mouse_leave)(p->under_mouse);
@@ -108,12 +110,14 @@ void disp_motion_notify(struct panel *p, XMotionEvent *e)
 		p->dnd.cur_y = e->y;
 		p->dnd.cur_root_x = e->x_root;
 		p->dnd.cur_root_y = e->y_root;
+		p->dnd.button = p->last_button;
 		if (w->interface->dnd_start)
 			(*w->interface->dnd_start)(w, &p->dnd);
 
 		p->last_click_widget = 0;
 		p->last_click_x = 0;
 		p->last_click_y = 0;
+		p->last_button = 0;
 	}
 }
 

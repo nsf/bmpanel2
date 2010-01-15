@@ -11,6 +11,18 @@
 #define MAXINT(a, b) ({int _a = (a), _b = (b); _a > _b ? _a : _b; })
 
 /**************************************************************************
+  Mouse buttons
+**************************************************************************/
+
+#define MBUTTON_USE		(1<<0)
+#define MBUTTON_DRAG		(1<<1)
+#define MBUTTON_KILL		(1<<2)
+
+#define MBUTTON_1_DEFAULT	(MBUTTON_USE | MBUTTON_DRAG)
+#define MBUTTON_2_DEFAULT	(MBUTTON_KILL)
+#define MBUTTON_3_DEFAULT	0
+
+/**************************************************************************
   Image cache
 **************************************************************************/
 
@@ -27,6 +39,8 @@ struct drag_info {
 	struct widget *taken_on;
 	int taken_x;
 	int taken_y;
+
+	int button;
 
 	struct widget *dropped_on;
 	int dropped_x;
@@ -166,6 +180,10 @@ struct panel {
 	struct widget *last_click_widget;
 	int last_click_x;
 	int last_click_y;
+	int last_button;
+
+	/* binded mouse actions */
+	unsigned int mbutton[3];
 
 	/* render interface */
 	struct render_interface *render;
@@ -209,6 +227,7 @@ void reconfigure_widgets(struct panel *panel);
 void panel_main_loop(struct panel *panel);
 
 void recalculate_widgets_sizes(struct panel *panel);
+int check_mbutton_condition(struct panel *panel, int mbutton, unsigned int condition);
 
 /* event dispatchers */
 void disp_button_press_release(struct panel *p, XButtonEvent *e);

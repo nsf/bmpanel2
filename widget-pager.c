@@ -393,7 +393,9 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	
 	struct x_connection *c = &w->panel->connection;
 
-	if (e->button == 1 && e->type == ButtonRelease && pw->active != di)
+	int mbutton_use = check_mbutton_condition(w->panel, e->button, MBUTTON_USE);
+
+	if (mbutton_use && e->type == ButtonRelease && pw->active != di)
 		switch_desktop(di, c);
 }
 

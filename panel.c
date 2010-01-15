@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include "gui.h"
 #include "settings.h"
@@ -17,6 +18,44 @@ static char *get_preferred_alternatives()
 {
 	return find_config_format_entry_value(&g_settings.root,
 					      "preferred_alternatives");
+}
+
+static unsigned int parse_mbutton_flag(const char *flag)
+{
+	if (!strcmp(flag, "use"))
+		return MBUTTON_USE;
+	else if (!strcmp(flag, "drag"))
+		return MBUTTON_DRAG;
+	else if (!strcmp(flag, "kill"))
+		return MBUTTON_KILL;
+	return 0;
+}
+
+static void really_parse_mbutton_flag(const char *flag, void *data)
+{
+	unsigned int *bitarray = data;
+	*bitarray |= parse_mbutton_flag(flag);
+}
+
+static unsigned int parse_mbutton_state(const char *name, unsigned int def)
+{
+	struct config_format_entry *e = find_config_format_entry(&g_settings.root, name);
+	if (!e)
+		return def;
+	char *str = e->value;
+	if (!str)
+		return 0;
+
+	unsigned int bitarray = 0;
+	for_each_word(str, really_parse_mbutton_flag, &bitarray);
+	return bitarray;
+}
+
+int check_mbutton_condition(struct panel *panel, int mbutton, unsigned int condition)
+{
+	if (mbutton >= 1 && mbutton <= 3)
+		return panel->mbutton[mbutton-1] & condition;
+	return 0;
 }
 
 /**************************************************************************
@@ -521,9 +560,8 @@ void init_panel(struct panel *panel, struct config_format_tree *tree,
 	/* parse panel theme */
 	if (load_panel_theme(&panel->theme, tree))
 		XDIE("Failed to load theme format file");
-	
-	panel->drag_threshold = parse_int("drag_threshold",
-					  &g_settings.root, 30);
+
+	reconfigure_panel_config(panel);
 
 	select_render_interface(panel);
 	struct x_connection *c = &panel->connection;
@@ -672,6 +710,9 @@ void reconfigure_panel_config(struct panel *panel)
 {
 	panel->drag_threshold = parse_int("drag_threshold",
 					  &g_settings.root, 30);
+	panel->mbutton[0] = parse_mbutton_state("mbutton1", MBUTTON_1_DEFAULT);
+	panel->mbutton[1] = parse_mbutton_state("mbutton2", MBUTTON_2_DEFAULT);
+	panel->mbutton[2] = parse_mbutton_state("mbutton3", MBUTTON_3_DEFAULT);
 }
 
 void reconfigure_widgets(struct panel *panel)

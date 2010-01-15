@@ -178,6 +178,7 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	if (cur == -1)
 		return;
 
-	if (e->button == 1 && e->type == ButtonRelease)
+	int mbutton_use = check_mbutton_condition(w->panel, e->button, MBUTTON_USE);
+	if (mbutton_use && e->type == ButtonRelease)
 		g_spawn_command_line_async(lw->items[cur].execstr, 0);
 }

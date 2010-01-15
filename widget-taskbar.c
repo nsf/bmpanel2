@@ -659,11 +659,18 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	struct taskbar_task *t = &tw->tasks[ti];
 	struct x_connection *c = &w->panel->connection;
 
-	if (e->button == 1 && e->type == ButtonRelease) {
-		if (tw->active == t->win)
-			XIconifyWindow(c->dpy, t->win, c->screen);
-		else
-			activate_task(c, t);
+	int mbutton_use = check_mbutton_condition(w->panel, e->button, MBUTTON_USE);
+	int mbutton_kill = check_mbutton_condition(w->panel, e->button, MBUTTON_KILL);
+
+	if (e->type == ButtonRelease) {
+		if (mbutton_use) {
+			if (tw->active == t->win)
+				XIconifyWindow(c->dpy, t->win, c->screen);
+			else
+				activate_task(c, t);
+		}
+		if (mbutton_kill)
+			close_task(c, t);
 	}
 }
 
@@ -743,6 +750,10 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 
 	int ti = get_taskbar_task_at(di->taken_on, di->taken_x);
 	if (ti == -1)
+		return;
+
+	int mbutton_drag = check_mbutton_condition(w->panel, di->button, MBUTTON_DRAG);
+	if (!mbutton_drag)
 		return;
 
 	struct taskbar_task *t = &tw->tasks[ti];
