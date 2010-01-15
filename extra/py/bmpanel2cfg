@@ -112,8 +112,7 @@ def make_alternatives_selector(config, choices, reconf=reconfigure_and_reload_th
 		except:
 			pass
 
-	w = gtk.ComboBox()
-	w.set_model(model)
+	w = gtk.ComboBox(model)
 	if i:
 		w.set_active(i)
 	else:
