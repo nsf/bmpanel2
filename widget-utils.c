@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <alloca.h>
+#include <ctype.h>
 #include "widget-utils.h"
 
 /**************************************************************************
@@ -261,6 +262,34 @@ void required_entry_not_found(struct config_format_entry *e, const char *name)
 	config_format_entry_path(buf, sizeof(buf), e);
 	XWARNING("Failed to find \"%s/%s\" entry which is required",
 		 buf, name);
+}
+
+void for_each_word(char *str, void (*func)(const char*))
+{
+	char *beg = str;
+	char *end;
+
+	while (1) {
+		while (isspace(*beg))
+			beg++;
+
+		if (*beg == '\0')
+			break;
+
+		end = beg;
+		while (!isspace(*end) && *end != 0)
+			end++;
+
+		char tmp = *end;
+		*end = '\0';
+		(*func)(beg);
+		*end = tmp;
+
+		if (*end == '\0')
+			break;
+
+		beg = end;
+	}
 }
 
 /**************************************************************************

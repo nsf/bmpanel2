@@ -1,5 +1,5 @@
-#include <ctype.h>
 #include "gui.h"
+#include "widget-utils.h"
 
 /**************************************************************************
   Alternative widgets
@@ -127,37 +127,9 @@ static void match_theme_has_widget_alternatives(struct config_format_tree *tree)
 	}
 }
 
-static void match_user_preferred_widget_alternatives(char *prefstr)
-{
-	char *beg = prefstr;
-	char *end;
-
-	while (1) {
-		while (isspace(*beg))
-			beg++;
-
-		if (*beg == '\0')
-			break;
-
-		end = beg;
-		while (!isspace(*end) && *end != 0)
-			end++;
-
-		char tmp = *end;
-		*end = '\0';
-		match_user_preference(beg);
-		*end = tmp;
-		
-		if (*end == '\0')
-			break;
-
-		beg = end;
-	}
-}
-
 void update_alternatives_preference(char *prefstr, struct config_format_tree *tree)
 {
-	match_user_preferred_widget_alternatives(prefstr);
+	for_each_word(prefstr, match_user_preference);
 	match_theme_has_widget_alternatives(tree);
 }
 

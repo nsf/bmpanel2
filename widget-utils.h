@@ -75,6 +75,8 @@ char *parse_string_or_null(const char *name, struct config_format_entry *e);
 /* nice error message */
 void required_entry_not_found(struct config_format_entry *e, const char *name);
 
+void for_each_word(char *str, void (*func)(const char*));
+
 /**************************************************************************
   Calculation utils
 **************************************************************************/
