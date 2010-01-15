@@ -1,7 +1,7 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
@@ -17,14 +17,14 @@ static void mouse_leave(struct widget *w);
 static void reconfigure(struct widget *w);
 
 struct widget_interface pager_interface = {
-	.theme_name 		= "pager",
-	.size_type 		= WIDGET_SIZE_CONSTANT,
-	.create_widget_private 	= create_widget_private,
+	.theme_name		= "pager",
+	.size_type		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
-	.draw 			= draw,
-	.button_click 		= button_click,
-	.prop_change 		= prop_change,
-	.dnd_drop 		= dnd_drop,
+	.draw			= draw,
+	.button_click		= button_click,
+	.prop_change		= prop_change,
+	.dnd_drop		= dnd_drop,
 	.client_msg		= client_msg,
 	.configure		= configure,
 	.mouse_motion		= mouse_motion,
@@ -83,9 +83,9 @@ static int parse_pager_theme(struct pager_theme *pt,
 
 	pt->height = parse_int("height", e, 999);
 	pt->desktop_spacing = parse_int("desktop_spacing", e, 1);
-	parse_pager_state(&pt->states[BUTTON_STATE_IDLE_HIGHLIGHT], 
+	parse_pager_state(&pt->states[BUTTON_STATE_IDLE_HIGHLIGHT],
 			  "idle_highlight", e, tree, 0);
-	parse_pager_state(&pt->states[BUTTON_STATE_PRESSED_HIGHLIGHT], 
+	parse_pager_state(&pt->states[BUTTON_STATE_PRESSED_HIGHLIGHT],
 			  "pressed_highlight", e, tree, 0);
 
 	return 0;
@@ -259,7 +259,7 @@ static void resize_desktops(struct widget *w)
 		pw->desktops[i].offy = mon.y;
 	}
 
-	w->width = pw->desktops_n * desktop_width + 
+	w->width = pw->desktops_n * desktop_width +
 		(pw->desktops_n - 1) * pw->theme.desktop_spacing;
 }
 
@@ -337,7 +337,7 @@ static void draw(struct widget *w)
 			ps = &pw->theme.states[state_hl];
 		else
 			ps = &pw->theme.states[state];
-		
+
 		pd->x = r.x;
 		r.w = pd->w;
 		fill_rectangle(cr, ps->fill, &r);
@@ -390,7 +390,7 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	int di = get_desktop_at(w, e->x);
 	if (di == -1)
 		return;
-	
+
 	struct x_connection *c = &w->panel->connection;
 
 	int mbutton_use = check_mbutton_condition(w->panel, e->button, MBUTTON_USE);
@@ -412,7 +412,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 			recalculate_widgets_sizes(w->panel);
 			return;
 		}
-		
+
 		if (e->atom == c->atoms[XATOM_NET_ACTIVE_WINDOW]) {
 			update_active(pw, c);
 			w->needs_expose = 1;
@@ -440,7 +440,7 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		w->needs_expose = 1;
 		return;
 	}
-	
+
 	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
 		t->visible = x_is_window_visible_on_screen(c, t->win);
 		t->visible_on_panel = x_is_window_visible_on_panel(c, t->win);
@@ -466,11 +466,11 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 		if (di != -1 && di != pw->active)
 				switch_desktop(di, c);
 
-		x_send_dnd_message(c, e->data.l[0], 
+		x_send_dnd_message(c, e->data.l[0],
 				   c->atoms[XATOM_XDND_STATUS],
 				   p->win,
 				   2, /* bits: 0 1 */
-				   0, 0, 
+				   0, 0,
 				   None);
 	}
 }
@@ -489,7 +489,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 		return;
 
 	struct x_connection *c = &w->panel->connection;
-	x_send_netwm_message(c, tw->taken, 
+	x_send_netwm_message(c, tw->taken,
 			     c->atoms[XATOM_NET_WM_DESKTOP],
 			     (long)desktop, 2, 0, 0, 0);
 }

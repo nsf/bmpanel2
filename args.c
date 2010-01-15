@@ -33,7 +33,7 @@ static struct argument *match_arg(struct opts *opts)
 {
 	const char *argnodash = &opts->argv[0][2];
 	struct argument *args = opts->args;
-	
+
 	while (args->type != ARGT_END) {
 		int argnlen = strlen(args->name);
 		if (!strncmp(args->name, argnodash, argnlen))
@@ -86,7 +86,7 @@ static void apply_value_to_arg(struct argument *arg, const char *value)
 		*((float*)arg->value) = arg->def.f;
 		break;
 	case ARGT_CALLBACK:
-		arg->callback(value);	
+		arg->callback(value);
 		break;
 	default:
 		break;
@@ -129,7 +129,7 @@ static const char *get_value(struct opts *opts, struct argument *arg)
 		arglen = strlen(arg->name);
 		if (opts->argv[0][arglen+2] == '=')
 			value = &opts->argv[0][arglen+3];
-		else if (opts->argc > 1 && 
+		else if (opts->argc > 1 &&
 			 opts->argv[1][0] != '-' &&
 			 opts->argv[1][1] != '-')
 		{
@@ -139,9 +139,9 @@ static const char *get_value(struct opts *opts, struct argument *arg)
 		} else {
 			value = 0;
 
-		}			
+		}
 		break;
-	case ARGT_BOOLEAN: 
+	case ARGT_BOOLEAN:
 		value = opts->argv[0];
 		break;
 	default:
@@ -200,9 +200,9 @@ static void print_arg_string(const struct argument *arg, int maxlen)
 		printf(" ");
 	printf("%s", arg->help);
 	switch (arg->type) {
-		case ARGT_STRING: 
-			if (arg->def.s) 
-				printf(" [\"%s\"]", arg->def.s); 
+		case ARGT_STRING:
+			if (arg->def.s)
+				printf(" [\"%s\"]", arg->def.s);
 			break;
 		case ARGT_INTEGER: printf(" [%d]", arg->def.i); break;
 		case ARGT_FLOAT: printf(" [%f]", arg->def.f); break;

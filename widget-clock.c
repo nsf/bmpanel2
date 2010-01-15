@@ -2,7 +2,7 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
@@ -11,12 +11,12 @@ static void button_click(struct widget *w, XButtonEvent *e);
 static void reconfigure(struct widget *w);
 
 struct widget_interface clock_interface = {
-	.theme_name 		= "clock",
-	.size_type 		= WIDGET_SIZE_CONSTANT,
-	.create_widget_private 	= create_widget_private,
+	.theme_name		= "clock",
+	.size_type		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
-	.draw 			= draw,
-	.clock_tick 		= clock_tick,
+	.draw			= draw,
+	.clock_tick		= clock_tick,
 	.button_click		= button_click,
 	.reconfigure		= reconfigure
 };
@@ -25,7 +25,7 @@ struct widget_interface clock_interface = {
   Clock theme
 **************************************************************************/
 
-static int parse_clock_theme(struct clock_theme *ct, 
+static int parse_clock_theme(struct clock_theme *ct,
 		struct config_format_entry *e, struct config_format_tree *tree)
 {
 	if (parse_text_info_named(&ct->font, "font", e, 1))
@@ -66,8 +66,8 @@ static int get_clock_width(struct widget *w, const char *bufover)
 		fill_buftime(buftime, sizeof(buftime), &cw->theme);
 		bufover = buftime;
 	}
-	text_extents(w->panel->layout, cw->theme.font.pfd, 
-			bufover, &text_width, 0);
+	text_extents(w->panel->layout, cw->theme.font.pfd,
+		     bufover, &text_width, 0);
 	if (cw->theme.background.center) {
 		pics_width += image_width(cw->theme.background.left);
 		pics_width += image_width(cw->theme.background.right);
@@ -75,8 +75,8 @@ static int get_clock_width(struct widget *w, const char *bufover)
 	return text_width + pics_width;
 }
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
-		struct config_format_tree *tree)
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
+				 struct config_format_tree *tree)
 {
 	struct clock_widget *cw = xmallocz(sizeof(struct clock_widget));
 	if (parse_clock_theme(&cw->theme, e, tree)) {
@@ -85,9 +85,9 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 		return -1;
 	}
 
-	cw->clock_prog = parse_string_or_null("clock_prog", 
+	cw->clock_prog = parse_string_or_null("clock_prog",
 					      &g_settings.root);
-	cw->mouse_button = parse_int("clock_mouse_button", 
+	cw->mouse_button = parse_int("clock_mouse_button",
 				     &g_settings.root, 1);
 
 	w->private = cw;
@@ -99,7 +99,7 @@ static void destroy_widget_private(struct widget *w)
 {
 	struct clock_widget *cw = (struct clock_widget*)w->private;
 	free_clock_theme(&cw->theme);
-	if (cw->clock_prog) 
+	if (cw->clock_prog)
 		xfree(cw->clock_prog);
 	xfree(cw);
 }
@@ -133,7 +133,7 @@ static void draw(struct widget *w)
 		x += leftw;
 
 		/* center part */
-		pattern_image(cw->theme.background.center, cr, x, 0, 
+		pattern_image(cw->theme.background.center, cr, x, 0,
 				centerw, 1);
 		x += centerw;
 
@@ -144,8 +144,8 @@ static void draw(struct widget *w)
 	}
 
 	/* text */
-	draw_text(cr, w->panel->layout, &cw->theme.font, buftime, 
-			x, 0, centerw, w->panel->height, 0);
+	draw_text(cr, w->panel->layout, &cw->theme.font, buftime,
+		  x, 0, centerw, w->panel->height, 0);
 }
 
 static void clock_tick(struct widget *w)
@@ -154,7 +154,7 @@ static void clock_tick(struct widget *w)
 
 	static char buflasttime[128];
 	char buftime[128];
-	
+
 	time_t current_time;
 	current_time = time(0);
 	strftime(buftime, sizeof(buftime), cw->theme.time_format, localtime(&current_time));
@@ -187,9 +187,9 @@ static void reconfigure(struct widget *w)
 	struct clock_widget *cw = (struct clock_widget*)w->private;
 	if (cw->clock_prog)
 		xfree(cw->clock_prog);
-	
-	cw->clock_prog = parse_string_or_null("clock_prog", 
+
+	cw->clock_prog = parse_string_or_null("clock_prog",
 					      &g_settings.root);
-	cw->mouse_button = parse_int("clock_mouse_button", 
+	cw->mouse_button = parse_int("clock_mouse_button",
 				     &g_settings.root, 1);
 }

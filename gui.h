@@ -63,7 +63,7 @@ struct drag_info {
 struct widget;
 struct panel;
 
-/** 
+/**
  * Widget interface specification.
  *
  * This struct represents virtual funtions table.
@@ -71,7 +71,7 @@ struct panel;
 struct widget_interface {
 	const char *theme_name;
 	int size_type;
-	
+
 	int (*create_widget_private)(struct widget *w, struct config_format_entry *e, 
 			struct config_format_tree *tree);
 	void (*destroy_widget_private)(struct widget *w);
@@ -85,7 +85,7 @@ struct widget_interface {
 	void (*configure)(struct widget *w, XConfigureEvent *e);
 	void (*client_msg)(struct widget *w, XClientMessageEvent *e);
 	void (*win_destroy)(struct widget *w, XDestroyWindowEvent *e);
-	
+
 	void (*dnd_start)(struct widget *w, struct drag_info *di);
 	void (*dnd_drag)(struct widget *w, struct drag_info *di);
 	void (*dnd_drop)(struct widget *w, struct drag_info *di);

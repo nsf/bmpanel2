@@ -20,7 +20,7 @@ void load_settings(const char *configfile)
 
 	size_t i;
 	for (i = 0; i < config_dirs_len; ++i) {
-		snprintf(buf, sizeof(buf), "%s/" BMPANEL2_CONFIG_FILE, 
+		snprintf(buf, sizeof(buf), "%s/" BMPANEL2_CONFIG_FILE,
 			 config_dirs[i]);
 		buf[sizeof(buf)-1] = '\0';
 		if (is_file_exists(buf)) {

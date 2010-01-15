@@ -11,12 +11,12 @@
 
 #define MAX_ALLOCA 2048
 
-#define CLEAR_STRUCT(s) ((void)memset((s), 0, sizeof(*(s)))) 
+#define CLEAR_STRUCT(s) ((void)memset((s), 0, sizeof(*(s))))
 
 #ifdef NDEBUG
 	#define ENSURE(cond, ...) ((void)0)
 #else
- 	#define ENSURE(cond, ...)					\
+	#define ENSURE(cond, ...)					\
 	do {								\
 		if (!(cond)) {						\
 			fprintf(stderr, "%s (%s:%d): ", STRINGIZE(cond),\
@@ -78,7 +78,7 @@ const char *pretty_print_FILE(const char *file);
 #define MEMSRC_DEFAULT_FREE (0)
 #define MEMSRC_NO_FLAGS (0)
 
-/* 
+/*
  * When this flag is set "x" alloc functions directly return the result of
  * custom malloc (defined in a memory_source) without any other activity. Also
  * allocs pass exact requested size to this custom function (without
@@ -119,30 +119,30 @@ extern struct memory_source msrc_default;
 
 /* functions */
 #ifdef NDEBUG
-	#define xmalloc(a) 	impl_xmalloc((a), &msrc_default)
-	#define xmallocz(a) 	impl_xmallocz((a), &msrc_default)
-	#define xfree(a) 	impl_xfree((a), &msrc_default)
-	#define xstrdup(a) 	impl_xstrdup((a), &msrc_default)
-	
-	#define xmalloc_from_source(a, s) 	impl_xmalloc((a), (s))
-	#define xmallocz_from_source(a, s) 	impl_xmallocz((a), (s))
-	#define xfree_from_source(a, s) 	impl_xfree((a), (s))
-	#define xstrdup_from_source(a, s) 	impl_xstrdup((a), (s))
-	
+	#define xmalloc(a)	impl_xmalloc((a), &msrc_default)
+	#define xmallocz(a)	impl_xmallocz((a), &msrc_default)
+	#define xfree(a)	impl_xfree((a), &msrc_default)
+	#define xstrdup(a)	impl_xstrdup((a), &msrc_default)
+
+	#define xmalloc_from_source(a, s)	impl_xmalloc((a), (s))
+	#define xmallocz_from_source(a, s)	impl_xmallocz((a), (s))
+	#define xfree_from_source(a, s)		impl_xfree((a), (s))
+	#define xstrdup_from_source(a, s)	impl_xstrdup((a), (s))
+
 	void *impl_xmalloc(size_t size, struct memory_source *src);
 	void *impl_xmallocz(size_t size, struct memory_source *src);
 	void impl_xfree(void *ptr, struct memory_source *src);
 	char *impl_xstrdup(const char *str, struct memory_source *src);
 #else
-	#define xmalloc(a) 	impl_xmalloc((a), &msrc_default, __FILE__, __LINE__)
-	#define xmallocz(a) 	impl_xmallocz((a), &msrc_default, __FILE__, __LINE__)
-	#define xfree(a) 	impl_xfree((a), &msrc_default)
-	#define xstrdup(a) 	impl_xstrdup((a), &msrc_default, __FILE__, __LINE__)
-	
-	#define xmalloc_from_source(a, s) 	impl_xmalloc((a), (s), __FILE__, __LINE__)
-	#define xmallocz_from_source(a, s) 	impl_xmallocz((a), (s), __FILE__, __LINE__)
-	#define xfree_from_source(a, s) 	impl_xfree((a), (s))
-	#define xstrdup_from_source(a, s) 	impl_xstrdup((a), (s), __FILE__, __LINE__)
+	#define xmalloc(a)	impl_xmalloc((a), &msrc_default, __FILE__, __LINE__)
+	#define xmallocz(a)	impl_xmallocz((a), &msrc_default, __FILE__, __LINE__)
+	#define xfree(a)	impl_xfree((a), &msrc_default)
+	#define xstrdup(a)	impl_xstrdup((a), &msrc_default, __FILE__, __LINE__)
+
+	#define xmalloc_from_source(a, s)	impl_xmalloc((a), (s), __FILE__, __LINE__)
+	#define xmallocz_from_source(a, s)	impl_xmallocz((a), (s), __FILE__, __LINE__)
+	#define xfree_from_source(a, s)		impl_xfree((a), (s))
+	#define xstrdup_from_source(a, s)	impl_xstrdup((a), (s), __FILE__, __LINE__)
 
 	void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, unsigned int line);
 	void *impl_xmallocz(size_t size, struct memory_source *src, const char *file, unsigned int line);
@@ -150,7 +150,7 @@ extern struct memory_source msrc_default;
 	char *impl_xstrdup(const char *str, struct memory_source *src, const char *file, unsigned int line);
 #endif
 
-/* #define MEMDEBUG_ASCII_STATS 1 */ 
+/* #define MEMDEBUG_ASCII_STATS 1 */
 /*
  * Prints out an info table about memory sources array "sources" of size "n".
  * "details" boolean for detailed statistics (memleaks).

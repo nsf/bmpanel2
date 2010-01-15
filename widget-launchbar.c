@@ -1,7 +1,7 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 				 struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
@@ -37,7 +37,7 @@ static int parse_items(struct launchbar_widget *lw)
 {
 	int items = 0;
 	size_t i;
-	struct config_format_entry *e = find_config_format_entry(&g_settings.root, 
+	struct config_format_entry *e = find_config_format_entry(&g_settings.root,
 								 "launchbar");
 	if (!e)
 		return 0;
@@ -61,8 +61,8 @@ static int parse_items(struct launchbar_widget *lw)
 		if (!icon)
 			continue;
 
-		lbitem.icon = copy_resized(icon, 
-					   lw->icon_size[0], 
+		lbitem.icon = copy_resized(icon,
+					   lw->icon_size[0],
 					   lw->icon_size[1]);
 		cairo_surface_destroy(icon);
 		lbitem.execstr = xstrdup(ee->value);
@@ -78,7 +78,7 @@ static int parse_items(struct launchbar_widget *lw)
   Launch Bar interface
 **************************************************************************/
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 				 struct config_format_tree *tree)
 {
 	struct launchbar_widget *lw = xmallocz(sizeof(struct launchbar_widget));
@@ -110,7 +110,7 @@ static void reconfigure(struct widget *w)
 {
 	struct launchbar_widget *lw = (struct launchbar_widget*)w->private;
 
-	/* free items */	
+	/* free items */
 	size_t i;
 	for (i = 0; i < lw->items_n; ++i) {
 		cairo_surface_destroy(lw->items[i].icon);
@@ -127,7 +127,7 @@ static void draw(struct widget *w)
 {
 	struct launchbar_widget *lw = (struct launchbar_widget*)w->private;
 	size_t i;
-	
+
 	cairo_t *cr = w->panel->cr;
 	int x = w->x + 5;
 	int y = (w->panel->height - lw->icon_size[1]) / 2;
@@ -141,14 +141,14 @@ static void draw(struct widget *w)
 			cairo_save(cr);
 			cairo_set_operator(cr, CAIRO_OPERATOR_ADD);
 			cairo_set_source_rgba(cr, 1, 1, 1, 0.2);
-			cairo_rectangle(cr, x, y, 
+			cairo_rectangle(cr, x, y,
 					lw->icon_size[0], lw->icon_size[1]);
 			cairo_clip(cr);
 			cairo_mask_surface(cr, lw->items[i].icon, x, y);
 			cairo_restore(cr);
 		}
 		cairo_restore(cr);
-		x += lw->icon_size[0] + 5; 
+		x += lw->icon_size[0] + 5;
 	}
 }
 

@@ -39,7 +39,7 @@ static void try_add_image_to_cache(struct image *img)
 	if (images_cache_n == IMAGES_CACHE_SIZE)
 		return;
 
-	images_cache[images_cache_n++] = img;	
+	images_cache[images_cache_n++] = img;
 }
 
 static void free_image(struct image *img, int final)
@@ -53,7 +53,7 @@ static void free_image(struct image *img, int final)
 
 cairo_surface_t *get_image(const char *path)
 {
-	struct image *img = find_image_in_cache(path);	
+	struct image *img = find_image_in_cache(path);
 	if (img) {
 		cairo_surface_reference(img->surface);
 		return img->surface;

@@ -4,9 +4,9 @@
 #include "util.h"
 
 struct memory_source msrc_default = MEMSRC(
-	"Default", 
-	MEMSRC_DEFAULT_MALLOC, 
-	MEMSRC_DEFAULT_FREE, 
+	"Default",
+	MEMSRC_DEFAULT_MALLOC,
+	MEMSRC_DEFAULT_FREE,
 	MEMSRC_NO_FLAGS
 );
 
@@ -24,7 +24,7 @@ void *impl_xmalloc(size_t size, struct memory_source *src)
 		else
 			ret = (*src->malloc)(size + MEMDEBUG_OVERHEAD, src);
 	}
-		
+
 	if (!ret)
 		ret = malloc(size + MEMDEBUG_OVERHEAD);
 
@@ -45,7 +45,7 @@ void impl_xfree(void *ptr, struct memory_source *src)
 {
 	if (src->free)
 		(*src->free)(ptr, src);
-	else	
+	else
 		free(ptr);
 }
 
@@ -69,7 +69,7 @@ void *impl_xmalloc(size_t size, struct memory_source *src, const char *file, uns
 		else
 			ret = (*src->malloc)(size + MEMDEBUG_OVERHEAD, src);
 	}
-	
+
 	if (!ret)
 		ret = malloc(size + MEMDEBUG_OVERHEAD);
 
@@ -112,7 +112,7 @@ void impl_xfree(void *ptr, struct memory_source *src)
 	}
 
 	struct memory_stat *memstat = ptr - sizeof(struct memory_stat);
-	
+
 	if (memstat->next)
 		memstat->next->prev = (memstat->prev) ? memstat->prev : 0;
 	if (memstat->prev)
@@ -122,7 +122,7 @@ void impl_xfree(void *ptr, struct memory_source *src)
 
 	src->frees++;
 	src->bytes -= memstat->size;
-	
+
 	if (src->free)
 		(*src->free)(memstat, src);
 	else
@@ -162,7 +162,7 @@ static void print_source_stat(struct memory_source *src, int details)
 			char location[50];
 			snprintf(location, sizeof(location), "%s:%u", stat->file, stat->line);
 			location[sizeof(location)-1] = '\0';
-			printf("┃ %10p │ %10zu │ %-45s ┃\n", stat+1, stat->size, 
+			printf("┃ %10p │ %10zu │ %-45s ┃\n", stat+1, stat->size,
 				location);
 			stat = stat->next;
 		}
@@ -193,7 +193,7 @@ static void print_source_stat(struct memory_source *src, int details)
 			char location[50];
 			snprintf(location, sizeof(location), "%s:%u", stat->file, stat->line);
 			location[sizeof(location)-1] = '\0';
-			printf("| %10p | %10u | %-45s |\n", stat+1, stat->size, 
+			printf("| %10p | %10u | %-45s |\n", stat+1, stat->size,
 				location);
 			stat = stat->next;
 		}
@@ -210,11 +210,11 @@ void xmemstat(struct memory_source **sources, size_t n, int details)
 
 	printf("\033[32m");
 	print_source_stat(&msrc_default, details);
-	
+
 	for (i = 0; i < n; ++i) {
 		if (i % 2)
 			printf("\033[36m");
-		else 
+		else
 			printf("\033[0m");
 
 		print_source_stat(sources[i], details);

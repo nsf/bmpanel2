@@ -3,8 +3,8 @@
 #include "util.h"
 #include "xdg.h"
 
-static char **get_XDG_DIRS(size_t *len, const char *home_env, 
-			   const char *home_default, const char *dirs_env, 
+static char **get_XDG_DIRS(size_t *len, const char *home_env,
+			   const char *home_default, const char *dirs_env,
 			   const char *dirs_default)
 {
 	char *dir_home;

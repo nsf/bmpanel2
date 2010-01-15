@@ -103,7 +103,7 @@ static void match_user_preference(const char *pref, void *not_used)
 	wad->user_has = 1;
 }
 
-static void match_theme_has(const char *theme_name) 
+static void match_theme_has(const char *theme_name)
 {
 	struct widget_alternative_def *wad;
 
@@ -120,7 +120,7 @@ static void match_theme_has_widget_alternatives(struct config_format_tree *tree)
 	for (i = 0; i < tree->root.children_n; ++i) {
 		struct config_format_entry *e = &tree->root.children[i];
 		struct widget_interface *we = lookup_widget_interface(e->name);
-		if (!we) 
+		if (!we)
 			continue;
 
 		match_theme_has(e->name);

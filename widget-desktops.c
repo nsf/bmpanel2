@@ -1,6 +1,6 @@
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
@@ -14,14 +14,14 @@ static void mouse_motion(struct widget *w, XMotionEvent *e);
 static void mouse_leave(struct widget *w);
 
 struct widget_interface desktops_interface = {
-	.theme_name 		= "desktop_switcher",
-	.size_type 		= WIDGET_SIZE_CONSTANT,
-	.create_widget_private 	= create_widget_private,
+	.theme_name		= "desktop_switcher",
+	.size_type		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
-	.draw 			= draw,
-	.button_click 		= button_click,
-	.prop_change 		= prop_change,
-	.dnd_drop 		= dnd_drop,
+	.draw			= draw,
+	.button_click		= button_click,
+	.prop_change		= prop_change,
+	.dnd_drop		= dnd_drop,
 	.client_msg		= client_msg,
 	.mouse_motion		= mouse_motion,
 	.mouse_leave		= mouse_leave
@@ -76,11 +76,11 @@ static int parse_desktops_theme(struct desktops_theme *dt,
 
 	if (parse_desktops_state(&dt->states[BUTTON_STATE_PRESSED], "pressed", e, tree, 1))
 		goto parse_desktops_state_error_pressed;
-	
+
 	dt->separator = parse_image_part_named("separator", e, tree, 0);
-	parse_desktops_state(&dt->states[BUTTON_STATE_IDLE_HIGHLIGHT], 
+	parse_desktops_state(&dt->states[BUTTON_STATE_IDLE_HIGHLIGHT],
 			     "idle_highlight", e, tree, 0);
-	parse_desktops_state(&dt->states[BUTTON_STATE_PRESSED_HIGHLIGHT], 
+	parse_desktops_state(&dt->states[BUTTON_STATE_PRESSED_HIGHLIGHT],
 			     "pressed_highlight", e, tree, 0);
 
 	return 0;
@@ -114,13 +114,13 @@ static void free_desktops(struct desktops_widget *dw)
 
 static void update_active_desktop(struct desktops_widget *dw, struct x_connection *c)
 {
-	dw->active = x_get_prop_int(c, c->root, 
+	dw->active = x_get_prop_int(c, c->root,
 				    c->atoms[XATOM_NET_CURRENT_DESKTOP]);
 }
 
 static void switch_desktop(int desktop, struct x_connection *c)
 {
-	int desktops = x_get_prop_int(c, c->root, 
+	int desktops = x_get_prop_int(c, c->root,
 				      c->atoms[XATOM_NET_NUMBER_OF_DESKTOPS]);
 	if (desktop >= desktops)
 		return;
@@ -133,11 +133,11 @@ static void update_desktops(struct desktops_widget *dw, struct x_connection *c)
 {
 	free_desktops(dw);
 	update_active_desktop(dw, c);
-	int desktops_n = x_get_prop_int(c, c->root, 
+	int desktops_n = x_get_prop_int(c, c->root,
 					c->atoms[XATOM_NET_NUMBER_OF_DESKTOPS]);
 	char *name, *names;
 	size_t i;
-	names = name = x_get_prop_data(c, c->root, 
+	names = name = x_get_prop_data(c, c->root,
 				       c->atoms[XATOM_NET_DESKTOP_NAMES],
 				       c->atoms[XATOM_UTF8_STRING], 0);
 
@@ -165,7 +165,7 @@ static void resize_desktops(struct widget *w)
 	size_t i;
 
 	int x = 0;
-	
+
 	int left_cornerw = image_width(ds->left_corner);
 	int leftw = image_width(ds->background.left);
 	int rightw = image_width(ds->background.right);
@@ -176,7 +176,7 @@ static void resize_desktops(struct widget *w)
 		int basex = x;
 		if (i == 0)
 			x += left_cornerw;
-		else 
+		else
 			x += leftw;
 		int maxwidth = 0;
 		if (ds->font.pfd) {
@@ -185,7 +185,7 @@ static void resize_desktops(struct widget *w)
 				struct desktops_state *lds = &dw->theme.states[j];
 				if (!lds->exists)
 					continue;
-				text_extents(w->panel->layout, lds->font.pfd, 
+				text_extents(w->panel->layout, lds->font.pfd,
 					     dw->desktops[i].name, &width, 0);
 				if (width > maxwidth)
 					maxwidth = width;
@@ -195,7 +195,7 @@ static void resize_desktops(struct widget *w)
 		x += maxwidth;
 		if (i == dw->desktops_n - 1)
 			x += right_cornerw;
-		else 
+		else
 			x += rightw + sepw;
 		dw->desktops[i].w = x - sepw - basex;
 	}
@@ -219,8 +219,8 @@ static int get_desktop_at(struct widget *w, int x)
   Desktop switcher interface
 **************************************************************************/
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
-		struct config_format_tree *tree)
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
+				 struct config_format_tree *tree)
 {
 	struct desktops_widget *dw = xmallocz(sizeof(struct desktops_widget));
 	if (parse_desktops_theme(&dw->theme, e, tree)) {
@@ -257,7 +257,7 @@ static void draw(struct widget *w)
 	size_t i;
 
 	int x = w->x;
-	
+
 	int left_cornerw = image_width(idle->left_corner);
 	int leftw = image_width(idle->background.left);
 	int rightw = image_width(idle->background.right);
@@ -274,11 +274,11 @@ static void draw(struct widget *w)
 			cur = &dw->theme.states[state_hl];
 		else
 			cur = &dw->theme.states[state];
-		
+
 		dw->desktops[i].x = x;
-		
+
 		if (i == 0 && left_cornerw) {
-			blit_image(cur->left_corner, cr, x, 0); 
+			blit_image(cur->left_corner, cr, x, 0);
 			x += left_cornerw;
 		} else if (leftw) {
 			blit_image(cur->background.left, cr, x, 0);
@@ -288,7 +288,7 @@ static void draw(struct widget *w)
 
 		pattern_image(cur->background.center, cr, x, 0, width, 1);
 		if (cur->font.pfd)
-			draw_text(cr, w->panel->layout, &cur->font, 
+			draw_text(cr, w->panel->layout, &cur->font,
 				  dw->desktops[i].name, x, 0, width, h, 0);
 
 		x += width;
@@ -314,7 +314,7 @@ static void button_click(struct widget *w, XButtonEvent *e)
 	int di = get_desktop_at(w, e->x);
 	if (di == -1)
 		return;
-	
+
 	struct x_connection *c = &w->panel->connection;
 
 	int mbutton_use = check_mbutton_condition(w->panel, e->button, MBUTTON_USE);
@@ -363,11 +363,11 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 		if (di != -1 && di != dw->active)
 				switch_desktop(di, c);
 
-		x_send_dnd_message(c, e->data.l[0], 
+		x_send_dnd_message(c, e->data.l[0],
 				   c->atoms[XATOM_XDND_STATUS],
 				   p->win,
 				   2, /* bits: 0 1 */
-				   0, 0, 
+				   0, 0,
 				   None);
 	}
 }
@@ -386,7 +386,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 		return;
 
 	struct x_connection *c = &w->panel->connection;
-	x_send_netwm_message(c, tw->taken, 
+	x_send_netwm_message(c, tw->taken,
 			     c->atoms[XATOM_NET_WM_DESKTOP],
 			     (long)desktop, 2, 0, 0, 0);
 }

@@ -29,27 +29,27 @@ struct text_info {
 };
 
 /* image part */
-cairo_surface_t *parse_image_part(struct config_format_entry *e, 
+cairo_surface_t *parse_image_part(struct config_format_entry *e,
 				  struct config_format_tree *tree,
 				  int required);
-cairo_surface_t *parse_image_part_named(const char *name, 
-					struct config_format_entry *e, 
+cairo_surface_t *parse_image_part_named(const char *name,
+					struct config_format_entry *e,
 					struct config_format_tree *tree,
 					int required);
 /* triple image */
-int parse_triple_image(struct triple_image *tri, 
-		       struct config_format_entry *e, 
+int parse_triple_image(struct triple_image *tri,
+		       struct config_format_entry *e,
 		       struct config_format_tree *tree,
 		       int required);
-int parse_triple_image_named(struct triple_image *tri, 
-			     const char *name, 
-			     struct config_format_entry *e, 
+int parse_triple_image_named(struct triple_image *tri,
+			     const char *name,
+			     struct config_format_entry *e,
 			     struct config_format_tree *tree,
 			     int required);
 void free_triple_image(struct triple_image *tri);
 
 /* text info */
-int parse_text_info(struct text_info *out, 
+int parse_text_info(struct text_info *out,
 		    struct config_format_entry *e);
 int parse_text_info_named(struct text_info *out, const char *name,
 			  struct config_format_entry *e, int required);
@@ -68,7 +68,7 @@ int parse_int(const char *name, struct config_format_entry *e, int def);
 int parse_color(unsigned char *out, const char *name, struct config_format_entry *e,
 		unsigned char *def);
 int parse_bool(const char *name, struct config_format_entry *e);
-char *parse_string(const char *name, struct config_format_entry *e, 
+char *parse_string(const char *name, struct config_format_entry *e,
 		   const char *def);
 char *parse_string_or_null(const char *name, struct config_format_entry *e);
 
@@ -104,12 +104,12 @@ void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 		   int width, int height, int dstx, int dsty);
 void stretch_image(cairo_surface_t *src, cairo_t *dest,
 		   int dstx, int dsty, int w);
-void pattern_image(cairo_surface_t *src, cairo_t *dest, 
+void pattern_image(cairo_surface_t *src, cairo_t *dest,
 		   int dstx, int dsty, int w, int align);
 
-void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti, 
+void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	       const char *text, int x, int y, int w, int h, int ellipsized);
-void text_extents(PangoLayout *layout, PangoFontDescription *font, 
+void text_extents(PangoLayout *layout, PangoFontDescription *font,
 		  const char *text, int *w, int *h);
 
 void draw_rectangle_outline(cairo_t *cr, unsigned char *color, struct rect *r);
@@ -123,7 +123,7 @@ cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
 cairo_t *create_cairo_for_bitmap(struct x_connection *c, Pixmap p, int w, int h);
 cairo_surface_t *create_cairo_surface_for_pixmap(struct x_connection *c, Pixmap p,
 						 int w, int h);
-cairo_surface_t *get_window_icon(struct x_connection *c, Window win, 
+cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 				 cairo_surface_t *default_icon);
 cairo_surface_t *copy_resized(cairo_surface_t *source, int w, int h);
 

@@ -82,7 +82,7 @@ struct x_connection {
 
 	Window root;
 	Pixmap root_pixmap;
-	
+
 	Atom atoms[XATOM_COUNT];
 };
 
@@ -98,23 +98,23 @@ void x_update_monitors_info(struct x_connection *c);
  *  class = InputOutput
  *  visual = c->default_visual
  */
-Window x_create_default_window(struct x_connection *c, 
-			       int x, int y, unsigned int w, unsigned int h, 
+Window x_create_default_window(struct x_connection *c,
+			       int x, int y, unsigned int w, unsigned int h,
 			       unsigned long valuemask, XSetWindowAttributes *attrs);
 
-/* 
+/*
  * default pixmap is (ommiting 2 parameters):
  *  d = c->root
  *  depth = c->default_depth
  */
-Pixmap x_create_default_pixmap(struct x_connection *c, 
+Pixmap x_create_default_pixmap(struct x_connection *c,
 			       unsigned int w, unsigned int h);
 
-Window x_create_default_embedder(struct x_connection *c, Window parent, 
+Window x_create_default_embedder(struct x_connection *c, Window parent,
 				 Window icon, unsigned int w, unsigned int h);
 
 /* allocated by Xlib, should be released with XFree */
-void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 
+void *x_get_prop_data(struct x_connection *c, Window win, Atom prop,
 		      Atom type, int *items);
 
 int x_get_prop_int(struct x_connection *c, Window win, Atom at);
@@ -123,10 +123,10 @@ Pixmap x_get_prop_pixmap(struct x_connection *c, Window win, Atom at);
 int x_get_window_desktop(struct x_connection *c, Window win);
 
 void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value);
-void x_set_prop_visualid(struct x_connection *c, Window win, 
+void x_set_prop_visualid(struct x_connection *c, Window win,
 			 Atom type, VisualID value);
 void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at);
-void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
+void x_set_prop_array(struct x_connection *c, Window win, Atom type,
 		      const long *values, size_t len);
 
 int x_is_window_visible_on_panel(struct x_connection *c, Window win);
@@ -134,12 +134,12 @@ int x_is_window_visible_on_screen(struct x_connection *c, Window win);
 int x_is_window_iconified(struct x_connection *c, Window win);
 int x_is_window_demands_attention(struct x_connection *c, Window win);
 
-void x_realloc_window_name(struct strbuf *sb, struct x_connection *c, 
+void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 			   Window win, Atom *atom, Atom *atype);
 
-void x_send_netwm_message(struct x_connection *c, Window win, 
+void x_send_netwm_message(struct x_connection *c, Window win,
 			  Atom a, long l0, long l1, long l2, long l3, long l4);
-void x_send_dnd_message(struct x_connection *c, Window win, 
+void x_send_dnd_message(struct x_connection *c, Window win,
 			Atom a, long l0, long l1, long l2, long l3, long l4);
 void x_update_root_pmap(struct x_connection *c);
 void x_translate_coordinates(struct x_connection *c, int x, int y,

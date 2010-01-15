@@ -1,6 +1,6 @@
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void client_msg(struct widget *w, XClientMessageEvent *e);
@@ -8,16 +8,16 @@ static void win_destroy(struct widget *w, XDestroyWindowEvent *e);
 static void configure(struct widget *w, XConfigureEvent *e);
 static void panel_exposed(struct widget *w);
 static void draw(struct widget *w);
-static int retheme_reconfigure(struct widget *w, struct config_format_entry *e, 
+static int retheme_reconfigure(struct widget *w, struct config_format_entry *e,
 			       struct config_format_tree *tree);
 
 struct widget_interface systray_interface = {
-	.theme_name 		= "systray",
-	.size_type 		= WIDGET_SIZE_CONSTANT,
-	.create_widget_private 	= create_widget_private,
+	.theme_name		= "systray",
+	.size_type		= WIDGET_SIZE_CONSTANT,
+	.create_widget_private	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
-	.client_msg 		= client_msg,
-	.win_destroy 		= win_destroy,
+	.client_msg		= client_msg,
+	.win_destroy		= win_destroy,
 	.configure		= configure,
 	.draw			= draw,
 	.panel_exposed		= panel_exposed,
@@ -31,7 +31,7 @@ struct widget_interface systray_interface = {
 static Atom acquire_tray_selection_atom(struct x_connection *c)
 {
 	char systray_atom[32];
-	snprintf(systray_atom, sizeof(systray_atom), "_NET_SYSTEM_TRAY_S%u", 
+	snprintf(systray_atom, sizeof(systray_atom), "_NET_SYSTEM_TRAY_S%u",
 		 c->screen);
 
 	return XInternAtom(c->dpy, systray_atom, False);
@@ -58,10 +58,10 @@ static void add_tray_icon(struct widget *w, Window win)
 
 	/* create embedder window */
 	icon.embedder = x_create_default_embedder(c, w->panel->win, win,
-						  st->icon_size[0], 
+						  st->icon_size[0],
 						  st->icon_size[1]);
 
-	/* Select structure notifications. Some tray icons require double 
+	/* Select structure notifications. Some tray icons require double
 	 * size sets (I don't know why, but it works).
 	 */
 	XSelectInput(c->dpy, icon.icon, StructureNotifyMask);
@@ -80,9 +80,9 @@ static void update_systray_width(struct widget *w)
 	if (!sw->icons_n)
 		w->width = 0;
 	else
-		w->width = sw->icons_n * (st->icon_size[0] + st->icon_spacing) - 
-			st->icon_spacing + 
-			image_width(st->background.left) + 
+		w->width = sw->icons_n * (st->icon_size[0] + st->icon_spacing) -
+			st->icon_spacing +
+			image_width(st->background.left) +
 			image_width(st->background.right);
 }
 
@@ -126,8 +126,9 @@ static void free_tray_icons(struct widget *w)
   Systray theme
 **************************************************************************/
 
-static int parse_systray_theme(struct systray_theme *st, 
-		struct config_format_entry *e, struct config_format_tree *tree)
+static int parse_systray_theme(struct systray_theme *st,
+			       struct config_format_entry *e,
+			       struct config_format_tree *tree)
 {
 	if (parse_2ints(st->icon_size, "icon_size", e) != 0)
 		return -1;
@@ -150,11 +151,11 @@ static void free_systray_theme(struct systray_theme *st)
 #define NET_SYSTEM_TRAY_ORIENTATION_HORZ 0
 #define NET_SYSTEM_TRAY_ORIENTATION_VERT 1
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
-		struct config_format_tree *tree)
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
+				 struct config_format_tree *tree)
 {
 	struct systray_widget *sw = xmallocz(sizeof(struct systray_widget));
-	if (parse_systray_theme(&sw->theme, e, tree)) { 
+	if (parse_systray_theme(&sw->theme, e, tree)) {
 		xfree(sw);
 		XWARNING("Failed to parse systray theme");
 		return -1;
@@ -178,12 +179,12 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	/* set hints */
 	Atom orientatom = XInternAtom(c->dpy, "_NET_SYSTEM_TRAY_ORIENTATION", False);
 	Atom visualatom = XInternAtom(c->dpy, "_NET_SYSTEM_TRAY_VISUAL", False);
-	
-	x_set_prop_int(c, sw->selection_owner, orientatom, 
+
+	x_set_prop_int(c, sw->selection_owner, orientatom,
 		       NET_SYSTEM_TRAY_ORIENTATION_HORZ);
 	x_set_prop_visualid(c, sw->selection_owner, visualatom,
 			    XVisualIDFromVisual(c->default_visual));
-	
+
 	/* inform other clients that we're here */
 	XEvent ev;
 	ev.xclient.type = ClientMessage;
@@ -223,7 +224,7 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 	struct x_connection *c = &w->panel->connection;
 
 	if (e->message_type == c->atoms[XATOM_NET_SYSTEM_TRAY_OPCODE] &&
-	    e->data.l[1] == TRAY_REQUEST_DOCK) 
+	    e->data.l[1] == TRAY_REQUEST_DOCK)
 	{
 		add_tray_icon(w, e->data.l[2]);
 		update_systray_width(w);
@@ -241,9 +242,9 @@ static void panel_exposed(struct widget *w)
 	int x = w->x + image_width(st->background.left) + st->icon_offset[0];
 	int y = (w->panel->height - st->icon_size[1]) / 2 + st->icon_offset[1];
 	for (i = 0; i < sw->icons_n; ++i) {
-		XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y, 
+		XMoveResizeWindow(c->dpy, sw->icons[i].embedder, x, y,
 				  st->icon_size[0], st->icon_size[1]);
-		XResizeWindow(c->dpy, sw->icons[i].icon, 
+		XResizeWindow(c->dpy, sw->icons[i].icon,
 			      st->icon_size[0], st->icon_size[1]);
 		if (!sw->icons[i].mapped) {
 			XMapRaised(c->dpy, sw->icons[i].embedder);
@@ -286,14 +287,14 @@ static void draw(struct widget *w)
 {
 	struct systray_widget *sw = (struct systray_widget*)w->private;
 	struct systray_theme *st = &sw->theme;
-    
+
 	cairo_t *cr = w->panel->cr;
 	int x = w->x;
-    
+
 	int leftw = 0;
 	int rightw = 0;
 	int centerw = w->width;
-    
+
 	if (st->background.center) {
 		leftw += image_width(st->background.left);
 		rightw += image_width(st->background.right);
@@ -315,7 +316,7 @@ static void draw(struct widget *w)
 	}
 }
 
-static int retheme_reconfigure(struct widget *w, struct config_format_entry *e, 
+static int retheme_reconfigure(struct widget *w, struct config_format_entry *e,
 			       struct config_format_tree *tree)
 {
 	struct systray_widget *sw = (struct systray_widget*)w->private;
@@ -323,13 +324,13 @@ static int retheme_reconfigure(struct widget *w, struct config_format_entry *e,
 	struct systray_theme tmptheme;
 	CLEAR_STRUCT(&tmptheme);
 
-	if (parse_systray_theme(&tmptheme, e, tree)) { 
+	if (parse_systray_theme(&tmptheme, e, tree)) {
 		XWARNING("Failed to parse systray theme");
 		return -1;
 	}
 
 	free_systray_theme(st);
-	*st = tmptheme;	
+	*st = tmptheme;
 	update_systray_width(w);
 	return 0;
 }

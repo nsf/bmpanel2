@@ -2,7 +2,7 @@
 #include "config-parser.h"
 
 /* Tiny structure used for tracking current parsing position and probably other
- * parser related data (if any, currently none). 
+ * parser related data (if any, currently none).
  */
 struct parse_context {
 	char *cur;
@@ -13,10 +13,10 @@ struct parse_context {
 static int parse_children(struct config_format_entry *te, int indent_level, struct parse_context *ctx);
 
 /* Count indent symbols (tabs and spaces) and advance parsing context to the
- * first non-indent symbol. 
+ * first non-indent symbol.
  *
  * RETURNS
- * 	A number of indent symbols (aka indent level).
+ *	A number of indent symbols (aka indent level).
  */
 static int count_and_skip_indent(struct parse_context *ctx)
 {
@@ -31,7 +31,7 @@ static int count_and_skip_indent(struct parse_context *ctx)
 /* Classify the line using its first non-space character. It's intended to do
  * this right after indent skipping. Parser uses this function to know what to
  * do next. If the line is comment or empty, it is being skipped. If the line
- * is entry, it's being parsed as entry. 
+ * is entry, it's being parsed as entry.
  */
 static bool line_is_entry(char first_char)
 {
@@ -56,7 +56,7 @@ static bool line_is_entry(char first_char)
  * has.
  *
  * RETURNS
- * 	A number of children.
+ *	A number of children.
  */
 static size_t count_children(int indent_level, struct parse_context *ctx, int *chld_indent)
 {
@@ -103,14 +103,14 @@ static size_t count_children(int indent_level, struct parse_context *ctx, int *c
  * symbols on that line. This is tricky, but in my opinion it is required for a
  * nice recursion here. Also it is worth to notice that function modifies
  * buffer, because of in-situ parsing.
- * 
+ *
  * This function ends after its children, because of recursion. But before
- * calling "parse_children" it ends right after the line it was called on. 
+ * calling "parse_children" it ends right after the line it was called on.
  *
  * RETURNS
- * 	See "parse_children"...
+ *	See "parse_children"...
  */
-static int parse_format_entry(struct config_format_entry *te, 
+static int parse_format_entry(struct config_format_entry *te,
 			      struct config_format_entry *parent,
 			      int indent_level, struct parse_context *ctx)
 {
@@ -118,9 +118,9 @@ static int parse_format_entry(struct config_format_entry *te,
 	te->parent = parent;
 	/* extract name */
 	char *start = ctx->cur;
-	while (*ctx->cur != ' ' 
-		&& *ctx->cur != '\t' 
-		&& *ctx->cur != '\n' 
+	while (*ctx->cur != ' '
+		&& *ctx->cur != '\t'
+		&& *ctx->cur != '\n'
 		&& *ctx->cur != '\0')
 	{
 		ctx->cur++;
@@ -159,10 +159,10 @@ static int parse_format_entry(struct config_format_entry *te,
 				ctx->line++;
 			}
 	}
-	
+
 	/* delayed nullifing */
 	*end = '\0';
-	
+
 	/* recurse to our children (function will decide if any) */
 	return parse_children(te, indent_level, ctx);
 }
@@ -172,9 +172,9 @@ static int parse_format_entry(struct config_format_entry *te,
  * level more than "indent_level") and then thinks of all next entries with the
  * same indent level as other children. Other entries are skipped. Function
  * stops when entry with indent lower or equals to "indent_level" is found.
- * 
+ *
  * RETURNS
- * 	A number of child entries were parsed.
+ *	A number of child entries were parsed.
  */
 static int parse_children(struct config_format_entry *te, int indent_level, struct parse_context *ctx)
 {
@@ -198,7 +198,7 @@ static int parse_children(struct config_format_entry *te, int indent_level, stru
 			/* we're interested in this line (it's a child line) */
 			parse_format_entry(&te->children[children], te, indent, ctx);
 			/* remember position after line [and its children] */
-			pos = ctx->cur; 
+			pos = ctx->cur;
 			children++; /* we're did one more child */
 
 			/* are we done? */
@@ -226,11 +226,11 @@ static int parse_children(struct config_format_entry *te, int indent_level, stru
 	return children;
 }
 
-/* Parse config format tree from a null-terminated string. 
+/* Parse config format tree from a null-terminated string.
  *
  * RETURNS
- * 	Non-zero on success. 
- * 	Zero on fail.
+ *	Non-zero on success.
+ *	Zero on fail.
  */
 static int parse_config_format_string(struct config_format_entry *tree, char *str)
 {
@@ -315,7 +315,7 @@ void free_config_format_tree(struct config_format_tree *tree)
 	xfree(tree->dir);
 }
 
-struct config_format_entry *find_config_format_entry(struct config_format_entry *e, 
+struct config_format_entry *find_config_format_entry(struct config_format_entry *e,
 						     const char *name)
 {
 	size_t i;

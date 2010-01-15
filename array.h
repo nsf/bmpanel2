@@ -37,7 +37,7 @@ do {										\
 #else
 	#define CHECK_ARRAY_BOUNDS(array, index)				\
 		if (index >= array##_n) {					\
-			XWARNING("Array: bounds were broken: (r: %u, n: %u)", 	\
+			XWARNING("Array: bounds were broken: (r: %u, n: %u)",	\
 					index, array##_n);			\
 			break;							\
 		}
@@ -64,7 +64,7 @@ do {										\
 } while (0)
 
 #define FREE_ARRAY(array)							\
-do { 										\
+do {										\
 	if (array)								\
 		xfree(array);							\
 	array = 0;								\
@@ -84,7 +84,7 @@ do {										\
 	if (index == array##_n - 1) {						\
 		array[array##_n++] = elt;					\
 	} else {								\
-		memmove(&array[index+2], &array[index+1], 			\
+		memmove(&array[index+2], &array[index+1],			\
 				(array##_n-index-1) * sizeof(array[0]));	\
 		array[index+1] = elt;						\
 		array##_n++;							\
@@ -95,7 +95,7 @@ do {										\
 do {										\
 	CHECK_ARRAY_BOUNDS(array, index)					\
 	ENSURE_ARRAY_CAPACITY(array, array##_n + 1);				\
-	memmove(&array[index+1], &array[index], 				\
+	memmove(&array[index+1], &array[index],					\
 			(array##_n-index) * sizeof(array[0]));			\
 	array[index] = elt;							\
 	array##_n++;								\
@@ -118,7 +118,7 @@ do {										\
 #define ARRAY_REMOVE(array, index)						\
 do {										\
 	CHECK_ARRAY_BOUNDS(array, index)					\
-	memmove(&array[index], &array[index+1], 				\
+	memmove(&array[index], &array[index+1],					\
 			(array##_n-index-1) * sizeof(array[0]));		\
 	array##_n--;								\
 } while (0)

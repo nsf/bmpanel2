@@ -2,10 +2,10 @@
 
 #include "util.h"
 
-/** 
- * \defgroup config_parser Config format parser 
+/**
+ * \defgroup config_parser Config format parser
  *
- * A simple tree-like format parser. 
+ * A simple tree-like format parser.
  *
  * It is used for bmpanel2 config and themes. The config may look like this:
  * @code
@@ -13,42 +13,42 @@
  * # panel
  * #---------------------------------------------
  * panel
- * 	position bottom
- * 	separator separator_img.png
- * 	background tile_img.png
- * 
+ *	position bottom
+ *	separator separator_img.png
+ *	background tile_img.png
+ *
  * #---------------------------------------------
  * # taskbar (this is a comment)
  * #---------------------------------------------
  * taskbar
- * 	idle
- * 		left tb_left_idle_img.png
- * 		center tb_tile_idle_img.png
- * 		right tb_right_idle_img.png
- * 		font DejaVuSans 8
- * 			color 255 255 255
- * 			align left
- * 			offset 5 1
- * 
- * 	pressed
- * 		left tb_left_pressed_img.png
- * 		center tb_tile_pressed_img.png
- * 		right tb_right_pressed_img.png
- * 		font DejaVuSans 8
- * 			color 255 255 255
- * 			align left
- * 			offset 5 1
- * 
- * 	default_icon default_icon.png
- * 		offset 0 1
- * 
+ *	idle
+ *		left tb_left_idle_img.png
+ *		center tb_tile_idle_img.png
+ *		right tb_right_idle_img.png
+ *		font DejaVuSans 8
+ *			color 255 255 255
+ *			align left
+ *			offset 5 1
+ *
+ *	pressed
+ *		left tb_left_pressed_img.png
+ *		center tb_tile_pressed_img.png
+ *		right tb_right_pressed_img.png
+ *		font DejaVuSans 8
+ *			color 255 255 255
+ *			align left
+ *			offset 5 1
+ *
+ *	default_icon default_icon.png
+ *		offset 0 1
+ *
  * @endcode
  */
 /*@{*/
 
 /**
- * Named config format entry with optional associated value and children. 
- * 
+ * Named config format entry with optional associated value and children.
+ *
  * * It is capable of building trees of entries.
  */
 struct config_format_entry {
@@ -64,11 +64,11 @@ struct config_format_entry {
 };
 
 /**
- * Config format tree representation. 
+ * Config format tree representation.
  */
 struct config_format_tree {
 	/** The directory containing the config file. */
-	char *dir; 
+	char *dir;
 
 	/**
 	 * Tree root.
@@ -77,10 +77,10 @@ struct config_format_tree {
 	 * \p children_n and \p children values are meaningful.
 	 */
 	struct config_format_entry root;
-	
-	/** 
+
+	/**
 	 * A buffer containing modified config format data (used for in-situ
-	 * parsing). 
+	 * parsing).
 	 *
 	 * Usually it's a pointer to a zero-terminated string, which
 	 * represents modified contents of a config file. Normally not used
@@ -89,9 +89,8 @@ struct config_format_tree {
 	char *buf;
 };
 
-
-/** 
- * Load a \p tree from a \p file. 
+/**
+ * Load a \p tree from a \p file.
  *
  * After successful loading, the \p tree should be released using
  * free_config_format_tree() function when the data isn't needed anymore.

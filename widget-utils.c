@@ -50,7 +50,7 @@ int parse_2ints(int *out, const char *name, struct config_format_entry *e)
 			return 0;
 		else
 			XWARNING("Failed to parse 2 ints \"%s\" value, "
-				 "the format is: \"%%d %%d\" (line: %u)", 
+				 "the format is: \"%%d %%d\" (line: %u)",
 				 name, ee->line);
 	}
 	return -1;
@@ -82,13 +82,13 @@ cairo_surface_t *parse_image_part(struct config_format_entry *e,
 	x = y = w = h = -1;
 	char *file;
 	size_t filestrlen;
-	
+
 	if (!e->value) {
 		if (required)
 			XWARNING("Missing image file name which is required ",
 				 "(line: %u)", e->line);
 		else
-			XWARNING("Missing image file name (line: %u)", e->line); 
+			XWARNING("Missing image file name (line: %u)", e->line);
 		return img;
 	}
 
@@ -109,13 +109,13 @@ cairo_surface_t *parse_image_part(struct config_format_entry *e,
 		img = get_image_part(file,x,y,w,h);
 	else
 		img = get_image(file);
-	
+
 	if (!img) {
 		if (required)
 			XWARNING("Failed to load image \"%s\" which is required "
 				 "(line: %u)", file, e->line);
 		else
-			XWARNING("Failed to load image \"%s\" (line: %u)", 
+			XWARNING("Failed to load image \"%s\" (line: %u)",
 				 file, e->line);
 	}
 
@@ -126,9 +126,9 @@ cairo_surface_t *parse_image_part(struct config_format_entry *e,
 	return img;
 }
 
-cairo_surface_t *parse_image_part_named(const char *name, 
+cairo_surface_t *parse_image_part_named(const char *name,
 					struct config_format_entry *e,
-					struct config_format_tree *tree, 
+					struct config_format_tree *tree,
 					int required)
 {
 	struct config_format_entry *ee = find_config_format_entry(e, name);
@@ -140,7 +140,7 @@ cairo_surface_t *parse_image_part_named(const char *name,
 	return parse_image_part(ee, tree, required);
 }
 
-int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e, 
+int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e,
 		       struct config_format_tree *tree, int required)
 {
 	tbt->center = parse_image_part_named("center", e, tree, required);
@@ -155,8 +155,8 @@ int parse_triple_image(struct triple_image *tbt, struct config_format_entry *e,
 	return 0;
 }
 
-int parse_triple_image_named(struct triple_image *tri, const char *name, 
-			     struct config_format_entry *e, 
+int parse_triple_image_named(struct triple_image *tri, const char *name,
+			     struct config_format_entry *e,
 			     struct config_format_tree *tree, int required)
 {
 	struct config_format_entry *ee = find_config_format_entry(e, name);
@@ -173,9 +173,9 @@ void free_triple_image(struct triple_image *tbt)
 {
 	if (tbt->center)
 		cairo_surface_destroy(tbt->center);
-	if (tbt->left) 
+	if (tbt->left)
 		cairo_surface_destroy(tbt->left);
-	if (tbt->right) 
+	if (tbt->right)
 		cairo_surface_destroy(tbt->right);
 }
 
@@ -226,7 +226,7 @@ int parse_int_or_percents(const char *name, struct config_format_entry *e,
 	if (v && 1 == sscanf(v, "%d", &i)) {
 		if (ispercents && strchr(v, '%') != 0)
 			*ispercents = 1;
-		else if (ispercents) 
+		else if (ispercents)
 			*ispercents = 0;
 		return i;
 	}
@@ -330,7 +330,7 @@ void blit_image_ex(cairo_surface_t *src, cairo_t *dest, int srcx, int srcy,
 	cairo_restore(dest);
 }
 
-void pattern_image(cairo_surface_t *src, cairo_t *dest, 
+void pattern_image(cairo_surface_t *src, cairo_t *dest,
 		   int dstx, int dsty, int w, int align)
 {
 	size_t sh = image_height(src);
@@ -374,8 +374,8 @@ void stretch_image(cairo_surface_t *src, cairo_t *dest,
 	cairo_restore(dest);
 }
 
-void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti, 
-		const char *text, int x, int y, int w, int h, int ellipsized)
+void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
+	       const char *text, int x, int y, int w, int h, int ellipsized)
 {
 	const static PangoEllipsizeMode ellipsize_table[] = {
 		PANGO_ELLIPSIZE_MIDDLE,
@@ -394,7 +394,7 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 	pango_layout_set_font_description(dest, ti->pfd);
 	pango_layout_set_text(dest, text, -1);
 	pango_layout_set_width(dest, -1);
-	
+
 	pango_layout_get_pixel_extents(dest, 0, &r);
 
 	offsety = (h - r.height) / 2;
@@ -413,7 +413,7 @@ void draw_text(cairo_t *cr, PangoLayout *dest, struct text_info *ti,
 
 	if (ellipsized && offsetx < 0)
 		offsetx = 0;
-	
+
 	offsetx += ti->offset[0];
 	offsety += ti->offset[1];
 
@@ -570,7 +570,7 @@ static void free_custom_surface_data(void *ptr)
 static cairo_surface_t *get_icon_from_netwm(long *data)
 {
 	cairo_surface_t *ret = 0;
-	uint32_t *array = 0; 
+	uint32_t *array = 0;
 	uint32_t w,h,size,i;
 	long *locdata = data;
 
@@ -596,14 +596,15 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 	}
 
 	/* TODO: I'm pretending here, that stride is w*4, but it should
-	 * be tested/verified 
+	 * be tested/verified
 	 */
-	ret = cairo_image_surface_create_for_data((unsigned char*)array, 
-			CAIRO_FORMAT_ARGB32, w, h, w*4);		
+	ret = cairo_image_surface_create_for_data((unsigned char*)array,
+						  CAIRO_FORMAT_ARGB32,
+						  w, h, w*4);
 	ENSURE(cairo_surface_status(ret) == CAIRO_STATUS_SUCCESS,
 	       "Failed to create cairo image surface");
 	cairo_status_t st;
-	st = cairo_surface_set_user_data(ret, &surface_data_key, 
+	st = cairo_surface_set_user_data(ret, &surface_data_key,
 					 array, free_custom_surface_data);
 	ENSURE(st == CAIRO_STATUS_SUCCESS,
 	       "Failed to set user data for surface");
@@ -611,16 +612,16 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 	return ret;
 }
 
-static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c, 
-		Pixmap icon, Pixmap icon_mask)
+static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c,
+					     Pixmap icon, Pixmap icon_mask)
 {
 	Window root_ret;
 	int x = 0, y = 0;
 	unsigned int w = 0, h = 0, d = 0, bw = 0;
 	cairo_surface_t *ret = 0;
 	cairo_surface_t *sicon = 0, *smask = 0;
-	
-	XGetGeometry(c->dpy, icon, &root_ret, 
+
+	XGetGeometry(c->dpy, icon, &root_ret,
 			&x, &y, &w, &h, &bw, &d);
 
 	/* yep, it is that bad */
@@ -628,7 +629,7 @@ static cairo_surface_t *get_icon_from_pixmap(struct x_connection *c,
 		sicon = cairo_xlib_surface_create_for_bitmap(c->dpy, icon,
 				DefaultScreenOfDisplay(c->dpy), w, h);
 	else
-		sicon = cairo_xlib_surface_create(c->dpy, icon, 
+		sicon = cairo_xlib_surface_create(c->dpy, icon,
 				c->default_visual, w, h);
 	ENSURE(cairo_surface_status(sicon) == CAIRO_STATUS_SUCCESS,
 	       "Failed to create cairo/xlib surface");
@@ -673,7 +674,7 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 		cairo_surface_t *default_icon)
 {
 	cairo_surface_t *ret = 0;
-	
+
 	int num = 0;
 	long *data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_ICON],
 			XA_CARDINAL, &num);
@@ -691,7 +692,7 @@ cairo_surface_t *get_window_icon(struct x_connection *c, Window win,
 				ret = get_icon_from_pixmap(c, hints->icon_pixmap,
 						hints->icon_mask);
 			}
-	        	XFree(hints);
+			XFree(hints);
 		}
 	}
 
@@ -736,16 +737,16 @@ cairo_surface_t *copy_resized(cairo_surface_t *source, int w, int h)
 
 cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
 {
-	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy, 
+	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy,
 							     p, c->default_visual,
 							     w, h);
-	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, 
+	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS,
 	       "Error creating xlib/cairo surface");
 
 	cairo_t *cr = cairo_create(surface);
 	cairo_surface_destroy(surface);
 
-	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS, 
+	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS,
 	       "Error creating cairo context");
 
 	return cr;
@@ -754,10 +755,10 @@ cairo_t *create_cairo_for_pixmap(struct x_connection *c, Pixmap p, int w, int h)
 cairo_surface_t *create_cairo_surface_for_pixmap(struct x_connection *c, Pixmap p,
 						 int w, int h)
 {
-	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy, 
+	cairo_surface_t *surface = cairo_xlib_surface_create(c->dpy,
 							     p, c->default_visual,
 							     w, h);
-	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, 
+	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS,
 	       "Error creating xlib/cairo surface");
 
 	return surface;
@@ -768,13 +769,13 @@ cairo_t *create_cairo_for_bitmap(struct x_connection *c, Pixmap p, int w, int h)
 	cairo_surface_t *surface = cairo_xlib_surface_create_for_bitmap(
 			c->dpy, p, DefaultScreenOfDisplay(c->dpy), w, h);
 
-	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS, 
+	ENSURE(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS,
 	       "Error creating xlib/cairo surface");
 
 	cairo_t *cr = cairo_create(surface);
 	cairo_surface_destroy(surface);
 
-	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS, 
+	ENSURE(cairo_status(cr) == CAIRO_STATUS_SUCCESS,
 	       "Error creating cairo context");
 
 	return cr;

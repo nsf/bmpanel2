@@ -14,10 +14,10 @@ struct render_interface render_normal = {
 
 static void create_dc(struct panel *p)
 {
-	p->cr = create_cairo_for_pixmap(&p->connection, p->bg, 
+	p->cr = create_cairo_for_pixmap(&p->connection, p->bg,
 					p->width, p->height);
 }
-	
+
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 {
 	XClearArea(p->connection.dpy, p->win, x, y, w, h, False);

@@ -36,7 +36,7 @@ void disp_button_press_release(struct panel *p, XButtonEvent *e)
 					p->dnd.dropped_x = e->x;
 					p->dnd.dropped_y = e->y;
 					if (w->interface->dnd_drop)
-						(*w->interface->dnd_drop)(w, &p->dnd);	
+						(*w->interface->dnd_drop)(w, &p->dnd);
 				}
 			}
 			break;

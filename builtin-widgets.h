@@ -27,7 +27,7 @@ struct taskbar_task {
 	int monitor; /* for multihead setups */
 
 	/* I'm using only one name source Atom and I'm watching it for
-	 * updates. 
+	 * updates.
 	 */
 	Atom name_atom;
 	Atom name_type_atom;
@@ -64,7 +64,7 @@ struct taskbar_widget {
 	Window taken;
 
 	Cursor dnd_cur;
-	
+
 	/* parameters from bmpanel2rc */
 	int task_death_threshold;
 	int task_urgency_hint;
@@ -85,7 +85,7 @@ struct clock_theme {
 
 struct clock_widget {
 	struct clock_theme theme;
-	
+
 	/* parameters from bmpanel2rc */
 	char *clock_prog;
 	int mouse_button;

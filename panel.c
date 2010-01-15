@@ -84,7 +84,7 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 	const char *v = find_config_format_entry_value(e, "position");
 	if (v)
 		theme->position = parse_position(v);
-	
+
 	theme->background = parse_image_part_named("background", e, tree, 1);
 	if (!theme->background)
 		return -1;
@@ -92,7 +92,7 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 	theme->separator = parse_image_part_named("separator", e, tree, 0);
 	theme->transparent = parse_bool("transparent", e);
 	theme->align = parse_align("align", e);
-	theme->width = parse_int_or_percents("width", e, -1, 
+	theme->width = parse_int_or_percents("width", e, -1,
 					     &theme->width_in_percents);
 	return 0;
 }
@@ -127,7 +127,7 @@ static int one_monitor_on_top_of_another(const struct x_monitor *one,
 	return 0;
 }
 
-static void validate_strut(long *strut, const struct x_connection *c, 
+static void validate_strut(long *strut, const struct x_connection *c,
 			   int monitor, int position)
 {
 	const struct x_monitor *top;
@@ -160,7 +160,7 @@ static void validate_strut(long *strut, const struct x_connection *c,
 		memset(strut, 0, sizeof(long) * 12);
 }
 
-static void get_position_and_strut(const struct x_connection *c, 
+static void get_position_and_strut(const struct x_connection *c,
 		const struct panel_theme *t, int monitor,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
@@ -189,7 +189,7 @@ static void get_position_and_strut(const struct x_connection *c,
 		/* limit */
 		if (w > mon->width)
 			w = mon->width;
-		
+
 		/* X */
 		switch (t->align) {
 		case ALIGN_CENTER:
@@ -205,7 +205,7 @@ static void get_position_and_strut(const struct x_connection *c,
 	}
 
 	*ox = x; *oy = y; *oh = h; *ow = w;
-	
+
 	static const struct {
 		int s, e;
 	} where[] = {
@@ -239,7 +239,7 @@ static void create_window(struct panel *panel, int monitor)
 	attrs.event_mask = ExposureMask | StructureNotifyMask | ButtonPressMask |
 		ButtonReleaseMask | PointerMotionMask | EnterWindowMask |
 		LeaveWindowMask;
-	panel->win = x_create_default_window(c, x, y, w, h, 
+	panel->win = x_create_default_window(c, x, y, w, h,
 					     CWBackPixmap | CWEventMask, &attrs);
 
 	panel->x = x;
@@ -258,18 +258,18 @@ static void create_window(struct panel *panel, int monitor)
 
 	/* NETWM struts */
 	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
-	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
-			strut, 12);
+	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL],
+			 strut, 12);
 
 	/* desktops and window type */
 	x_set_prop_int(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], -1);
 	x_set_prop_atom(c, panel->win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
 			c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK]);
-	
+
 	/* also send desktop message to wm */
-	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
+	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP],
 			     0xFFFFFFFF, 0, 0, 0, 0);
-	
+
 	/* place window on it's position */
 	XSizeHints size_hints;
 
@@ -292,8 +292,8 @@ static void create_window(struct panel *panel, int monitor)
 		int32_t input_mode;
 		uint32_t status;
 	} mwm = {MWM_HINTS_DECORATIONS,0,0,0,0};
-	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_MOTIF_WM_HINTS], 
-			c->atoms[XATOM_MOTIF_WM_HINTS], 32, PropModeReplace, 
+	XChangeProperty(c->dpy, panel->win, c->atoms[XATOM_MOTIF_WM_HINTS],
+			c->atoms[XATOM_MOTIF_WM_HINTS], 32, PropModeReplace,
 			(unsigned char*)&mwm, sizeof(struct mwmhints) / 4);
 	#undef MWM_HINTS_DECORATIONS
 
@@ -314,7 +314,7 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 	for (i = 0; i < tree->root.children_n; ++i) {
 		struct config_format_entry *e = &tree->root.children[i];
 		struct widget_interface *we = lookup_widget_interface(e->name);
-		if (!we) 
+		if (!we)
 			continue;
 
 		if (panel->widgets_n == PANEL_MAX_WIDGETS)
@@ -322,7 +322,7 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 
 		if (!validate_widget_for_alternatives(e->name))
 			continue;
-		
+
 		struct widget *w = &panel->widgets[panel->widgets_n];
 
 		w->interface = we;
@@ -342,7 +342,7 @@ static void parse_panel_widgets(struct panel *panel, struct config_format_tree *
 }
 
 static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
-					      struct panel *panel, 
+					      struct panel *panel,
 					      struct config_format_tree *tree)
 {
 	/* TODO: omg ugly copy & paste */
@@ -356,10 +356,10 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 		struct widget_interface *we = lookup_widget_interface(e->name);
 		if (!we)
 			continue;
-			
+
 		if (panel->widgets_n == PANEL_MAX_WIDGETS)
 			XDIE("error: Widgets limit reached");
-		
+
 		if (!validate_widget_for_alternatives(e->name))
 			continue;
 
@@ -368,7 +368,7 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 		w->interface = we;
 		w->panel = panel;
 		w->needs_expose = 0;
-		
+
 		int stashwi = find_widget_in_stash(e->name, stash);
 		if (stashwi != -1 && we->retheme_reconfigure) {
 			/* pop widget from the stash */
@@ -385,7 +385,7 @@ static void retheme_reconfigure_panel_widgets(struct widget_stash *stash,
 				w->paint_replace = parse_bool("paint_replace", e);
 
 				continue;
-			} else 
+			} else
 				(*w->interface->destroy_widget_private)(w);
 		}
 
@@ -432,7 +432,7 @@ void recalculate_widgets_sizes(struct panel *panel)
 		XDIE("There always should be exactly one widget with a "
 		     "SIZE_FILL size type (taskbar)");
 
-	if (total_constants_width + total_separators_width > 
+	if (total_constants_width + total_separators_width >
 	    panel->width - min_fill_size)
 	{
 		XDIE("Too many widgets here, try to remove one or more");
@@ -532,8 +532,8 @@ static void expose_panel(struct panel *panel)
 		struct widget *w = &panel->widgets[i];
 		if (!w->needs_expose)
 			continue;
-		
-		pattern_image(panel->theme.background, panel->cr, 
+
+		pattern_image(panel->theme.background, panel->cr,
 				w->x, 0, w->width, 0);
 		cairo_save(panel->cr);
 		if (w->paint_replace)
@@ -542,7 +542,7 @@ static void expose_panel(struct panel *panel)
 			(*w->interface->draw)(w);
 		cairo_restore(panel->cr);
 
-		(*panel->render->blit)(panel, w->x, 0, 
+		(*panel->render->blit)(panel, w->x, 0,
 				       w->width, panel->height);
 		w->needs_expose = 0;
 	}
@@ -568,7 +568,7 @@ void init_panel(struct panel *panel, struct config_format_tree *tree,
 
 	/* create window */
 	create_window(panel, monitor);
-	
+
 	/* render private */
 	if (panel->render->create_private)
 		(*panel->render->create_private)(panel);
@@ -587,9 +587,9 @@ void init_panel(struct panel *panel, struct config_format_tree *tree,
 	expose_panel(panel);
 	XMapWindow(c->dpy, panel->win);
 	XFlush(c->dpy);
-	
+
 	/* send desktop property again after mapping (fluxbox bug?) */
-	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP], 
+	x_send_netwm_message(c, panel->win, c->atoms[XATOM_NET_WM_DESKTOP],
 			     0xFFFFFFFF, 0, 0, 0, 0);
 }
 
@@ -622,7 +622,7 @@ void reconfigure_free_panel(struct panel *panel, struct widget_stash *stash)
 
 	stash->widgets = xmalloc(sizeof(struct widget) * panel->widgets_n);
 	stash->widgets_n = panel->widgets_n;
-	memcpy(stash->widgets, panel->widgets, 
+	memcpy(stash->widgets, panel->widgets,
 	       sizeof(struct widget) * panel->widgets_n);
 
 	panel->widgets_n = 0;
@@ -638,10 +638,10 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 	/* reload theme */
 	if (load_panel_theme(&panel->theme, tree))
 		XDIE("Failed to load theme format file");
-	
+
 	/* reparse config values */
 	reconfigure_panel_config(panel);
-	
+
 	/* check render interface */
 	select_render_interface(panel);
 
@@ -659,10 +659,10 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 	panel->y = y;
 	panel->width = w;
 	panel->height = h;
-	
+
 	XFreePixmap(panel->connection.dpy, panel->bg);
 	panel->bg = x_create_default_pixmap(c, w, h);
-	
+
 	/* render private */
 	if (panel->render->create_private)
 		(*panel->render->create_private)(panel);
@@ -672,7 +672,7 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 
 	/* create text layout */
 	panel->layout = pango_cairo_create_layout(panel->cr);
-	
+
 	/* reparse panel widgets */
 	retheme_reconfigure_panel_widgets(stash, panel, tree);
 	size_t i;
@@ -690,7 +690,7 @@ void reconfigure_panel(struct panel *panel, struct config_format_tree *tree,
 
 	XMoveResizeWindow(c->dpy, panel->win, x, y, w, h);
 	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
-	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
+	x_set_prop_array(c, panel->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL],
 			 strut, 12);
 
 	XSizeHints size_hints;
@@ -745,7 +745,7 @@ static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
 
 	if (e->window == c->root &&
 	    (e->width != c->screen_width ||
-	    e->height != c->screen_height)) 
+	    e->height != c->screen_height))
 	{
 		/* resolution changed */
 		c->screen_width = e->width;
@@ -757,14 +757,14 @@ static void panel_configure_notify(struct panel *p, XConfigureEvent *e)
 		get_position_and_strut(c, t, p->monitor, &x, &y, &w, &h, strut);
 		XMoveResizeWindow(c->dpy, p->win, x, y, w, h);
 		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT], strut, 4);
-		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL], 
+		x_set_prop_array(c, p->win, c->atoms[XATOM_NET_WM_STRUT_PARTIAL],
 				 strut, 12);
 
 		p->x = x;
 		p->y = y;
 		p->width = w;
 		p->height = h;
-	
+
 		XSizeHints size_hints;
 		size_hints.x = x;
 		size_hints.y = y;
@@ -793,7 +793,7 @@ static int process_events(struct panel *p)
 {
 	Display *dpy = p->connection.dpy;
 	int events_processed = 0;
-	
+
 	while (XPending(dpy)) {
 		XEvent e;
 
@@ -801,7 +801,7 @@ static int process_events(struct panel *p)
 		XNextEvent(dpy, &e);
 
 		switch (e.type) {
-		
+
 		case NoExpose:
 		case MapNotify:
 		case UnmapNotify:
@@ -814,7 +814,7 @@ static int process_events(struct panel *p)
 		case Expose:
 			panel_expose(p, &e.xexpose);
 			break;
-		
+
 		case ButtonRelease:
 		case ButtonPress:
 			disp_button_press_release(p, &e.xbutton);
@@ -828,7 +828,7 @@ static int process_events(struct panel *p)
 		case LeaveNotify:
 			disp_enter_leave_notify(p, &e.xcrossing);
 			break;
-		
+
 		case PropertyNotify:
 			panel_property_notify(p, &e.xproperty);
 			disp_property_notify(p, &e.xproperty);
@@ -837,7 +837,7 @@ static int process_events(struct panel *p)
 		case ClientMessage:
 			disp_client_msg(p, &e.xclient);
 			break;
-		
+
 		case ConfigureNotify:
 			panel_configure_notify(p, &e.xconfigure);
 			disp_configure(p, &e.xconfigure);
@@ -846,9 +846,9 @@ static int process_events(struct panel *p)
 		case DestroyNotify:
 			disp_win_destroy(p, &e.xdestroywindow);
 			break;
-		
+
 		default:
-			XWARNING("Unknown XEvent (type: %d, win: %d)", 
+			XWARNING("Unknown XEvent (type: %d, win: %d)",
 				 e.type, e.xany.window);
 			break;
 		}
@@ -891,7 +891,7 @@ void panel_main_loop(struct panel *panel)
 {
 	int fd = ConnectionNumber(panel->connection.dpy);
 	panel->loop = g_main_loop_new(0, 0);
-	
+
 	GIOChannel *x = g_io_channel_unix_new(fd);
 	g_io_add_watch(x, G_IO_IN | G_IO_HUP, panel_x_in, panel);
 	g_io_channel_unref(x);

@@ -26,7 +26,7 @@ static void list_theme(const char *themefile, const char *shortname)
 
 	const char *longname = 0;
 	const char *author = 0;
-	struct config_format_entry *e = find_config_format_entry(&tree.root, 
+	struct config_format_entry *e = find_config_format_entry(&tree.root,
 								 "theme");
 	if (e) {
 		longname = find_config_format_entry_value(e, "name");
@@ -105,7 +105,7 @@ static int try_load_theme(struct config_format_tree *tree, const char *name)
 {
 	char buf[4096];
 	size_t data_dirs_len;
-	char **data_dirs;	
+	char **data_dirs;
 	int found = 0;
 
 	/* try to load it in-place */
@@ -164,7 +164,7 @@ static int load_theme(struct config_format_tree *theme, const char *theme_overri
 }
 
 /*************************************************************************/
-	
+
 static struct config_format_tree theme;
 static struct panel p;
 
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 	if (load_theme(&theme, theme_override) < 0)
 		XDIE("Failed to load theme");
 	clean_image_cache(0);
-	
+
 	init_panel(&p, &theme, get_monitor());
 
 	mysignal(SIGINT, sigint_handler);
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
 	mysignal(SIGUSR2, sigusr2_handler);
 
 	panel_main_loop(&p);
-	
+
 	free_panel(&p);
 	free_config_format_tree(&theme);
 	clean_static_buf();

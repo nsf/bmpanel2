@@ -58,7 +58,7 @@ static char *atom_names[] = {
 	"XdndStatus"
 };
 
-void *x_get_prop_data(struct x_connection *c, Window win, Atom prop, 
+void *x_get_prop_data(struct x_connection *c, Window win, Atom prop,
 		      Atom type, int *items)
 {
 	Atom type_ret;
@@ -149,14 +149,14 @@ static int init_xrandr(struct x_connection *c)
 
 	monitors = xmallocz(sizeof(struct x_monitor) * resources->noutput);
 	for (i = 0; i < resources->noutput; ++i) {
-		XRROutputInfo *output = XRRGetOutputInfo(c->dpy, 
-							 resources, 
+		XRROutputInfo *output = XRRGetOutputInfo(c->dpy,
+							 resources,
 							 resources->outputs[i]);
 
 		if (output->connection == RR_Disconnected)
 		        continue;
 
-      		if (output->crtc) {
+		if (output->crtc) {
 			XRRCrtcInfo *crtc = XRRGetCrtcInfo(c->dpy, resources, output->crtc);
 			monitors[monitors_n].x = crtc->x;
 			monitors[monitors_n].y = crtc->y;
@@ -196,7 +196,7 @@ static int init_xinerama(struct x_connection *c)
 	xmonitors = XineramaQueryScreens(c->dpy, &monitors_n);
 	if (!xmonitors)
 		return 0;
-	
+
 	if (monitors_n <= 0) {
 		XFree(xmonitors);
 		return 0;
@@ -251,17 +251,17 @@ void x_connect(struct x_connection *c, const char *display)
 #endif
 	XSetErrorHandler(X_error_handler);
 	XSetIOErrorHandler(X_io_error_handler);
-	
+
 	/* get internal atoms */
 	XInternAtoms(c->dpy, atom_names, XATOM_COUNT, False, c->atoms);
 
-	c->screen 		= DefaultScreen(c->dpy);
-	c->screen_width 	= DisplayWidth(c->dpy, c->screen);
-	c->screen_height 	= DisplayHeight(c->dpy, c->screen);
-	c->default_visual 	= DefaultVisual(c->dpy, c->screen);
-	c->default_colormap 	= DefaultColormap(c->dpy, c->screen);
-	c->default_depth 	= DefaultDepth(c->dpy, c->screen);
-	c->root 		= RootWindow(c->dpy, c->screen);
+	c->screen		= DefaultScreen(c->dpy);
+	c->screen_width		= DisplayWidth(c->dpy, c->screen);
+	c->screen_height	= DisplayHeight(c->dpy, c->screen);
+	c->default_visual	= DefaultVisual(c->dpy, c->screen);
+	c->default_colormap	= DefaultColormap(c->dpy, c->screen);
+	c->default_depth	= DefaultDepth(c->dpy, c->screen);
+	c->root			= RootWindow(c->dpy, c->screen);
 	x_update_root_pmap(c);
 
 	XSelectInput(c->dpy, c->root, PropertyChangeMask | StructureNotifyMask);
@@ -290,12 +290,12 @@ void x_update_root_pmap(struct x_connection *c)
 		c->root_pixmap = x_get_prop_pixmap(c, c->root, c->atoms[XATOM_XROOTPMAP_ID2]);
 }
 
-Window x_create_default_window(struct x_connection *c, int x, int y, 
+Window x_create_default_window(struct x_connection *c, int x, int y,
 		unsigned int w, unsigned int h, unsigned long valuemask,
 		XSetWindowAttributes *attrs)
 {
-	return XCreateWindow(c->dpy, c->root, x, y, w, h, 0, 
-			     c->default_depth, InputOutput, 
+	return XCreateWindow(c->dpy, c->root, x, y, w, h, 0,
+			     c->default_depth, InputOutput,
 			     c->default_visual, valuemask, attrs);
 }
 
@@ -305,37 +305,37 @@ Pixmap x_create_default_pixmap(struct x_connection *c, unsigned int w,
 	return XCreatePixmap(c->dpy, c->root, w, h, c->default_depth);
 }
 
-Window x_create_default_embedder(struct x_connection *c, Window parent, 
+Window x_create_default_embedder(struct x_connection *c, Window parent,
 				 Window icon, unsigned int w, unsigned int h)
 {
 	XSetWindowAttributes attrs;
 	attrs.background_pixmap = ParentRelative;
-	return XCreateWindow(c->dpy, parent, 0, 0, w, h, 0, 
-			     c->default_depth, InputOutput, 
+	return XCreateWindow(c->dpy, parent, 0, 0, w, h, 0,
+			     c->default_depth, InputOutput,
 			     c->default_visual, CWBackPixmap, &attrs);
 }
 
 void x_set_prop_int(struct x_connection *c, Window win, Atom type, int value)
 {
-	XChangeProperty(c->dpy, win, type, XA_CARDINAL, 32, 
+	XChangeProperty(c->dpy, win, type, XA_CARDINAL, 32,
 			PropModeReplace, (unsigned char*)&value, 1);
 }
 
-void x_set_prop_visualid(struct x_connection *c, Window win, 
+void x_set_prop_visualid(struct x_connection *c, Window win,
 			 Atom type, VisualID value)
 {
-	XChangeProperty(c->dpy, win, type, XA_VISUALID, 32, 
+	XChangeProperty(c->dpy, win, type, XA_VISUALID, 32,
 			PropModeReplace, (unsigned char*)&value, 1);
 }
 
 void x_set_prop_atom(struct x_connection *c, Window win, Atom type, Atom at)
 {
-	XChangeProperty(c->dpy, win, type, XA_ATOM, 32, 
+	XChangeProperty(c->dpy, win, type, XA_ATOM, 32,
 			PropModeReplace, (unsigned char*)&at, 1);
 }
 
-void x_set_prop_array(struct x_connection *c, Window win, Atom type, 
-		const long *values, size_t len)
+void x_set_prop_array(struct x_connection *c, Window win, Atom type,
+		      const long *values, size_t len)
 {
 	XChangeProperty(c->dpy, win, type, XA_CARDINAL, 32,
 			PropModeReplace, (unsigned char*)values, len);
@@ -347,13 +347,13 @@ int x_is_window_visible_on_panel(struct x_connection *c, Window win)
 	int ret = 1;
 	int num;
 
-	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE], 
+	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_WINDOW_TYPE],
 			XA_ATOM, &num);
 	if (data) {
 		while (num) {
 			num--;
 			if (data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DOCK] ||
-			    data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP]) 
+			    data[num] == c->atoms[XATOM_NET_WM_WINDOW_TYPE_DESKTOP])
 			{
 				XFree(data);
 				return 0;
@@ -448,7 +448,7 @@ int x_is_window_demands_attention(struct x_connection *c, Window win)
 		}
 		XFree(wmh);
 	}
-	
+
 	data = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_STATE], XA_ATOM, &num);
 	if (!data)
 		return 0;
@@ -468,8 +468,8 @@ int x_is_window_iconified(struct x_connection *c, Window win)
 	unsigned long *data;
 	int ret = 0;
 
-	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE], 
-	     		c->atoms[XATOM_WM_STATE], 0);
+	data = x_get_prop_data(c, win, c->atoms[XATOM_WM_STATE],
+			       c->atoms[XATOM_WM_STATE], 0);
 	if (data) {
 		if (data[0] == IconicState) {
 			ret = 1;
@@ -491,7 +491,7 @@ int x_is_window_iconified(struct x_connection *c, Window win)
 	return ret;
 }
 
-void x_realloc_window_name(struct strbuf *sb, struct x_connection *c, 
+void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 			   Window win, Atom *atom, Atom *atype)
 {
 	char *name = 0;
@@ -505,7 +505,7 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 	*atype = c->atoms[XATOM_UTF8_STRING];
 	*atom = c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME];
 
-	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME], 
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_ICON_NAME],
 			c->atoms[XATOM_UTF8_STRING], 0);
 	if (name)
 		goto name_here;
@@ -513,7 +513,7 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 	*atype = c->atoms[XATOM_UTF8_STRING];
 	*atom = c->atoms[XATOM_NET_WM_ICON_NAME];
 
-	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_ICON_NAME], 
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_ICON_NAME],
 			c->atoms[XATOM_UTF8_STRING], 0);
 	if (name)
 		goto name_here;
@@ -522,22 +522,22 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 	*atom = XA_WM_ICON_NAME;
 
 	name = x_get_prop_data(c, win, XA_WM_ICON_NAME, XA_STRING, 0);
-	if (name) 
+	if (name)
 		goto name_here;
 	/****************/
 	*atype = c->atoms[XATOM_UTF8_STRING];
 	*atom = XA_WM_ICON_NAME;
 
 	name = x_get_prop_data(c, win, XA_WM_ICON_NAME, c->atoms[XATOM_UTF8_STRING], 0);
-	if (name) 
+	if (name)
 		goto name_here;
 	/****************/
 	*atype = c->atoms[XATOM_UTF8_STRING];
 	*atom = c->atoms[XATOM_NET_WM_VISIBLE_NAME];
 
-	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_NAME], 
+	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_VISIBLE_NAME],
 			c->atoms[XATOM_UTF8_STRING], 0);
-	if (name) 
+	if (name)
 		goto name_here;
 	/****************/
 	*atype = c->atoms[XATOM_UTF8_STRING];
@@ -545,21 +545,21 @@ void x_realloc_window_name(struct strbuf *sb, struct x_connection *c,
 
 	name = x_get_prop_data(c, win, c->atoms[XATOM_NET_WM_NAME],
 			c->atoms[XATOM_UTF8_STRING], 0);
-	if (name) 
+	if (name)
 		goto name_here;
 	/****************/
 	*atype = XA_STRING;
 	*atom = XA_WM_NAME;
 
 	name = x_get_prop_data(c, win, XA_WM_NAME, XA_STRING, 0);
-	if (name) 
+	if (name)
 		goto name_here;
 	/****************/
 	*atype = c->atoms[XATOM_UTF8_STRING];
 	*atom = XA_WM_NAME;
 
 	name = x_get_prop_data(c, win, XA_WM_NAME, c->atoms[XATOM_UTF8_STRING], 0);
-	if (name) 
+	if (name)
 		goto name_here;
 	else {
 		*atom = None;

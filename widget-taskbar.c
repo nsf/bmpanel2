@@ -2,7 +2,7 @@
 #include "settings.h"
 #include "builtin-widgets.h"
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 		struct config_format_tree *tree);
 static void destroy_widget_private(struct widget *w);
 static void draw(struct widget *w);
@@ -22,16 +22,16 @@ static void clock_tick(struct widget *w);
 static void reconfigure(struct widget *w);
 
 struct widget_interface taskbar_interface = {
-	.theme_name 		= "taskbar",
-	.size_type 		= WIDGET_SIZE_FILL,
-	.create_widget_private 	= create_widget_private,
+	.theme_name		= "taskbar",
+	.size_type		= WIDGET_SIZE_FILL,
+	.create_widget_private	= create_widget_private,
 	.destroy_widget_private = destroy_widget_private,
-	.draw 			= draw,
-	.button_click 		= button_click,
-	.prop_change 		= prop_change,
-	.dnd_start 		= dnd_start,
-	.dnd_drag 		= dnd_drag,
-	.dnd_drop 		= dnd_drop,
+	.draw			= draw,
+	.button_click		= button_click,
+	.prop_change		= prop_change,
+	.dnd_start		= dnd_start,
+	.dnd_drag		= dnd_drag,
+	.dnd_drop		= dnd_drop,
 	.client_msg		= client_msg,
 	.configure		= configure,
 	.mouse_motion		= mouse_motion,
@@ -82,7 +82,7 @@ static int parse_taskbar_state(struct taskbar_state *ts, const char *name,
 		goto parse_taskbar_state_error_font;
 
 	parse_2ints(ts->icon_offset, "icon_offset", ee);
-	
+
 	ts->exists = 1;
 	return 0;
 
@@ -100,8 +100,9 @@ static void free_taskbar_state(struct taskbar_state *ts)
 	}
 }
 
-static int parse_taskbar_theme(struct taskbar_theme *tt, 
-		struct config_format_entry *e, struct config_format_tree *tree)
+static int parse_taskbar_theme(struct taskbar_theme *tt,
+			       struct config_format_entry *e,
+			       struct config_format_tree *tree)
 {
 	if (parse_taskbar_state(&tt->states[BUTTON_STATE_IDLE], "idle", e, tree, 1))
 		goto parse_taskbar_button_theme_error_idle;
@@ -113,9 +114,9 @@ static int parse_taskbar_theme(struct taskbar_theme *tt,
 	if (ee)
 		tt->default_icon = parse_image_part(ee, tree, 0);
 
-	parse_taskbar_state(&tt->states[BUTTON_STATE_IDLE_HIGHLIGHT], 
+	parse_taskbar_state(&tt->states[BUTTON_STATE_IDLE_HIGHLIGHT],
 			    "idle_highlight", e, tree, 0);
-	parse_taskbar_state(&tt->states[BUTTON_STATE_PRESSED_HIGHLIGHT], 
+	parse_taskbar_state(&tt->states[BUTTON_STATE_PRESSED_HIGHLIGHT],
 			    "pressed_highlight", e, tree, 0);
 
 	tt->separator = parse_image_part_named("separator", e, tree, 0);
@@ -150,7 +151,7 @@ static int is_task_visible(struct widget *w, struct taskbar_task *task)
 
 	/* be aware of "on all desktops" tasks */
 	int gooddesktop = tw->desktop == task->desktop || task->desktop == -1;
-	int goodmonitor; 
+	int goodmonitor;
 	if (tw->task_visible_monitors)
 		goodmonitor = tw->task_visible_monitors & (1 << task->monitor);
 	else
@@ -217,7 +218,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 			XSelectInput(c->dpy, win, PropertyChangeMask);
 		return;
 	}
-	
+
 
 	XWindowAttributes winattrs;
 	XGetWindowAttributes(c->dpy, win, &winattrs);
@@ -232,7 +233,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 	t.monitor = task_monitor(x, y, winattrs.width, winattrs.height,
 				 c->monitors, c->monitors_n);
 
-	x_realloc_window_name(&t.name, c, win, &t.name_atom, &t.name_type_atom); 
+	x_realloc_window_name(&t.name, c, win, &t.name_atom, &t.name_type_atom);
 	if (tw->theme.default_icon)
 		t.icon = get_window_icon(c, win, tw->theme.default_icon);
 	else
@@ -326,7 +327,7 @@ static void draw_task(struct taskbar_task *task, struct taskbar_widget *tw,
 	int rightw = image_width(tbt->right);
 	int height = image_height(tbt->center);
 	int centerw = w - leftw - rightw;
-	
+
 	int iconw = image_width(theme->default_icon);
 	int iconh = image_height(theme->default_icon);
 	int textw = centerw - (iconw + icon_offset[0]);
@@ -337,12 +338,12 @@ static void draw_task(struct taskbar_task *task, struct taskbar_widget *tw,
 	int rightx = centerx + centerw;
 
 	if (tbt->stretched_overlap)
-		stretch_image(tbt->center, cr, 
-			      leftx + tbt->center_offsets[0], 0, 
+		stretch_image(tbt->center, cr,
+			      leftx + tbt->center_offsets[0], 0,
 			      w - tbt->center_offsets[0] - tbt->center_offsets[1]);
 	else if (tbt->stretched)
-		stretch_image(tbt->center, cr, 
-			      centerx + tbt->center_offsets[0], 0, 
+		stretch_image(tbt->center, cr,
+			      centerx + tbt->center_offsets[0], 0,
 			      centerw - tbt->center_offsets[0] - tbt->center_offsets[1]);
 	else
 		pattern_image(tbt->center, cr, centerx, 0, centerw, 1);
@@ -361,15 +362,15 @@ static void draw_task(struct taskbar_task *task, struct taskbar_widget *tw,
 		blit_image(task->icon, cr, xx, yy);
 		cairo_restore(cr);
 	}
-	xx += iconw; 
-	
+	xx += iconw;
+
 	/* text */
 	draw_text(cr, layout, font, task->name.buf, xx, 0, textw, height, 1);
 }
 
 static inline void activate_task(struct x_connection *c, struct taskbar_task *t)
 {
-	x_send_netwm_message(c, t->win, c->atoms[XATOM_NET_ACTIVE_WINDOW], 
+	x_send_netwm_message(c, t->win, c->atoms[XATOM_NET_ACTIVE_WINDOW],
 			2, CurrentTime, 0, 0, 0);
 
 	XWindowChanges wc;
@@ -419,13 +420,13 @@ static int get_taskbar_task_at(struct widget *w, int x)
 
 static void update_active(struct taskbar_widget *tw, struct x_connection *c)
 {
-	tw->active = x_get_prop_window(c, c->root, 
+	tw->active = x_get_prop_window(c, c->root,
 			c->atoms[XATOM_NET_ACTIVE_WINDOW]);
 }
 
 static void update_desktop(struct taskbar_widget *tw, struct x_connection *c)
 {
-	tw->desktop = x_get_prop_int(c, c->root, 
+	tw->desktop = x_get_prop_int(c, c->root,
 			c->atoms[XATOM_NET_CURRENT_DESKTOP]);
 }
 
@@ -435,7 +436,7 @@ static void update_tasks(struct widget *w, struct x_connection *c)
 	Window *wins;
 	int num;
 
-	wins = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_CLIENT_LIST], 
+	wins = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_CLIENT_LIST],
 			XA_WINDOW, &num);
 
 	size_t i;
@@ -457,7 +458,7 @@ static void update_tasks(struct widget *w, struct x_connection *c)
 		if (find_task_by_window(tw, wins[j]) == -1)
 			add_task(w, c, wins[j]);
 	}
-	
+
 	XFree(wins);
 }
 
@@ -465,7 +466,7 @@ static void update_tasks(struct widget *w, struct x_connection *c)
   Taskbar interface
 **************************************************************************/
 
-static int create_widget_private(struct widget *w, struct config_format_entry *e, 
+static int create_widget_private(struct widget *w, struct config_format_entry *e,
 		struct config_format_tree *tree)
 {
 	struct taskbar_widget *tw = xmallocz(sizeof(struct taskbar_widget));
@@ -484,11 +485,11 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 	update_tasks(w, c);
 	tw->dnd_win = None;
 	tw->taken = None;
-	tw->task_death_threshold = parse_int("task_death_threshold", 
+	tw->task_death_threshold = parse_int("task_death_threshold",
 					     &g_settings.root, 50);
 	tw->task_urgency_hint = parse_bool("task_urgency_hint",
 					   &g_settings.root);
-	const char *tvmstr = find_config_format_entry_value(&g_settings.root, 
+	const char *tvmstr = find_config_format_entry_value(&g_settings.root,
 							    "task_visible_monitors");
 	tw->task_visible_monitors = parse_task_visible_monitors(tvmstr);
 	tw->dnd_cur = XCreateFontCursor(c->dpy, XC_fleur);
@@ -510,7 +511,7 @@ static void draw(struct widget *w)
 {
 	/* I think it's a good idea to calculate all buttons positions here, and
 	 * cache these data for later use in other message handlers. User
-	 * interacts with what he/she sees, right? 
+	 * interacts with what he/she sees, right?
 	 */
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 	struct panel *p = w->panel;
@@ -531,7 +532,7 @@ static void draw(struct widget *w)
 
 	for (i = 0; i < tw->tasks_n; ++i) {
 		struct taskbar_task *t = &tw->tasks[i];
-		
+
 		if (!is_task_visible(w, t))
 			continue;
 
@@ -539,7 +540,7 @@ static void draw(struct widget *w)
 		/* last task width correction */
 		if (TASKS_NEED_CORRECTION && curtask == count-1)
 			taskw = (w->x + w->width) - x;
-		
+
 		/* save position for other events */
 		t->x = x;
 		t->w = taskw;
@@ -694,7 +695,7 @@ static Window create_window_for_dnd(struct x_connection *c, int x, int y,
 	attrs.override_redirect = True;
 
 	/* the window */
-	Window win = x_create_default_window(c, x, y, iconw, iconh, 
+	Window win = x_create_default_window(c, x, y, iconw, iconh,
 			CWOverrideRedirect | CWBackPixmap, &attrs);
 	XFreePixmap(c->dpy, bg);
 
@@ -726,7 +727,7 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 		/* if it's not ours, skip.. */
 		if ((x < (p->x + w->x)) || (x > (p->x + w->x + w->width)))
 			return;
-		
+
 		int ti = get_taskbar_task_at(w, x - p->x);
 		if (ti != -1) {
 			struct taskbar_task *t = &tw->tasks[ti];
@@ -734,7 +735,7 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 				activate_task(c, t);
 		}
 
-		x_send_dnd_message(c, e->data.l[0], 
+		x_send_dnd_message(c, e->data.l[0],
 				   c->atoms[XATOM_XDND_STATUS],
 				   p->win,
 				   2, /* bits: 0 1 */
@@ -758,8 +759,8 @@ static void dnd_start(struct widget *w, struct drag_info *di)
 
 	struct taskbar_task *t = &tw->tasks[ti];
 	if (t->icon) {
-		tw->dnd_win = create_window_for_dnd(c, 
-						    di->cur_root_x, 
+		tw->dnd_win = create_window_for_dnd(c,
+						    di->cur_root_x,
 						    di->cur_root_y,
 						    t->icon);
 		XMapWindow(c->dpy, tw->dnd_win);
@@ -790,7 +791,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 	if (tw->taken != None) {
 		int taken = find_task_by_window(tw, tw->taken);
 		int dropped = get_taskbar_task_at(w, di->dropped_x);
-		if (di->taken_on == di->dropped_on && 
+		if (di->taken_on == di->dropped_on &&
 		    taken != -1 && dropped != -1 &&
 		    tw->tasks[taken].desktop == tw->tasks[dropped].desktop)
 		{
@@ -799,7 +800,7 @@ static void dnd_drop(struct widget *w, struct drag_info *di)
 			w->needs_expose = 1;
 		} else if (!di->dropped_on && taken != -1) {
 			/* out of the panel */
-			if (di->cur_y < -tw->task_death_threshold || 
+			if (di->cur_y < -tw->task_death_threshold ||
 			    di->cur_y > w->panel->height + tw->task_death_threshold)
 			{
 				close_task(c, &tw->tasks[taken]);
@@ -885,11 +886,11 @@ static void reconfigure(struct widget *w)
 {
 	struct taskbar_widget *tw = (struct taskbar_widget*)w->private;
 
-	tw->task_death_threshold = parse_int("task_death_threshold", 
+	tw->task_death_threshold = parse_int("task_death_threshold",
 					     &g_settings.root, 50);
 	tw->task_urgency_hint = parse_bool("task_urgency_hint",
 					   &g_settings.root);
-	const char *tvmstr = find_config_format_entry_value(&g_settings.root, 
+	const char *tvmstr = find_config_format_entry_value(&g_settings.root,
 							    "task_visible_monitors");
 	tw->task_visible_monitors = parse_task_visible_monitors(tvmstr);
 }

@@ -37,7 +37,7 @@ static void create_private(struct panel *p)
 	pr->blit_cr = create_cairo_for_pixmap(c, p->bg, p->width, p->height);
 	pr->buf = x_create_default_pixmap(c, p->width, p->height);
 	pr->buf_cr = create_cairo_for_pixmap(c, pr->buf, p->width, p->height);
-	
+
 	if (c->root_pixmap != None)
 		pr->wallpaper = create_cairo_surface_for_pixmap(c, c->root_pixmap,
 								c->screen_width,
@@ -65,7 +65,7 @@ static void create_dc(struct panel *p)
 	p->cr = cairo_create(backbuf);
 	cairo_surface_destroy(backbuf);
 }
-	
+
 static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 {
 	Display *dpy = p->connection.dpy;
@@ -73,7 +73,7 @@ static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 
 	/* draw wallpaper or clear buffer */
 	if (pr->wallpaper) {
-		blit_image_ex(pr->wallpaper, pr->buf_cr, p->x + x, p->y + y, 
+		blit_image_ex(pr->wallpaper, pr->buf_cr, p->x + x, p->y + y,
 			      w, h, x, y);
 	} else {
 		cairo_save(pr->buf_cr);
@@ -88,7 +88,7 @@ static void blit(struct panel *p, int x, int y, unsigned int w, unsigned int h)
 	cairo_set_source_rgba(p->cr, 0, 0, 0, 0);
 	cairo_paint(p->cr);
 	cairo_restore(p->cr);
-	
+
 	/* put everything to the background pixmap and clear area */
 	blit_image_ex(cairo_get_target(pr->buf_cr), pr->blit_cr, x, y, w, h, x, y);
 	XClearArea(dpy, p->win, x, y, w, h, False);
@@ -100,7 +100,7 @@ static void update_bg(struct panel *p)
 	struct pseudo_render *pr = p->render_private;
 
 	cairo_surface_destroy(pr->wallpaper);
-	
+
 	if (c->root_pixmap != None)
 		pr->wallpaper = create_cairo_surface_for_pixmap(c, c->root_pixmap,
 								c->screen_width,
