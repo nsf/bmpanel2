@@ -264,7 +264,7 @@ void required_entry_not_found(struct config_format_entry *e, const char *name)
 		 buf, name);
 }
 
-void for_each_word(char *str, void (*func)(const char*))
+void for_each_word(char *str, void (*func)(const char*, void*), void *data)
 {
 	char *beg = str;
 	char *end;
@@ -282,7 +282,7 @@ void for_each_word(char *str, void (*func)(const char*))
 
 		char tmp = *end;
 		*end = '\0';
-		(*func)(beg);
+		(*func)(beg, data);
 		*end = tmp;
 
 		if (*end == '\0')

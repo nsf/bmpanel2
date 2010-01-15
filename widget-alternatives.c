@@ -86,7 +86,7 @@ find_widget_alternative_def(const char *name, struct widget_alternative_def **gr
 	return 0;
 }
 
-static void match_user_preference(const char *pref) 
+static void match_user_preference(const char *pref, void *not_used)
 {
 	struct widget_alternative_def *group;
 	struct widget_alternative_def *wad;
@@ -129,7 +129,7 @@ static void match_theme_has_widget_alternatives(struct config_format_tree *tree)
 
 void update_alternatives_preference(char *prefstr, struct config_format_tree *tree)
 {
-	for_each_word(prefstr, match_user_preference);
+	for_each_word(prefstr, match_user_preference, 0);
 	match_theme_has_widget_alternatives(tree);
 }
 
