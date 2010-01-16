@@ -426,7 +426,9 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 		}
 
 		if (e->atom == c->atoms[XATOM_NET_CLIENT_LIST_STACKING]) {
-			w->needs_expose = update_tasks(w);
+			int needs = update_tasks(w);
+			if (!w->needs_expose)
+				w->needs_expose = needs;
 			return;
 		}
 	}

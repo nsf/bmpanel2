@@ -224,6 +224,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 	XGetWindowAttributes(c->dpy, win, &winattrs);
 	long mask = winattrs.your_event_mask | PropertyChangeMask | StructureNotifyMask;
 	XSelectInput(c->dpy, win, mask);
+	XGetWindowAttributes(c->dpy, win, &winattrs); /* get position after select input */
 
 	CLEAR_STRUCT(&t);
 	t.win = win;
@@ -621,8 +622,8 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	if (e->atom == tw->tasks[ti].name_atom)
 	{
 		struct taskbar_task *t = &tw->tasks[ti];
-		x_realloc_window_name(&t->name, c, t->win, 
-				    &t->name_atom, &t->name_type_atom);
+		x_realloc_window_name(&t->name, c, t->win,
+				      &t->name_atom, &t->name_type_atom);
 		w->needs_expose = 1;
 		return;
 	}
