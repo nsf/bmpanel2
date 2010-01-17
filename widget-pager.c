@@ -368,6 +368,8 @@ static void draw(struct widget *w)
 			activeps = ps;
 		}
 
+		r.x++; r.y++; r.w -= 2; r.h -= 2;
+
 		size_t visible_tasks_count = 0;
 		size_t j;
 		for (j = 0; j < pw->windows_n; ++j) {
@@ -380,8 +382,8 @@ static void draw(struct widget *w)
 				unsigned char *window_border;
 				struct rect intersection;
 				struct rect winr;
-				winr.x = r.x + 1 + (t->x - pd->workarea.x) / pd->div;
-				winr.y = r.y + 1 + (t->y - pd->workarea.y) / pd->div;
+				winr.x = r.x + (t->x - pd->workarea.x) / pd->div;
+				winr.y = r.y + (t->y - pd->workarea.y) / pd->div;
 				winr.w = t->w / pd->div;
 				winr.h = t->h / pd->div;
 				if (!rect_intersection(&intersection, &winr, &r))
@@ -398,6 +400,8 @@ static void draw(struct widget *w)
 				draw_rectangle_outline(cr, window_border, &intersection);
 			}
 		}
+
+		r.x--; r.y--; r.w += 2; r.h += 2;
 
 		draw_rectangle_outline(cr, ps->border, &r);
 		if (ps->font.pfd && visible_tasks_count) {
@@ -432,9 +436,14 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	struct x_connection *c = &w->panel->connection;
 
 	if (e->window == c->root) {
-		if (e->atom == c->atoms[XATOM_NET_NUMBER_OF_DESKTOPS])
-		{
+		if (e->atom == c->atoms[XATOM_NET_NUMBER_OF_DESKTOPS]) {
 			update_desktops(pw, c);
+			resize_desktops(w);
+			recalculate_widgets_sizes(w->panel);
+			return;
+		}
+
+		if (e->atom == c->atoms[XATOM_NET_WORKAREA]) {
 			resize_desktops(w);
 			recalculate_widgets_sizes(w->panel);
 			return;
