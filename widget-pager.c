@@ -130,6 +130,14 @@ static void get_window_position(struct x_connection *c, struct pager_task *t, Wi
 	t->w = winattrs.width;
 	t->h = winattrs.height;
 	x_translate_coordinates(c, winattrs.x, winattrs.y, &t->x, &t->y, win);
+
+	long *extents = x_get_prop_data(c, win, c->atoms[XATOM_NET_FRAME_EXTENTS],
+					XA_CARDINAL, 0);
+	if (extents) {
+		t->x -= extents[0]; t->w += extents[0] + extents[1];
+		t->y -= extents[2]; t->h += extents[2] + extents[3];
+		XFree(extents);
+	}
 }
 
 static void select_window_input(struct x_connection *c, Window win)
@@ -243,24 +251,34 @@ static void resize_desktops(struct widget *w)
 	if (pw->theme.height > w->panel->height)
 		pw->theme.height = w->panel->height - 2;
 
-	struct x_monitor mon = c->monitors[w->panel->monitor];
+	const struct x_monitor *xmon = &c->monitors[w->panel->monitor];
+	struct rect mon = {xmon->x, xmon->y, xmon->width, xmon->height};
 	if (!pw->current_monitor_only) {
 		mon.x = mon.y = 0;
-		mon.width = c->screen_width;
-		mon.height = c->screen_height;
+		mon.w = c->screen_width;
+		mon.h = c->screen_height;
 	}
 
-	pw->div = mon.height / pw->theme.height;
-	int desktop_width = mon.width / pw->div;
+	int workareas_n = 0;
+	long *workareas = x_get_prop_data(c, c->root, c->atoms[XATOM_NET_WORKAREA],
+					  XA_CARDINAL, &workareas_n);
+
+	int width = 0;
 	size_t i;
 	for (i = 0; i < pw->desktops_n; ++i) {
-		pw->desktops[i].w = desktop_width;
-		pw->desktops[i].offx = mon.x;
-		pw->desktops[i].offy = mon.y;
+		struct pager_desktop *pd = &pw->desktops[i];
+		struct rect workarea = {
+			workareas[4*i+0], workareas[4*i+1],
+			workareas[4*i+2], workareas[4*i+3]
+		};
+		rect_intersection(&pd->workarea, &workarea, &mon);
+		pd->div = pd->workarea.h / (pw->theme.height - 2);
+		pd->w = (mon.w / pd->div) + 2;
+		width += pd->w;
 	}
+	XFree(workareas);
 
-	w->width = pw->desktops_n * desktop_width +
-		(pw->desktops_n - 1) * pw->theme.desktop_spacing;
+	w->width = width + (pw->desktops_n - 1) * pw->theme.desktop_spacing;
 }
 
 static int get_desktop_at(struct widget *w, int x)
@@ -327,6 +345,9 @@ static void draw(struct widget *w)
 	r.y = (w->panel->height - pw->theme.height) / 2;
 	r.h = pw->theme.height;
 
+	struct rect activerect;
+	struct pager_state *activeps = &pw->theme.states[0];
+
 	for (i = 0; i < pw->desktops_n; ++i) {
 		struct pager_desktop *pd = &pw->desktops[i];
 		int state = (i == pw->active) << 1;
@@ -342,6 +363,11 @@ static void draw(struct widget *w)
 		r.w = pd->w;
 		fill_rectangle(cr, ps->fill, &r);
 
+		if (pw->active == i) {
+			activerect = r;
+			activeps = ps;
+		}
+
 		size_t visible_tasks_count = 0;
 		size_t j;
 		for (j = 0; j < pw->windows_n; ++j) {
@@ -354,10 +380,10 @@ static void draw(struct widget *w)
 				unsigned char *window_border;
 				struct rect intersection;
 				struct rect winr;
-				winr.x = r.x + (t->x - pd->offx) / pw->div;
-				winr.y = r.y + (t->y - pd->offy) / pw->div;
-				winr.w = t->w / pw->div;
-				winr.h = t->h / pw->div;
+				winr.x = r.x + 1 + (t->x - pd->workarea.x) / pd->div;
+				winr.y = r.y + 1 + (t->y - pd->workarea.y) / pd->div;
+				winr.w = t->w / pd->div;
+				winr.h = t->h / pd->div;
 				if (!rect_intersection(&intersection, &winr, &r))
 					continue;
 
@@ -382,6 +408,7 @@ static void draw(struct widget *w)
 		}
 		r.x += r.w + pw->theme.desktop_spacing;
 	}
+	draw_rectangle_outline(cr, activeps->border, &activerect);
 }
 
 static void button_click(struct widget *w, XButtonEvent *e)
@@ -446,6 +473,12 @@ static void prop_change(struct widget *w, XPropertyEvent *e)
 	if (e->atom == c->atoms[XATOM_NET_WM_STATE]) {
 		t->visible = x_is_window_visible_on_screen(c, t->win);
 		t->visible_on_panel = x_is_window_visible_on_panel(c, t->win);
+		w->needs_expose = 1;
+		return;
+	}
+
+	if (e->atom == c->atoms[XATOM_NET_FRAME_EXTENTS]) {
+		get_window_position(c, t, e->window);
 		w->needs_expose = 1;
 		return;
 	}

@@ -158,8 +158,8 @@ struct pager_desktop {
 	int w;
 	int needs_expose;
 	int num_tasks;
-	int offx;
-	int offy;
+	struct rect workarea;
+	int div;
 };
 
 struct pager_task {
