@@ -159,7 +159,7 @@ struct pager_desktop {
 	int needs_expose;
 	int num_tasks;
 	struct rect workarea;
-	int div;
+	int div; /* use this value to convert window sizes */
 };
 
 struct pager_task {
@@ -186,9 +186,6 @@ struct pager_widget {
 	int active;
 	int highlighted;
 	Window active_win;
-
-	/* use this value to convert window sizes */
-	int div;
 
 	Window *windows; /* from NETWM */
 	int windows_n;

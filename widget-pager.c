@@ -1,3 +1,4 @@
+#include <math.h>
 #include "settings.h"
 #include "builtin-widgets.h"
 
@@ -129,7 +130,7 @@ static void get_window_position(struct x_connection *c, struct pager_task *t, Wi
 	XGetWindowAttributes(c->dpy, win, &winattrs);
 	t->w = winattrs.width;
 	t->h = winattrs.height;
-	x_translate_coordinates(c, winattrs.x, winattrs.y, &t->x, &t->y, win);
+	x_translate_coordinates(c, 0, 0, &t->x, &t->y, win);
 
 	long *extents = x_get_prop_data(c, win, c->atoms[XATOM_NET_FRAME_EXTENTS],
 					XA_CARDINAL, 0);
