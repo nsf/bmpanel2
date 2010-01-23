@@ -32,7 +32,7 @@ By default, The configuration file is stored in ~/.config/bmpanel/bmpanel2rc
 
 For details on usage, Please refer to Unix Manual Pages or Short Help.
 
-Short Help:    bmpanel2 --help
-Unix Manual:    man bmpanel2
+Short Help: <code>bmpanel2 --help</code><br/>
+Unix Manual: <code>man bmpanel2</code>
  
 
