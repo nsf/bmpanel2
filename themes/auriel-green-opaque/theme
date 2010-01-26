@@ -1,7 +1,7 @@
 theme
 	name Auriel Green Opaque
 	author weakhead <http://weakhead.deviantart.com/>
-	# Original author: lassekongo83
+	# Original author: lassekongo83 <http://lassekongo83.deviantart.com/>
 	# License: Creative Commons Attribution-Noncommercial-Share Alike 3.0
 
 panel
@@ -34,8 +34,34 @@ desktop_switcher
 			color 255 255 255
 			align center
 			offset 0 0
-			shadow_color 0 0 0 
+			shadow_color 0 0 0
 			shadow_offset 1 1
+
+pager
+	idle
+		border 0 0 0
+		fill 24 24 24
+		inactive_window_border 66 87 41
+		inactive_window_fill 24 24 24
+		active_window_border 66 87 41
+		active_window_fill 24 24 24
+		font DejaVu Sans condensed bold 8
+			color 255 255 255
+			offset -2 3
+			align right
+			shadow_offset 1 1
+			shadow_color 0 0 0
+
+	pressed
+		border 0 0 0
+		fill 72 108 29
+		inactive_window_border 150 150 150
+		inactive_window_fill 22 25 28
+		active_window_border 218 255 118
+		active_window_fill 90 133 40
+
+	height 18
+	desktop_spacing 3
 
 launchbar
 	icon_size 16 16

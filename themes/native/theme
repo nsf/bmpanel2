@@ -29,6 +29,32 @@ desktop_switcher
 
 	separator ds_separator_img.png
 
+pager
+	idle
+		border 43 56 63
+		fill 88 102 109
+		inactive_window_border 73 101 120
+		inactive_window_fill 43 56 63
+		active_window_border 73 101 120
+		active_window_fill 43 56 63
+		font DejaVu Sans 8
+			color 230 230 230
+			offset -2 4
+			align right
+			shadow_offset 1 1
+			shadow_color 0 0 0
+
+	pressed
+		border 43 56 63
+		fill 74 113 137
+		inactive_window_border 150 150 150
+		inactive_window_fill 43 56 63
+		active_window_border 91 156 186
+		active_window_fill 67 94 116
+
+	height 21
+	desktop_spacing 5
+
 launchbar 
 	icon_size 24 24
 

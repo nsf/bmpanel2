@@ -33,6 +33,32 @@ desktop_switcher
 
 	separator ds_separator_img.png
 
+pager
+	idle
+		border 29 29 29
+		fill 53 53 53
+		inactive_window_border 90 90 91
+		inactive_window_fill 123 123 123
+		active_window_border 90 90 91
+		active_window_fill 123 123 123
+		font DejaVu Sans 8
+			color 255 255 255
+			offset -2 5
+			align right
+			shadow_offset 1 1
+			shadow_color 0 0 0
+
+	pressed
+		border 29 29 29
+		fill 0 0 0
+		inactive_window_border 90 90 90
+		inactive_window_fill 43 43 43
+		active_window_border 220 220 220
+		active_window_fill 15 15 15
+
+	height 22
+	desktop_spacing 4
+
 taskbar
 	idle
 		left tb_left_idle_img.png

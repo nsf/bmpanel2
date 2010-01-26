@@ -1,7 +1,7 @@
 theme
 	name Striped
 	author weakhead <http://weakhead.deviantart.com/>
-	# Original author: lassekongo83
+	# Original author: lassekongo83 <http://lassekongo83.deviantart.com/>
 	# License: Creative Commons Attribution-Noncommercial-Share Alike 3.0
 
 panel
@@ -34,6 +34,32 @@ desktop_switcher
 			shadow_offset 1 1
 			shadow_color 0 0 0
 			align center
+
+pager
+	idle
+		border 0 0 0
+		fill 55 55 55
+		inactive_window_border 89 89 89
+		inactive_window_fill 18 18 18
+		active_window_border 89 89 89
+		active_window_fill 18 18 18
+		font DejaVu Sans 8
+			color 247 247 247
+			offset -2 3
+			align right
+			shadow_offset 1 1
+			shadow_color 0 0 0
+
+	pressed
+		border 15 15 15
+		fill 66 83 34
+		inactive_window_border 160 160 160
+		inactive_window_fill 43 43 43
+		active_window_border 204 235 143
+		active_window_fill 130 160 74
+
+	height 18
+	desktop_spacing 3
 
 launchbar
 	icon_size 16 16

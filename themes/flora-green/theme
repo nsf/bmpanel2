@@ -1,7 +1,7 @@
 theme
 	name Flora Green
 	author weakhead <http://weakhead.deviantart.com/>
-	# Original author: lassekongo83
+	# Original author: lassekongo83 <http://lassekongo83.deviantart.com/>
 	# License: Creative Commons Attribution-Noncommercial-Share Alike 3.0
 
 panel
@@ -24,6 +24,32 @@ desktop_switcher
 		center ds-tile-active.png
 		right ds-right-active.png
 		right_corner ds-right-active.png
+
+pager
+	idle
+		border 0 0 0
+		fill 72 89 56
+		inactive_window_border 66 87 41
+		inactive_window_fill 24 24 24
+		active_window_border 66 87 41
+		active_window_fill 24 24 24
+		font Arial 8
+			color 230 230 230
+			offset -2 4
+			align right
+			shadow_offset 1 1
+			shadow_color 0 0 0
+
+	pressed
+		border 0 0 0
+		fill 120 166 76
+		inactive_window_border 150 150 150
+		inactive_window_fill 22 25 28
+		active_window_border 222 236 214
+		active_window_fill 78 125 36
+
+	height 20
+	desktop_spacing 3
 
 taskbar
 	idle

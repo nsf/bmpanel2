@@ -28,6 +28,32 @@ desktop_switcher
 			color 255 255 255
 			offset 0 1
 
+pager
+	idle
+		border 57 57 57
+		fill 57 57 57
+		inactive_window_border 70 70 70
+		inactive_window_fill 18 18 18
+		active_window_border 70 70 70
+		active_window_fill 18 18 18
+		font DejaVu Sans 8
+			color 255 255 255
+			offset 0 7
+			align right
+			shadow_offset 1 1
+			shadow_color 0 0 0
+
+	pressed
+		border 32 32 32
+		fill 32 32 32
+		inactive_window_border 110 110 110
+		inactive_window_fill 43 43 43
+		active_window_border 190 190 190
+		active_window_fill 0 0 0
+
+	height 24
+	desktop_spacing 1
+
 launchbar
 	icon_size 24 24
 
