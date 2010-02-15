@@ -277,6 +277,7 @@ static void draw(struct widget *w)
 
 		dw->desktops[i].x = x;
 
+		/* TODO: There is a bug when left_corner and right_corner is abscent */
 		if (i == 0 && left_cornerw) {
 			blit_image(cur->left_corner, cr, x, 0);
 			x += left_cornerw;
