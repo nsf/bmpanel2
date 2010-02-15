@@ -408,7 +408,7 @@ static void draw(struct widget *w)
 		if (ps->font.pfd && visible_tasks_count) {
 			/* draw number */
 			char buf[10];
-			snprintf(buf, sizeof(buf), "%u", visible_tasks_count);
+			snprintf(buf, sizeof(buf), "%zu", visible_tasks_count);
 			draw_text(cr, layout, &ps->font, buf, r.x, r.y, r.w, r.h, 0);
 		}
 		r.x += r.w + pw->theme.desktop_spacing;
