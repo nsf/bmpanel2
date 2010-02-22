@@ -268,10 +268,15 @@ static void resize_desktops(struct widget *w)
 	size_t i;
 	for (i = 0; i < pw->desktops_n; ++i) {
 		struct pager_desktop *pd = &pw->desktops[i];
-		struct rect workarea = {
-			workareas[4*i+0], workareas[4*i+1],
-			workareas[4*i+2], workareas[4*i+3]
-		};
+		struct rect workarea;
+		if (i < workareas_n / 4) {
+			workarea.x = workareas[4*i+0];
+			workarea.y = workareas[4*i+1];
+			workarea.w = workareas[4*i+2];
+			workarea.h = workareas[4*i+3];
+		} else {
+			memcpy(&workarea, &mon, sizeof(struct rect));
+		}
 		rect_intersection(&pd->workarea, &workarea, &mon);
 		pd->div = pd->workarea.h / (pw->theme.height - 2);
 		pd->w = (mon.w / pd->div) + 2;
