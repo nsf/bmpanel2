@@ -17,6 +17,7 @@
 #define MBUTTON_USE		(1<<0)
 #define MBUTTON_DRAG		(1<<1)
 #define MBUTTON_KILL		(1<<2)
+#define MBUTTON_SHOW_DESKTOP	(1<<3)
 
 #define MBUTTON_1_DEFAULT	(MBUTTON_USE | MBUTTON_DRAG)
 #define MBUTTON_2_DEFAULT	(MBUTTON_KILL)
@@ -167,6 +168,8 @@ struct panel {
 	int height;
 
 	int monitor;
+
+	int showing_desktop;
 
 	/* expose flag */
 	int needs_expose;

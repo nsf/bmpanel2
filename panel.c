@@ -28,6 +28,8 @@ static unsigned int parse_mbutton_flag(const char *flag)
 		return MBUTTON_DRAG;
 	else if (!strcmp(flag, "kill"))
 		return MBUTTON_KILL;
+	else if (!strcmp(flag, "show-desktop"))
+		return MBUTTON_SHOW_DESKTOP;
 	return 0;
 }
 
@@ -726,6 +728,20 @@ void reconfigure_widgets(struct panel *panel)
 	recalculate_widgets_sizes(panel);
 }
 
+static void panel_button_press_release(struct panel *p, XButtonEvent *e)
+{
+	struct x_connection *c = &p->connection;
+
+	int mbutton_sd = check_mbutton_condition(p, e->button,
+						 MBUTTON_SHOW_DESKTOP);
+
+	if (mbutton_sd && e->type == ButtonRelease) {
+		p->showing_desktop = !p->showing_desktop;
+		x_send_netwm_message(c, c->root, c->atoms[XATOM_NET_SHOWING_DESKTOP],
+				     p->showing_desktop, 0, 0, 0, 0);
+	}
+}
+
 static void panel_property_notify(struct panel *p, XPropertyEvent *e)
 {
 	if (e->atom == p->connection.atoms[XATOM_XROOTPMAP_ID]) {
@@ -817,6 +833,7 @@ static int process_events(struct panel *p)
 
 		case ButtonRelease:
 		case ButtonPress:
+			panel_button_press_release(p, &e.xbutton);
 			disp_button_press_release(p, &e.xbutton);
 			break;
 
