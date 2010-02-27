@@ -1,0 +1,65 @@
+Bmpanel2 Changes
+================
+
+This is a ChangeLog, but in the asciidoc format.
+
+.Changes from *2.0a* to *2.0.1a*
+- Man page fix.
+
+.Changes from *2.0.1a* to *2.1pre1*
+- Fix http://code.google.com/p/bmpanel2/issues/detail?id=1[xfwm4 modal
+  dialogs]
+- Change texture filtering mode for stretching modes to PAD (works like
+  GL_CLAMP_TO_EDGE).
+- New "center_offsets" parameter for stretching modes.
+- Desktop switcher uses now the maximum width of all button states to calculate
+  a width for its button.
+- Implementation of "demands attention" feature. Flashy taskbar buttons.
+- SIGUSR1 signal forces bmpanel2 to reconfigure itself.
+- Change default blending mode to OVER in pseudo-transparency renderer.
+- Add "paint_replace" widget parameter, it forces a widget to use COPY blending
+  mode instead of OVER (for pseudo-transparency renderer).
+- Man page is being installed to $(PREFIX)/share/man/man1 now instead of
+  $(PREFIX)/man/man1.
+- Add bmpanel2cfg utility. Also add python library to do remote bmpanel2
+  manipulations (the library is very unstable, interfaces will be changed).
+- Integrate few themes to the git tree (alduin, auriel, curvy, flora, striped).
+- Add COPYING file (BSD/MIT style license).
+- Minor bugfixes and tweaks.
+- Documentation updates.
+- Build scripts improvements.
+
+.Changes from *2.1pre1* to *2.1*
+- The 2.1 release is skipped. Consider 2.1pre1 as 2.1.
+
+.Changes from *2.1* to *2.2* (not released yet)
+- Fix transparency issues (garbage instead of wallpaper).
+- Add ESETROOT_PMAP_ID handing, just in case.
+- Enable locale for time in bmpanel2 (month names are now displayed correctly
+  according to your locale).
+- Add UTF8_STRING variant for WM(_ICON)_NAME properties. Fixes weird
+  applications on weird WMs, like opera on pekwm.
+- Get rid of the workspace hints usage. Therefore bmpanel2 can't stack its
+  instances one on top of another anymore. It was buggy anyway.
+- Add support for multiple monitors (Xinerama and XRandR).
+- Fix wrong width calculation for clock text.
+- Add a command line option that overrides default config file (--config).
+- Add "monitor" option to the config file.
+- Add "task_visible_monitors" parameter to the config file for the taskbar.
+- Fix bug with ellipsized right/center aligned text.
+- Add widget alternatives system and "preffered_alternatives" parameter to the
+  config file.
+- Add "pager" widget as a first alternative to "desktop switcher".
+- Add "pager_current_monitor_only" boolean option to the config file.
+- Change signals behaviour for remote bmpanel2 reconfiguration. It uses SIGUSR1
+  to reload the config only and SIGUSR2 to reload the config and a theme too.
+- Add customizable mouse actions (use, drag, kill).
+- Add "pager" alternative to all themes in the git tree (thanks weakhead).
+- Fix pekwm floating point exception bug (there was a logic error causing
+  division by zero).
+- Add "show-desktop" mouse action which implements _NETWM_SHOWING_DESKTOP.
+- Remove GCC warning caused by size_t and printf (thanks Matthew William Cox).
+  And that was true probably for x86_64 archs only, because size_t is 64 bits
+  here.
+- Bmpanel2cfg updates according to changes (not exactly up to date).
+- Minor bugfixes, tweaks, build system imporvements and code cleanups.
