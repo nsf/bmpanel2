@@ -230,7 +230,7 @@ static void add_task(struct widget *w, struct x_connection *c, Window win)
 	t.win = win;
 	t.demands_attention = x_is_window_demands_attention(c, win);
 	int x, y;
-	x_translate_coordinates(c, winattrs.x, winattrs.y, &x, &y, win);
+	x_translate_coordinates(c, 0, 0, &x, &y, win);
 	t.monitor = task_monitor(x, y, winattrs.width, winattrs.height,
 				 c->monitors, c->monitors_n);
 
@@ -871,7 +871,7 @@ static void configure(struct widget *w, XConfigureEvent *e)
 		XGetWindowAttributes(c->dpy, e->window, &winattrs);
 
 		int x, y;
-		x_translate_coordinates(c, winattrs.x, winattrs.y, &x, &y, e->window);
+		x_translate_coordinates(c, 0, 0, &x, &y, e->window);
 		int monitor = task_monitor(x, y, winattrs.width, winattrs.height,
 					   monitors, monitors_n);
 
