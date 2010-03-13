@@ -47,7 +47,7 @@ This is a ChangeLog, but in the asciidoc format.
 - Add "monitor" option to the config file.
 - Add "task_visible_monitors" parameter to the config file for the taskbar.
 - Fix bug with ellipsized right/center aligned text.
-- Add widget alternatives system and "preffered_alternatives" parameter to the
+- Add widget alternatives system and "preferred_alternatives" parameter to the
   config file.
 - Add "pager" widget as a first alternative to "desktop switcher".
 - Add "pager_current_monitor_only" boolean option to the config file.
