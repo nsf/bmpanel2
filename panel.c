@@ -186,7 +186,7 @@ static void get_position_and_strut(const struct x_connection *c,
 		if (t->width_in_percents)
 			w = ((float)mon->width / 100.0f) * t->width;
 		else
-			w = mon->width;
+			w = t->width;
 
 		/* limit */
 		if (w > mon->width)
