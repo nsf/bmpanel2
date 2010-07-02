@@ -464,6 +464,9 @@ class Bmpanel2Remote:
 		except:
 			return
 
+		if not pids:
+			return
+
 		# (2)
 		configlist = []
 		nonconfiglist = []
