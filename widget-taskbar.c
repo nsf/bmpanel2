@@ -668,8 +668,10 @@ static void button_click(struct widget *w, XButtonEvent *e)
 		if (mbutton_use) {
 			if (tw->active == t->win)
 				XIconifyWindow(c->dpy, t->win, c->screen);
-			else
+			else {
 				activate_task(c, t);
+				w->panel->showing_desktop = 0;
+			}
 		}
 		if (mbutton_kill)
 			close_task(c, t);
@@ -732,8 +734,10 @@ static void client_msg(struct widget *w, XClientMessageEvent *e)
 		int ti = get_taskbar_task_at(w, x - p->x);
 		if (ti != -1) {
 			struct taskbar_task *t = &tw->tasks[ti];
-			if (t->win != tw->active)
+			if (t->win != tw->active) {
 				activate_task(c, t);
+				w->panel->showing_desktop = 0;
+			}
 		}
 
 		x_send_dnd_message(c, e->data.l[0],
