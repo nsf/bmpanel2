@@ -62,8 +62,8 @@ static int parse_items(struct launchbar_widget *lw)
 			continue;
 
 		lbitem.icon = copy_resized(icon,
-					   lw->icon_size[0],
-					   lw->icon_size[1]);
+					   lw->theme.icon_size[0],
+					   lw->theme.icon_size[1]);
 		cairo_surface_destroy(icon);
 		lbitem.execstr = xstrdup(ee->value);
 
@@ -74,6 +74,32 @@ static int parse_items(struct launchbar_widget *lw)
 	return items;
 }
 
+static int parse_launchbar_theme(struct launchbar_theme *theme,
+				 struct config_format_entry *e,
+				 struct config_format_tree *tree)
+{
+	if (parse_2ints(theme->icon_size, "icon_size", e) != 0)
+		return -1;
+	parse_triple_image_named(&theme->background, "background", e, tree, 0);
+	parse_2ints(theme->icon_offset, "icon_offset", e);
+	theme->icon_spacing = parse_int("icon_spacing", e, 0);
+	return 0;
+}
+
+static void free_launchbar_theme(struct launchbar_theme *theme)
+{
+	free_triple_image(&theme->background);
+}
+
+static int calc_width(struct launchbar_theme *lt,
+		      int items)
+{
+	return items * (lt->icon_size[0] + lt->icon_spacing) -
+		lt->icon_spacing +
+		image_width(lt->background.left) +
+		image_width(lt->background.right);
+}
+
 /**************************************************************************
   Launch Bar interface
 **************************************************************************/
@@ -82,13 +108,18 @@ static int create_widget_private(struct widget *w, struct config_format_entry *e
 				 struct config_format_tree *tree)
 {
 	struct launchbar_widget *lw = xmallocz(sizeof(struct launchbar_widget));
-	parse_2ints(lw->icon_size, "icon_size", e);
+	struct launchbar_theme *lt = &lw->theme;
+	if (parse_launchbar_theme(lt, e, tree)) {
+		xfree(lw);
+		XWARNING("Failed to parse launchbar theme");
+		return -1;
+	}
 
 	INIT_EMPTY_ARRAY(lw->items);
 	lw->active = -1;
 	int items = parse_items(lw);
 
-	w->width = items * (lw->icon_size[0] + 5) + 5;
+	w->width = calc_width(lt, items);
 	w->private = lw;
 
 	return 0;
@@ -103,6 +134,7 @@ static void destroy_widget_private(struct widget *w)
 		xfree(lw->items[i].execstr);
 	}
 	FREE_ARRAY(lw->items);
+	free_launchbar_theme(&lw->theme);
 	xfree(lw);
 }
 
@@ -120,20 +152,44 @@ static void reconfigure(struct widget *w)
 	lw->active = -1;
 	int items = parse_items(lw);
 
-	w->width = items * (lw->icon_size[0] + 5) + 5;
+	w->width = calc_width(&lw->theme, items);
 }
 
 static void draw(struct widget *w)
 {
 	struct launchbar_widget *lw = (struct launchbar_widget*)w->private;
+	struct launchbar_theme *lt = &lw->theme;
 	size_t i;
 
 	cairo_t *cr = w->panel->cr;
-	int x = w->x + 5;
-	int y = (w->panel->height - lw->icon_size[1]) / 2;
+	int x = w->x;
+	int leftw = 0;
+	int rightw = 0;
+	int centerw = w->width;
+	if (lt->background.center) {
+		leftw += image_width(lt->background.left);
+		rightw += image_width(lt->background.right);
+		centerw -= leftw + rightw;
+
+		/* left */
+		if (leftw)
+			blit_image(lt->background.left, cr, x, 0);
+		x += leftw;
+
+		/* center */
+		pattern_image(lt->background.center, cr, x, 0, centerw, 1);
+		x += centerw;
+
+		/* right */
+		if (rightw)
+			blit_image(lt->background.right, cr, x, 0);
+		x -= centerw;
+	}
+	x = w->x + leftw + lt->icon_offset[0];
+	int y = (w->panel->height - lt->icon_size[1]) / 2 + lt->icon_offset[1];
 	for (i = 0; i < lw->items_n; ++i) {
 		lw->items[i].x = x;
-		lw->items[i].w = lw->icon_size[0];
+		lw->items[i].w = lt->icon_size[0];
 		cairo_save(cr);
 		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 		blit_image(lw->items[i].icon, cr, x, y);
@@ -142,13 +198,13 @@ static void draw(struct widget *w)
 			cairo_set_operator(cr, CAIRO_OPERATOR_ADD);
 			cairo_set_source_rgba(cr, 1, 1, 1, 0.2);
 			cairo_rectangle(cr, x, y,
-					lw->icon_size[0], lw->icon_size[1]);
+					lt->icon_size[0], lt->icon_size[1]);
 			cairo_clip(cr);
 			cairo_mask_surface(cr, lw->items[i].icon, x, y);
 			cairo_restore(cr);
 		}
 		cairo_restore(cr);
-		x += lw->icon_size[0] + 5;
+		x += lt->icon_size[0] + lt->icon_spacing;
 	}
 }
 

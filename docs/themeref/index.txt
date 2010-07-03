@@ -519,17 +519,37 @@ image:launchbar.png[]
 
 Launch bar. This widget contains clickable icons with user defined
 programs to run. The actual content of this widget is defined in the
-bmpane2rc file (*TODO*: add link to the man page (which doesn't exist
+bmpanel2rc file (*TODO*: add link to the man page (which doesn't exist
 yet)).
 
 ---------------------------------
 launchbar
 	icon_size 16 16
+	#icon_offset 0 -1
+	#icon_spacing 5
+
+	background
+		left launchbar_left_img.png
+		center launchbar_tile_img.png
+		right launchbar_right_img.png
 ---------------------------------
 
 icon_size::
 	Defines a size of an icon. Two numbers - width and height
 	respectively (in pixels).
+
+icon_offset::
+	An offset for placing icons. Two numbers - horizontal and
+	vertical offset in pixels. Usually only the vertical offset is
+	useful.
+
+icon_spacing::
+	Space between icons in pixels. If you don't like that the
+	icons are too close to each other, you should increment this
+	parameter definitely.
+
+background/*::
+	See *clock* widget below. The meaning is the same.
 
 // vim: set syntax=asciidoc:
 

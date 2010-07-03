@@ -254,14 +254,22 @@ struct launchbar_item {
 	int w;
 };
 
+struct launchbar_theme {
+	struct triple_image background;
+	int icon_size[2];
+	int icon_offset[2];
+	int icon_spacing;
+};
+
 struct launchbar_widget {
+	struct launchbar_theme theme;
+
 	/* parameters from bmpanel2rc */
 	/* array */
 	struct launchbar_item *items;
 	size_t items_n;
 	size_t items_alloc;
 
-	int icon_size[2];
 	int active;
 };
 
