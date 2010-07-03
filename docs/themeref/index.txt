@@ -168,7 +168,7 @@ no_separator::
 	widget controls only one separator and it depends on a
 	relative position to the *taskbar* widget. I hope the image
 	will help you understand the idea.
-
++
 image:widget_separator.png[]
 
 paint_replace::
@@ -176,7 +176,6 @@ paint_replace::
 	widget uses different drawing mode replacing background
 	instead of trying to draw itself over it. Useful for
 	transparent themes.
-+
 
 Specific widget parameters
 --------------------------
