@@ -158,6 +158,7 @@ taskbar
 
 systray
 	no_separator
+	# paint_replace
 	# ...
 ---------------------------------
 
@@ -167,6 +168,12 @@ no_separator::
 	widget controls only one separator and it depends on a
 	relative position to the *taskbar* widget. I hope the image
 	will help you understand the idea.
+
+paint_replace::
+	If the *paint_replace* parameters presents in a widget, the
+	widget uses different drawing mode replacing background
+	instead of trying to draw itself over it. Useful for
+	transparent themes.
 +
 image:widget_separator.png[]
 
