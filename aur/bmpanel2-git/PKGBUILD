@@ -1,6 +1,6 @@
 # Contributor: nsf <no.smile.face@gmail.com>
 pkgname=bmpanel2-git
-pkgver=20100106
+pkgver=20100703
 pkgrel=1
 pkgdesc="The second major release of the known panel."
 arch=("i686" "x86_64")
@@ -33,7 +33,7 @@ conflicts=('bmpanel2')
 # * cmake
 # * gcc
 # * make
-# * pkgbuild - bmpanel2 uses it in cmake a lot
+# * pkgconfig - bmpanel2 uses it in cmake a lot
 # * asciidoc - it is used for man page generation via a2x tool
 #   + docbook-xsl - it is required too
 # * python - you need this to build bmpanel2cfg utility using setup.py
