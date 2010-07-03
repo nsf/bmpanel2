@@ -1,0 +1,39 @@
+Bmpanel2 rc reference
+=====================
+
+This reference covers config file called bmpanel2rc.
+
+Parameters
+----------
+
+theme::
+	Defines a theme used for bmpanel2. It is being searched in XDG
+	standard data directories (env vars: XDG_DATA_HOME,
+	XDG_DATA_DIRS).
+
+drag_threshold::
+	When you're pressing left mouse button and starting to move
+	mouse cursor, it should walk at least that amount of pixels
+	before it will be considered as dragging action. By default
+	it's 50 pixels.
+
+task_urgency_hint::
+	Enables blinking tasks in the taskbar if the represented
+	application demands attention. Boolean option, turned off by
+	default.
+
+task_death_threshold::
+	In order to kill the task in the taskbar you need to drag it
+	at least that amount of pixels off the panel. Default value is
+	30 pixels.
+
+monitor::
+	Place bmpanel2 on a specific monitor. Starting from 0. Default
+	is 0.
+
+clock_prog::
+	A string. An application that should be executed when you
+	click on the clock widget.
+
+// vim: set syntax=asciidoc:
+
