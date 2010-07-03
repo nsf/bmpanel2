@@ -169,13 +169,14 @@ no_separator::
 	relative position to the *taskbar* widget. I hope the image
 	will help you understand the idea.
 
+image:widget_separator.png[]
+
 paint_replace::
 	If the *paint_replace* parameters presents in a widget, the
 	widget uses different drawing mode replacing background
 	instead of trying to draw itself over it. Useful for
 	transparent themes.
 +
-image:widget_separator.png[]
 
 Specific widget parameters
 --------------------------
