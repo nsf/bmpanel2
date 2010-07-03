@@ -10,8 +10,8 @@ There are two types of mostly common parameters. The *image* and the
 
 Image
 ~~~~~
-The image is specified using filename and optional rectangle. The
-rectangle defines which part of the image should be used.
+The image is specified using a filename and an optional rectangle. The
+rectangle defines which part of the image should be rendered.
 
 ---------------------------------
 image file.png
@@ -24,8 +24,8 @@ xywh::
 
 Font
 ~~~~
-The font is specified using font name, its parameters and other
-drawing parameters. The font itself is specified by the string:
+The font is specified using a font name, its parameters and other
+drawing parameters. The font itself is specified by a string:
 "[FAMILY-LIST] [STYLE-OPTIONS] [SIZE]". STYLE-OPTIONS are optional.
 
 ---------------------------------
@@ -55,7 +55,7 @@ shadow_color::
 	Only useful if *shadow_offset* values aren't zero.
 
 shadow_offset::
-	An offset for drawing a shadow (relative to text position).
+	An offset for drawing a shadow (relative to a text position).
 	Two numbers - horizontal and vertical offset respectively. If
 	both values are zero, then the shadow isn't drawn.
 
