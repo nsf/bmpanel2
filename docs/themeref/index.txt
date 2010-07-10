@@ -403,8 +403,10 @@ pressed_highlight/*::
 	*Pressed_highlight* state parameters are the same as *idle*.
 
 separator::
-	'(Not implemented)' It was in bmpanel 0.9.x, does anyone
-	need this?
+	If specified this image is being drawn between tasks in the taskbar
+	widget.
++
+image:taskbar_separator.png[]
 
 default_icon::
 	Defines an icon to show for the task which has no icon. Also

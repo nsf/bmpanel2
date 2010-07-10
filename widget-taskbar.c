@@ -523,7 +523,8 @@ static void draw(struct widget *w)
 	if (!count)
 		return;
 
-	int taskw = w->width / count;
+	int sepspace = (count-1) * image_width(tw->theme.separator);
+	int taskw = (w->width - sepspace) / count;
 	if (tw->theme.task_max_width && taskw > tw->theme.task_max_width)
 		taskw = tw->theme.task_max_width;
 
@@ -565,6 +566,10 @@ static void draw(struct widget *w)
 		draw_task(t, tw, cr, w->panel->layout,
 			  x, taskw, t->win == tw->active, i == tw->highlighted);
 		x += taskw;
+		if (sepspace && curtask != count-1) {
+			blit_image(tw->theme.separator, cr, x, 0);
+			x += image_width(tw->theme.separator);
+		}
 		curtask++;
 	}
 }
