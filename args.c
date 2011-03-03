@@ -74,7 +74,7 @@ static void apply_value_to_arg(struct argument *arg, const char *value)
 		*((int*)arg->value) = !strncmp(value, "--no-", 5) ? 0 : 1;
 		break;
 	case ARGT_SET_BIT:
-		*((uint*)arg->value) |= arg->def.b;
+		*((unsigned int*)arg->value) |= arg->def.b;
 		break;
 	case ARGT_SET_INT:
 		*((int*)arg->value) = arg->def.i;
