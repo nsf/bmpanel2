@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <alloca.h>
 #include <ctype.h>
 #include "widget-utils.h"
 
@@ -77,6 +76,7 @@ cairo_surface_t *parse_image_part(struct config_format_entry *e,
 				  struct config_format_tree *tree,
 				  int required)
 {
+	char buf[MAX_ALLOCA+1];
 	cairo_surface_t *img = 0;
 	int x,y,w,h;
 	x = y = w = h = -1;
@@ -98,7 +98,7 @@ cairo_surface_t *parse_image_part(struct config_format_entry *e,
 	if (filestrlen > MAX_ALLOCA)
 		file = xmalloc(filestrlen);
 	else
-		file = alloca(filestrlen);
+		file = buf;
 	if (!strcmp(tree->dir, ""))
 		strcpy(file, e->value);
 	else
