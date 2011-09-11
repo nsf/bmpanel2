@@ -595,12 +595,10 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 		a[2] *= (float)d[3] / 255.0f;
 	}
 
-	/* TODO: I'm pretending here, that stride is w*4, but it should
-	 * be tested/verified
-	 */
+	int stride = cairo_format_stride_width(CAIRO_FORMAT_ARGB32, w);
 	ret = cairo_image_surface_create_for_data((unsigned char*)array,
 						  CAIRO_FORMAT_ARGB32,
-						  w, h, w*4);
+						  w, h, stride);
 	ENSURE(cairo_surface_status(ret) == CAIRO_STATUS_SUCCESS,
 	       "Failed to create cairo image surface");
 	cairo_status_t st;
