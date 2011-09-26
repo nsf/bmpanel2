@@ -595,7 +595,7 @@ static cairo_surface_t *get_icon_from_netwm(long *data)
 		a[2] *= (float)d[3] / 255.0f;
 	}
 
-	int stride = cairo_format_stride_width(CAIRO_FORMAT_ARGB32, w);
+	int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
 	ret = cairo_image_surface_create_for_data((unsigned char*)array,
 						  CAIRO_FORMAT_ARGB32,
 						  w, h, stride);
