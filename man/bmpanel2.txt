@@ -17,12 +17,12 @@ DESCRIPTION
 BMPanel2 (bitmap panel) is a tiny little bar on the top of the screen
 or on the bottom. It contains different "widgets" - the pieces of
 functionality which help user to interact with his desktop. Some of
-the default widgets include:
+the default widgets are:
 
  . Taskbar - A list of tasks (windows) on the current desktop.
  . Desktop Switcher - Allows user to choose current desktop.
  . Systray - Also known as notification area.
- . Clock - No comments.
+ . Clock - Shows time..
  . Launchbar - Allows user to run different programs in one click.
 
 The main goal of this project is to create a simple, lightweight, nice
