@@ -8,7 +8,7 @@ url="http://code.google.com/p/bmpanel2"
 license=('MIT')
 depends=('libxext' 'pango' 'libxinerama')
 optdepends=('pygtk: bmpanel2cfg utility')
-makedepends=('git' 'cmake' 'gcc' 'make' 'pkgconfig' 'asciidoc' 'python')
+makedepends=('git' 'cmake' 'gcc' 'make' 'pkgconfig' 'asciidoc' 'python2')
 provides=('bmpanel2')
 conflicts=('bmpanel2')
 #-----------------------------------------------------------------------------
