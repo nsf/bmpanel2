@@ -1,6 +1,6 @@
 # Contributor: nsf <no.smile.face@gmail.com>
 pkgname=bmpanel2-git
-pkgver=20111008
+pkgver=20111111
 pkgrel=1
 pkgdesc="The second major release of the known panel."
 arch=("i686" "x86_64")

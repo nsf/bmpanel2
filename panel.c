@@ -94,6 +94,7 @@ static int load_panel_theme(struct panel_theme *theme, struct config_format_tree
 	theme->separator = parse_image_part_named("separator", e, tree, 0);
 	theme->transparent = parse_bool("transparent", e);
 	theme->align = parse_align("align", e);
+	theme->height = parse_int("height", e, -1);
 	theme->width = parse_int_or_percents("width", e, -1,
 					     &theme->width_in_percents);
 	return 0;
@@ -167,11 +168,15 @@ static void get_position_and_strut(const struct x_connection *c,
 		int *ox, int *oy, int *ow, int *oh, long *strut)
 {
 	struct x_monitor *mon = &c->monitors[monitor];
-	int x,y,w,h;
+	int x,y,w,h,rh;
 	x = mon->x;
 	y = mon->y;
 	h = image_height(t->background);
 	w = mon->width;
+	rh = h;
+
+	if (t->height != -1)
+		h = t->height;
 
 	strut[0] = strut[1] = strut[3] = 0;
 	strut[2] = y + h;
@@ -206,7 +211,7 @@ static void get_position_and_strut(const struct x_connection *c,
 		}
 	}
 
-	*ox = x; *oy = y; *oh = h; *ow = w;
+	*ox = x; *oy = y; *oh = rh; *ow = w;
 
 	static const struct {
 		int s, e;

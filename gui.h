@@ -73,7 +73,7 @@ struct widget_interface {
 	const char *theme_name;
 	int size_type;
 
-	int (*create_widget_private)(struct widget *w, struct config_format_entry *e, 
+	int (*create_widget_private)(struct widget *w, struct config_format_entry *e,
 			struct config_format_tree *tree);
 	void (*destroy_widget_private)(struct widget *w);
 	void (*draw)(struct widget *w);
@@ -138,6 +138,7 @@ struct panel_theme {
 	int transparent; /* bool */
 	int align;
 	int width;
+	int height;
 	int width_in_percents; /* bool */
 };
 
