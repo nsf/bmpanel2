@@ -2,7 +2,7 @@
 
 pkgname=bmpanel2
 pkgver=2.1pre1
-pkgrel=4
+pkgrel=5
 pkgdesc="The second major release of the known panel."
 arch=("i686" "x86_64")
 url="http://bmpanel2.googlecode.com/"
@@ -10,13 +10,16 @@ license=('MIT')
 depends=('pango' 'cairo' 'libx11' 'libxrender')
 optdepends=('pygtk')
 makedepends=('cmake' 'asciidoc' 'python')
-source=(http://bmpanel2.googlecode.com/files/$pkgname-$pkgver.tar.gz)
-md5sums=('766ce5d3d6be427192fa11883b230eed')
+source=(https://github.com/nsf/bmpanel2/archive/$pkgver.tar.gz)
+md5sums=('ef6b586d256cb9aa3365840e51972c65')
 
 build() {
   cd "$startdir/src/$pkgname-$pkgver"
   cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RELEASE -DPYTHON_EXECUTABLE=/usr/bin/python2.7 . || return 1
   make || return 1
-  make DESTDIR="$pkgdir/" install
-} 
+}
 
+package() {
+  cd "$startdir/src/$pkgname-$pkgver"
+  make DESTDIR="$pkgdir/" install
+}
